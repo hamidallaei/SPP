@@ -162,52 +162,19 @@ void Wall::Interact(VicsekParticle* p)
 
 void Wall::Interact(ContinuousParticle* p)
 {
-		C2DVector dr_1,dr_2,dr;
-		Real d2_1, d2_2, d2;
+		C2DVector dr_1,dr;
+		Real d2;
 		dr_1 = p->r - point_1;
-		dr_2 = p->r - point_2;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			dr_1.Periodic_Transform();
-			dr_2.Periodic_Transform();
 		#endif
 
-		if ((dr_1*direction < length) && (dr_1*direction > 0))
-		{
 			dr = dr_1 - direction*(dr_1*direction);
 			d2 = dr.Square();
-			Real dtheta = p->theta - theta;
-			dtheta -= 2*PI * (int (dtheta / (PI)));
-
-			if (dtheta > PI/2)
-				dtheta -= PI;
-			if (dtheta < -PI/2)
-				dtheta += PI;
-
 			if (d2 < 1)
-				p->torque -= (sin(dtheta)/2*PI);
-		}
-		else
-		{
-			d2_1 = dr_1.Square();
-			d2_2 = dr_2.Square();
-			if (d2_2 < d2_1)
 			{
-				dr = dr_2;
-				d2 = d2_2;
+				p->torque += (40.0/Particle::g)*((p->v.x*dr.y - p->v.y*dr.x)/(2*PI*(d2)));
 			}
-			else
-			{
-				dr = dr_1;
-				d2 = d2_1;
-			}
-		}
-
-		Real d = sqrt(d2);
-//		C2DVector f = dr*(wall_repulsion_strength*exp(-d2/sigma)/((d - sigma)*(d - sigma)));
-
-//		C2DVector f = dr*(wall_repulsion_strength*exp(-d2/sigma)/(d2*d2*d2))*100*g;
-//		p->torque += (p->v.x * f.y - p->v.y * f.x) / sqrt(p->v.Square());
-		p->f += dr*(wall_repulsion_strength*exp(-d/(0.1*sigma))/(d*d));
 }
 
 #endif

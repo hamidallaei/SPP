@@ -52,8 +52,8 @@ class C2DVector
 
 		void Rand_Lattice()
 		{
-			x = (Real) gsl_rng_uniform_int(gsl_r, 2*L) - L;
-			y = (Real) gsl_rng_uniform_int(gsl_r, 2*L) - L;
+			x = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*L) - L;
+			y = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*L) - L;
 		}
 
 

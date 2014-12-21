@@ -9,7 +9,7 @@ template <class T>
 class Stat{
 public:
 	vector<T> data;
-	double mean, std, error;
+	double mean, std, error, variance;
 	void Compute();
 	void Reset();
 	void Add_Data(T input);
@@ -21,8 +21,9 @@ template <class T> void Stat<T>::Compute()
 	mean = sum / data.size();
 	double sq_sum = inner_product(data.begin(), data.end(), data.begin(), 0.0);
 	double sq_mean = sq_sum / data.size();
-	std = sqrt(sq_mean - mean*mean);
-	error = sqrt((sq_mean - mean*mean) / data.size());
+	variance = sq_mean - mean*mean;
+	std = sqrt(variance);
+	error = sqrt(variance / data.size());
 }
 
 template <class T> void Stat<T>::Reset()

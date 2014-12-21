@@ -105,17 +105,18 @@ class ContinuousParticle: public BasicDynamicParticle {
 public:
 	Real torque;
 	static Real g;
+	static Real alpha;
 
 	ContinuousParticle();
 	void Move()
 	{
-		torque = g*torque/neighbor_size + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude/sqrt(neighbor_size));
+		torque = g*torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
 		theta += torque*dt;
-		theta -= 2*PI * ((int) (theta / (PI)));
+//		theta -= 2*PI * ((int) (theta / (PI)));
 		C2DVector old_v = v;
 		v.x = cos(theta);
 		v.y = sin(theta);
-		v += f;
+//		v += f;
 //		r += (old_v + v)*(half_dt);
 		r += v*dt;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
@@ -134,28 +135,20 @@ public:
 		Real d2 = dr.Square();
 
 		Real torque_interaction;
-		C2DVector interaction_force;
 		if (d2 < 1)
 		{
 			neighbor_size++;
 			p->neighbor_size++;
 
 			Real d = sqrt(d2);
-			Real x = (d / sigma);
 
-			torque_interaction = sin(p->theta - theta)/(PI);
+			torque_interaction = (1-alpha)*sin(p->theta - theta)/(PI);
+
 			torque += torque_interaction;
 			p->torque -= torque_interaction;
 
-			if (d < 1)
-			{
-				Real a = exp(-x) * (1+x) / (x*x);
-				a *= repulsion_strength;
-				interaction_force = dr * (a / d);
-
-				f += interaction_force;
-				p->f -= interaction_force;
-			}
+			torque -= alpha*(dr.x*v.y - dr.y*v.x) /(PI*d);
+			p->torque += alpha*(dr.x*p->v.y - dr.y*p->v.x) /(PI*d);
 		}
 	}
 };
@@ -174,5 +167,6 @@ void ContinuousParticle::Reset()
 
 Real BasicDynamicParticle::noise_amplitude = 1.0;
 Real ContinuousParticle::g = 4;
+Real ContinuousParticle::alpha = 1;
 
 #endif

@@ -4,11 +4,14 @@
 #include "c2dvector.h"
 #include "visualparticle.h"
 #include "field.h"
+#include <boost/algorithm/string.hpp>
 
 class Scene{
 public:
 	VisualParticle* particle;
 	static float L;
+	static float density;
+	static float noise;
 	static int number_of_particles;
 	Scene();
 	Scene(const Scene&);
@@ -19,9 +22,12 @@ public:
 	void Auto_Correlation();
 	void Skip_File(std::istream& is, int n);
 	friend std::istream& operator>>(std::istream& is, Scene& scene);
+	friend std::ostream& operator<<(std::ostream& os, Scene& scene);
 };
 
 float Scene::L;
+float Scene::density;
+float Scene::noise;
 int Scene::number_of_particles;
 
 Scene::Scene()
@@ -81,26 +87,51 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	}
 }
 
+std::ostream& operator<<(std::ostream& os, Scene& scene)
+{
+	os.write((char*) &(scene.number_of_particles), sizeof(int) / sizeof(char));
+	for (int i = 0; i < scene.number_of_particles; i++)
+	{
+		scene.particle[i].r.write(os);
+		scene.particle[i].v.write(os);
+	}
+}
+
 class SceneSet{
 public:
 	vector<Scene> scene;
 	Real L;
 	stringstream address;
+	string info;
 	ifstream input_file;
+	ofstream output_file;
 	Field* field;
 
 	SceneSet(string input_address);
 	~SceneSet();
 	void Read();
-	void Plot_Fields(int);
+	void Write(int, int); // write from a time to the end
+	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int grid_dim, string name);
+	void Plot_Averaged_Fields_Section(int grid_dim, int y, string info);
+	void Plot_Density_Contour(int grid_dim, double rho, string info);
 };
 
 SceneSet::SceneSet(string input_address) : L(0)
 {
 	address.str("");
 	address << input_address;
-	input_file.open(address.str().c_str());
+	string name = input_address;
+	boost::replace_all(name, "-r-v.bin", "");
+	info = name;
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-noise=", "\t");
+
+	stringstream ss;
+	ss.str("");
+	ss << name;
+	ss >> Scene::density;
+	ss >> Scene::noise;
 }
 
 SceneSet::~SceneSet()
@@ -117,6 +148,7 @@ void SceneSet::Read()
 	L = 0;
 
 //	temp_scene.Skip_File(input_file, 3800);
+	input_file.open(address.str().c_str());
 
 	while (!input_file.eof())
 	{
@@ -130,8 +162,6 @@ void SceneSet::Read()
 			if (abs(temp_scene.particle[i].r.y) > L)
 				L = abs(temp_scene.particle[i].r.y);
 		}
-//		if (counter % 100 == 0)
-//			cout << counter << endl;
 	}
 	input_file.close();
 
@@ -145,15 +175,31 @@ void SceneSet::Read()
 //			scene[i].particle[j].v.Periodic_Transform();
 //		}
 //	}
-	L = round(1000*L)/1000;
+
+
+
+	L = round(L+0.1);
 	L += 0.5;
 }
 
-void SceneSet::Plot_Fields(int t)
+void SceneSet::Write(int start, int limit)
 {
-	field = new Field(20,L);
+	if ((scene.size() - start) > limit)
+	{
+		output_file.open(address.str().c_str());
+		for (int i = start; i < scene.size(); i++)
+			output_file << scene[i];
+		output_file.close();
+	}
+	else
+		cout << "I will not cut the file because it is short enough!" << endl;
+}
+
+void SceneSet::Plot_Fields(int grid_dim, int t, string name)
+{
+	field = new Field(grid_dim,L);
 	field->Compute((BasicParticle*) scene[t].particle, Scene::number_of_particles);
-	field->Draw("Hello");
+	field->Draw(name);
 }
 
 void SceneSet::Plot_Averaged_Fields(int grid_dim, string info)
@@ -168,6 +214,34 @@ void SceneSet::Plot_Averaged_Fields(int grid_dim, string info)
 	averaged_field.Average();
 	averaged_field.Draw(info);
 	averaged_field.Reset();
+}
+
+void SceneSet::Plot_Averaged_Fields_Section(int grid_dim, int y, string info)
+{
+	Field averaged_field(grid_dim, L);
+	for (int i = 0; i < scene.size(); i++)
+	{
+		Field f(grid_dim, L);
+		f.Compute(scene[i].particle, Scene::number_of_particles);
+		averaged_field.Add(&f);
+	}
+	averaged_field.Average();
+	averaged_field.Draw_Section(info, y);
+	averaged_field.Reset();
+}
+
+void SceneSet::Plot_Density_Contour(int grid_dim, double rho, string info)
+{
+	Field averaged_field(grid_dim, L);
+	Field f(grid_dim, L);
+	for (int i = 0; i < scene.size(); i++)
+	{
+		f.Compute(scene[i].particle, Scene::number_of_particles);
+		averaged_field.Add(&f);
+		f.Reset();
+	}
+	averaged_field.Average();
+	averaged_field.Draw_Density_Contour(info, rho);
 }
 
 #endif

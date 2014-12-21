@@ -1,5 +1,3 @@
-#define PERIODIC_BOUNDARY_CONDITION
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -75,11 +73,12 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 
 int main(int argc, char *argv[])
 {
-//	C2DVector::Init_Rand(time(NULL));
-	C2DVector::Init_Rand(321);
+	C2DVector::Init_Rand(time(NULL));
+//	C2DVector::Init_Rand(321);
 
 	Box box;
-	box.Init(atof(argv[1]), atof(argv[2]), atof(argv[3]));
+
+	box.Init(atof(argv[1]), atof(argv[2]), atof(argv[3]), atof(argv[4]));
 
 	cout << box.info.str() << endl;
 

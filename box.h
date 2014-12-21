@@ -22,7 +22,7 @@ public:
 	stringstream info;
 
 	Box();
-	void Init(Real input_volume_fraction, Real noise_amplitude, Real g);
+	void Init(Real input_volume_fraction, Real g = 2, Real alpha=0.5, Real noise_amplitude = 0.1);
 	void Square_Lattice_Formation();
 	void Triangle_Lattice_Formation();
 	void Single_Vortex_Formation();
@@ -48,17 +48,16 @@ Box::Box()
 	density = 0;
 }
 
-void Box::Init(Real input_volume_fraction, Real noise_amplitude, Real g)
+void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 {
 	wall_num = 4;
-	volume_fraction = input_volume_fraction;
-	N = (int) round(4*L2*L2*volume_fraction/(PI*sigma*sigma));
+	density = input_density;
+	N = (int) round(L2*L2*density);
 	cout << "number_of_particles = " << N << endl;
-	density = (Real) N / (L2*L2);
-
 
 	Particle::noise_amplitude = noise_amplitude / sqrt(dt);
 	ContinuousParticle::g = g;
+	ContinuousParticle::alpha = alpha;
 
 	Triangle_Lattice_Formation();
 //	Single_Vortex_Formation();
@@ -77,7 +76,7 @@ void Box::Init(Real input_volume_fraction, Real noise_amplitude, Real g)
 	#endif
 
 	info.str("");
-	info << "phi=" << volume_fraction << "-g=" << ContinuousParticle::g << "-noise=" << noise_amplitude;
+	info << "rho=" << density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_amplitude;
 }
 
 void Box::Single_Vortex_Formation()
