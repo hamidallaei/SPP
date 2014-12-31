@@ -1,14 +1,14 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
-#define PERIODIC_BOUNDARY_CONDITION
+//#define PERIODIC_BOUNDARY_CONDITION
 
 // This is for checking particles outside of the box
 //#define DEBUG
 // This track an specific particle. At the buttom the id of the tracking particle is given
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (when the order of a sum is changed the result will change because of the truncation error)
-#define COMPARE
+//#define COMPARE
 
 #include <iostream>
 #include <iomanip>
@@ -54,9 +54,9 @@ const int tag_max = 32767;
 const Real dt = 0.005;
 const Real half_dt = dt/2;
 const int cell_update_period=20;
-const int equilibrium_step = 2000;//4113;
-const int total_step = 2000;
-const int saving_period = 20;
+const long int equilibrium_step = 1000000;
+const long int total_step = 1000000;
+const int saving_period = 100;
 
 const Real repulsion_strength = 5;
 const Real wall_repulsion_strength = 10*repulsion_strength;

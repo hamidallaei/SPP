@@ -305,16 +305,18 @@ void Node::Init_Topology() // This function must be called after box definition.
 // Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast.
 void Node::Quick_Update_Cells()
 {
-//	for (int i = 0; i < boundary.size(); i++)
-//		boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-//	for (int i = 0; i < boundary.size(); i++)
-//		boundary[i].Receive_Data(); // Receive information of i'th boundary of neighboring node.
-
-	for (int i = 0; i < boundary.size(); i++)
-	{
-		boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-		boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
-	}
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		for (int i = 0; i < boundary.size(); i++)
+		{
+			boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+			boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+		}
+	#else
+		for (int i = 0; i < boundary.size(); i++)
+			boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+		for (int i = 0; i < boundary.size(); i++)
+			boundary[i].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+	#endif
 
 	MPI_Barrier(MPI_COMM_WORLD);
 

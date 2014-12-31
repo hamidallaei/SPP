@@ -68,7 +68,7 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 	#ifdef TRACK_PARTICLE
 	track_p = &particle[track];
 	#endif
-	
+
 	thisnode = input_node;
 	density = input_density;
 	N = (int) round(L2*L2*density);

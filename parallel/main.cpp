@@ -11,13 +11,13 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
 		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+//		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 
-inline Real equilibrium(Box* box, int equilibrium_step, int saving_period, ofstream& out_file)
+inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, ofstream& out_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -25,7 +25,7 @@ inline Real equilibrium(Box* box, int equilibrium_step, int saving_period, ofstr
 	if (box->thisnode->node_id == 0)
 		cout << "equilibrium:" << endl;
 
-	for (int i = 0; i < equilibrium_step; i+=cell_update_period)
+	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
 		timing_information(box->thisnode,start_time,i,equilibrium_step);
@@ -41,7 +41,7 @@ inline Real equilibrium(Box* box, int equilibrium_step, int saving_period, ofstr
 }
 
 
-inline Real data_gathering(Box* box, int total_step, int saving_period, ofstream& out_file)
+inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -55,7 +55,7 @@ inline Real data_gathering(Box* box, int total_step, int saving_period, ofstream
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
 
-	for (int i = 0; i < total_step; i+=cell_update_period)
+	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
 		timing_information(box->thisnode,start_time,i,total_step);
@@ -83,51 +83,65 @@ int main(int argc, char *argv[])
 	Real input_rho = atof(argv[1]);
 	Real input_g = atof(argv[2]);
 	Real input_alpha = atof(argv[3]);
-	Real noise_amplitude = atof(argv[4]);
+	vector<Real> noise_list;
+
+	for (int i = 4; i < argc; i++)
+		noise_list.push_back(atof(argv[i]));
 
 	Node thisnode;
 
-//	thisnode.seed = 0 + thisnode.node_id*112488;
-	thisnode.seed = seed;
-
-//	while (!thisnode.Chek_Seeds())
-//	{
-//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-//		MPI_Barrier(MPI_COMM_WORLD);
-//	}
-
+	thisnode.seed = 0 + thisnode.node_id*112488;
+//	thisnode.seed = seed;
+	while (!thisnode.Chek_Seeds())
+	{
+		thisnode.seed = time(NULL) + thisnode.node_id*112488;
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	C2DVector::Init_Rand(seed);
 
 	Real t_eq,t_sim;
 
 	Box box;
-	box.Init(&thisnode, input_rho, input_g, input_alpha, noise_amplitude);
-
-	cout << "From processor " << thisnode.node_id << " Box information is: " << box.info.str() << endl;
+	box.Init(&thisnode, input_rho, input_g, input_alpha, 0);
 
 	ofstream out_file;
-	if (thisnode.node_id == 0)
+
+	for (int i = 0; i < noise_list.size(); i++)
 	{
+		Particle::noise_amplitude = noise_list[i] / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		box.info.str("");
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
+
+		if (thisnode.node_id == 0)
+		{
 			stringstream address;
 			address.str("");
 			address << box.info.str() << "-r-v.bin";
 			out_file.open(address.str().c_str());
+		}
+
+		if (thisnode.node_id == 0)
+			cout << " Box information is: " << box.info.str() << endl;
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode.node_id == 0)
+			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
+
+		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode.node_id == 0)
+		{
+			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
+			out_file.close();
+		}
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-	MPI_Barrier(MPI_COMM_WORLD);
-	t_sim = data_gathering(&box, total_step, saving_period, out_file);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-//	if (thisnode.node_id == 0)
-//		for (int i = 0; i < box.N; i++)
-//			cout << i << "\t" << box.particle[i].r << endl;
-
-	if (thisnode.node_id == 0)
-		out_file.close();
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
+
 }
 
