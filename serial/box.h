@@ -1,14 +1,11 @@
 #ifndef _BOX_
 #define _BOX_
 
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include "c2dvector.h"
-#include "parameters.h"
-#include "particle.h"
-#include "cell.h"
-#include "wall.h"
+#include "../shared/parameters.h"
+#include "../shared/c2dvector.h"
+#include "../shared/particle.h"
+#include "../shared/cell.h"
+#include "../shared/wall.h"
 
 
 class Box{

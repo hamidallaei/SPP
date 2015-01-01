@@ -1,6 +1,8 @@
 #ifndef _BOUNDARY_
 #define _BOUNDARY_
 
+#include "mpi.h"
+
 struct Boundary{
 // Any node has a list of boundaries. Each boundary is aware of the node that it belongs to (this_node_id) and the node that it is connecting this_node_id to (that_node_id).
 	int this_node_id;

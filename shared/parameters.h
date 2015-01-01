@@ -17,7 +17,6 @@
 #include <cmath>
 #include <ctime>
 #include <algorithm>
-#include "mpi.h"
 
 using namespace std;
 
@@ -47,16 +46,16 @@ const int max_divisor_x = 20*Lx_int/11;
 const int max_divisor_y = 20*Ly_int/11;
 const int divisor_x = max_divisor_x;
 const int divisor_y = max_divisor_y;
-const int npx = 2;
-const int npy = 2;
-const int tag_max = 32767;
+const int npx = 2; // For parallel use only
+const int npy = 2; // For parallel use only
+const int tag_max = 32767; // For parallel use only
 
 const Real dt = 0.005;
 const Real half_dt = dt/2;
 const int cell_update_period=20;
-const long int equilibrium_step = 1000000;
-const long int total_step = 1000000;
-const int saving_period = 100;
+const long int equilibrium_step = 5000;
+const long int total_step = 5000;
+const int saving_period = 20;
 
 const Real repulsion_strength = 5;
 const Real wall_repulsion_strength = 10*repulsion_strength;

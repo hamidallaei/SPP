@@ -1,7 +1,7 @@
-#include "c2dvector.h"
-#include "parameters.h"
-#include "particle.h"
-#include "cell.h"
+#include "../shared/parameters.h"
+#include "../shared/c2dvector.h"
+#include "../shared/particle.h"
+#include "../shared/cell.h"
 #include "box.h"
 
 inline void timing_information(Node* node, clock_t start_time, int i_step, int total_step)
@@ -90,13 +90,13 @@ int main(int argc, char *argv[])
 
 	Node thisnode;
 
-	thisnode.seed = 0 + thisnode.node_id*112488;
-//	thisnode.seed = seed;
-	while (!thisnode.Chek_Seeds())
-	{
-		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-		MPI_Barrier(MPI_COMM_WORLD);
-	}
+//	thisnode.seed = 0 + thisnode.node_id*112488;
+	thisnode.seed = seed;
+//	while (!thisnode.Chek_Seeds())
+//	{
+//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
+//		MPI_Barrier(MPI_COMM_WORLD);
+//	}
 	C2DVector::Init_Rand(seed);
 
 	Real t_eq,t_sim;
