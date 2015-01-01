@@ -460,6 +460,7 @@ void Node::Send_To_Root()
 		MPI_Send(index_buffer, particle_count, MPI_INT, 0, tag_max-1,MPI_COMM_WORLD);
 		MPI_Send(data_buffer, 3*particle_count, MPI_DOUBLE, 0, tag_max,MPI_COMM_WORLD);
 
+// Deallocation
 		delete [] index_buffer;
 		delete [] data_buffer;
 	}
@@ -535,6 +536,7 @@ void Node::Root_Bcast()
 			particle[i].v.y = sin(particle[i].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 		}
 	}
+	delete [] data_buffer;
 	MPI_Barrier(MPI_COMM_WORLD); // We want to make sure that all the nodes have the same information at the end (finished their task).
 }
 
