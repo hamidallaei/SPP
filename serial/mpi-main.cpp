@@ -1,13 +1,7 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cmath>
-#include <ctime>
-#include <algorithm>
-#include "c2dvector.h"
-#include "parameters.h"
-#include "particle.h"
-#include "cell.h"
+#include "../shared/parameters.h"
+#include "../shared/c2dvector.h"
+#include "../shared/particle.h"
+#include "../shared/cell.h"
 #include "box.h"
 
 #include "mpi.h"

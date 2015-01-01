@@ -11,7 +11,7 @@
 #include <fstream>
 #include <cmath>
 #include "read.h"
-#include "c2dvector.h"
+#include "../shared/c2dvector.h"
 
 unsigned int window_width = 650;
 unsigned int window_height = 650;

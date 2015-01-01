@@ -1,7 +1,7 @@
 #ifndef _FIELD_
 #define _FIELD_
 
-#include "c2dvector.h"
+#include "../shared/c2dvector.h"
 #include <boost/tuple/tuple.hpp>
 #include "gnuplot-iostream.h"
 #include <vector>

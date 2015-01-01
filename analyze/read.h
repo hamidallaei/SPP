@@ -1,7 +1,7 @@
 #ifndef _READ_
 #define _READ_
 
-#include "c2dvector.h"
+#include "../shared/c2dvector.h"
 #include "visualparticle.h"
 #include "field.h"
 #include <boost/algorithm/string.hpp>

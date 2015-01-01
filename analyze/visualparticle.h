@@ -1,7 +1,7 @@
 #ifndef _VISUALPARTICLE_
 #define _VISUALPARTICLE_
 
-#include "particle.h"
+#include "../shared/particle.h"
 
 const int circle_points_num = 100;
 
