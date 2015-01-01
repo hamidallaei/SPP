@@ -16,7 +16,7 @@ public:
 	int N, wall_num;
 	Particle particle[max_N];
 	Wall wall[8];
-	Cell cell[divisor][divisor];
+	Cell cell[divisor_x][divisor_y];
 
 	Real density, volume_fraction;
 	stringstream info;
@@ -50,6 +50,8 @@ Box::Box()
 
 void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 {
+	Cell::particle = particle;
+
 	wall_num = 4;
 	density = input_density;
 	N = (int) round(L2*L2*density);
@@ -63,11 +65,12 @@ void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 //	Single_Vortex_Formation();
 //	Four_Vortex_Formation();
 
+	for (int i = 0; i < divisor_x; i++)
+		for (int j = 0; j < divisor_y; j++)
+			cell[i][j].Init((Real) L*(2*i-divisor_x + 0.5)/divisor_x, (Real) L*(2*j-divisor_y + 0.5)/divisor_y);
+
 	Update_Cells();
 
-	for (int i = 0; i < divisor; i++)
-		for (int j = 0; j < divisor; j++)
-			cell[i][j].Init((Real) L*(2*i-divisor + 0.5)/divisor, (Real) L*(2*j-divisor + 0.5)/divisor);
 	#ifndef PERIODIC_BOUNDARY_CONDITION
 		wall[0].Init(-L,-L,-L,L);
 		wall[1].Init(-L,L,L,L);
@@ -233,19 +236,19 @@ void Box::Clump_Formation(int size)
 
 void Box::Update_Cells()
 {
-	for (int x = 0; x < divisor; x++)
-		for (int y = 0; y < divisor; y++)
+	for (int x = 0; x < divisor_x; x++)
+		for (int y = 0; y < divisor_y; y++)
 			cell[x][y].Delete();
 
 	#pragma omp parallel for
 	for (int i = 0; i < N; i++)
 	{
 		int x,y;
-		x = (int) (particle[i].r.x + L)*divisor / L2;
-		y = (int) (particle[i].r.y + L)*divisor / L2;
+		x = (int) (particle[i].r.x + L)*divisor_x / L2;
+		y = (int) (particle[i].r.y + L)*divisor_y / L2;
 
 		#ifdef DEBUG
-		if ((x >= divisor) || (x < 0) || (y >= divisor) || (y < 0))
+		if ((x >= divisor_x) || (x < 0) || (y >= divisor_y) || (y < 0))
 		{
 			cout << "\n Particle number " << i << " is Out of the box" << endl << flush;
 			cout << "Particle Position is " << particle[i].r << endl;
@@ -253,7 +256,7 @@ void Box::Update_Cells()
 		}
 		#endif
 
-		cell[x][y].Add(&particle[i]);
+		cell[x][y].Add(i);
 	}
 }
 
@@ -261,45 +264,45 @@ void Box::Update_Cells()
 void Box::Interact()
 {
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-	for (int x = 0; x < divisor; x++)
-		for (int y = 0; y < divisor; y++)
+	for (int x = 0; x < divisor_x; x++)
+		for (int y = 0; y < divisor_y; y++)
 		{
 			cell[x][y].Self_Interact();
-			cell[x][y].Interact(&cell[(x+1)%divisor][y]);
-			cell[x][y].Interact(&cell[x][(y+1)%divisor]);
-			cell[x][y].Interact(&cell[(x+1)%divisor][(y+1)%divisor]);
-			cell[x][y].Interact(&cell[(x+1)%divisor][(y-1+divisor)%divisor]);
+			cell[x][y].Interact(&cell[(x+1)%diviso_x][y]);
+			cell[x][y].Interact(&cell[x][(y+1)%divisor_x]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y+1)%divisor_y]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y-1+divisor_y)%divisor_y]);
 		}
 	#else
-	for (int x = 0; x < divisor-1; x++)
-		for (int y = 1; y < divisor-1; y++)
+	for (int x = 0; x < divisor_x-1; x++)
+		for (int y = 1; y < divisor_y-1; y++)
 		{
 			cell[x][y].Self_Interact();
-			cell[x][y].Interact(&cell[(x+1)%divisor][y]);
-			cell[x][y].Interact(&cell[x][(y+1)%divisor]);
-			cell[x][y].Interact(&cell[(x+1)%divisor][(y+1)%divisor]);
-			cell[x][y].Interact(&cell[(x+1)%divisor][(y-1+divisor)%divisor]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_y][y]);
+			cell[x][y].Interact(&cell[x][(y+1)%divisor_y]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_y][(y+1)%divisor_y]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_y][(y-1+divisor_y)%divisor_y]);
 		}
-	for (int y = 1; y < divisor-1; y++)
+	for (int y = 1; y < divisor_y-1; y++)
 	{
-		cell[divisor-1][y].Self_Interact();
-		cell[divisor-1][y].Interact(&cell[divisor-1][y+1]);
+		cell[divisor_x-1][y].Self_Interact();
+		cell[divisor_x-1][y].Interact(&cell[divisor_x-1][y+1]);
 	}
-	for (int x = 0; x < divisor-1; x++)
+	for (int x = 0; x < divisor_x-1; x++)
 	{
 		cell[x][0].Self_Interact();
 		cell[x][0].Interact(&cell[x+1][0]);
 		cell[x][0].Interact(&cell[x][1]);
 		cell[x][0].Interact(&cell[x+1][1]);
 
-		cell[x][divisor-1].Self_Interact();
-		cell[x][divisor-1].Interact(&cell[x+1][divisor-1]);
-		cell[x][divisor-1].Interact(&cell[x+1][divisor-2]);
+		cell[x][divisor_x-1].Self_Interact();
+		cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-1]);
+		cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-2]);
 	}
 
-	cell[divisor-1][divisor-1].Self_Interact();
-	cell[divisor-1][0].Self_Interact();
-	cell[divisor-1][0].Interact(&cell[divisor-1][1]);
+	cell[divisor_x-1][divisor_y-1].Self_Interact();
+	cell[divisor_x-1][0].Self_Interact();
+	cell[divisor_x-1][0].Interact(&cell[divisor_y-1][1]);
 
 	for (int i = 0; i < wall_num; i++)
 		for (int j = 0; j < N; j++)

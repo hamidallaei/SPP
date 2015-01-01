@@ -111,7 +111,7 @@ public:
 	void Move()
 	{
 		#ifdef COMPARE
-			torque = round(10000000*torque)/10000000.0;
+			torque = round(10000000000*torque)/10000000000.0;
 		#endif
 		torque = g*torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
 		theta += torque*dt;
@@ -142,8 +142,6 @@ public:
 			dr.Periodic_Transform();
 		#endif
 		Real d2 = dr.Square();
-
-
 
 		Real torque_interaction;
 		if (d2 < 1)
@@ -178,7 +176,6 @@ public:
 //						cout << "Intthat:     " << setprecision(100) << p.r << "\t" << d2 << "\t" << p.theta << "\t" << torque_interaction << endl << flush;
 				}
 			#endif
-
 		}
 	}
 };

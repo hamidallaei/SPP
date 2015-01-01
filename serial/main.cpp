@@ -73,8 +73,8 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 
 int main(int argc, char *argv[])
 {
-	C2DVector::Init_Rand(time(NULL));
-//	C2DVector::Init_Rand(321);
+//	C2DVector::Init_Rand(time(NULL));
+	C2DVector::Init_Rand(321);
 
 	Box box;
 

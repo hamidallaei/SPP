@@ -38,10 +38,10 @@ class C2DVector
 			x = y = 0;
 		}
 
-		void Rand() // Choose random numbers for components of the vector in [-L, L]
+		void Rand() // Choose random numbers for components of the vector with x in interval [-Lx, Lx] and y in interval [-Ly, Ly]
 		{
-			x = gsl_ran_flat (gsl_r, -L, L);
-			y = gsl_ran_flat (gsl_r, -L, L);
+			x = gsl_ran_flat (gsl_r, -Lx, Lx);
+			y = gsl_ran_flat (gsl_r, -Ly, Ly);
 		}
 
 		void Rand(const Real amplitude) // Choose random numbers for components of the vector in [-L, L]
@@ -52,15 +52,15 @@ class C2DVector
 
 		void Rand_Lattice()
 		{
-			x = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*L) - L;
-			y = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*L) - L;
+			x = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*Lx) - Lx;
+			y = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*Ly) - Ly;
 		}
 
 
 		void Periodic_Transform()
 		{
-			x -= L2*((int) (x / L));
-			y -= L2*((int) (y / L));
+			x -= Lx2*((int) (x / Lx));
+			y -= Ly2*((int) (y / Ly));
 		}
 
 		Real Square() const// returns the magnitude of the vector
@@ -204,8 +204,8 @@ public:
 	int x,y;
 	void Find(C2DVector r)
 	{
-		x = (int) (r.x + L)*divisor / (2*L);
-		y = (int) (r.y + L)*divisor / (2*L);
+		x = (int) (r.x + Lx)*divisor_x / (Lx2);
+		y = (int) (r.y + Ly)*divisor_y / (Ly2);
 	}
 };
 

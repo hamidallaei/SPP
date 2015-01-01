@@ -7,19 +7,20 @@
 
 class Cell{
 public:
-	vector<Particle*> particle;
-	C2DVector r;
-	static C2DVector dim;
+	vector<int> pid; // particle_id
+	C2DVector r; // Center position of the cell in the box
+	static C2DVector dim; // Dimension of the cell width and height
+	static Particle* particle; // This is a pointer to the original particle array pointer of the box. We need this pointer in some subroutins
 
 	Cell();
 
 	void Init();
 	void Init(Real x, Real y);
 	void Delete();
-	void Add(Particle* p);
-	void Interact(Cell* c);
-	void Self_Interact();
-	bool Inside(C2DVector);
+	void Add(int p); // Add a particle id to the list of pid of this cell.
+	void Interact(Cell* c); // Interact all particles wihtin this cell with the cell c
+	void Self_Interact(); // Interact all particles within this cell with themselve
+	void Move();
 };
 
 Cell::Cell()
@@ -34,52 +35,40 @@ void Cell::Init(Real x, Real y)
 
 void Cell::Delete()
 {
-	particle.clear();
+	pid.clear();
 }
 
-void Cell::Add(Particle* p)
+void Cell::Add(int p)
 {
-	particle.push_back(p);
+	pid.push_back(p);
 }
-
-//void Cell::Add(Wall w)
-//{
-//	bool b = Inside(w);
-//	for (int i = 0; i < wall.size(); i++)
-//		b = b && (wall[i] != &w);
-//	if (b)
-//		wall.push_back(&w);
-//}
 
 void Cell::Interact(Cell* c)
 {
-	for (int i = 0; i < particle.size(); i++)
+	for (int i = 0; i < pid.size(); i++)
 	{
-		for (int j = 0; j < c->particle.size(); j++)
-			particle[i]->Interact(c->particle[j]);
+		for (int j = 0; j < c->pid.size(); j++)
+			particle[pid[i]].Interact(particle[c->pid[j]]);
 	}
 }
 
 void Cell::Self_Interact()
 {
-	for (int i = 0; i < particle.size(); i++)
+	for (int i = 0; i < pid.size(); i++)
 	{
-		for (int j = i+1; j < particle.size(); j++)
-			particle[i]->Interact(particle[j]);
+		for (int j = i+1; j < pid.size(); j++)
+			particle[pid[i]].Interact(particle[pid[j]]);
 	}
 }
 
-bool Cell::Inside(C2DVector point)
+void Cell::Move()
 {
-	C2DVector dr = point - r;
-	#ifdef PERIODIC_BOUNDARY_CONDITION
-		dr.Periodic_Transform();
-	#endif
-	bool result = ((dr.x < dim.x) && (-dim.x < dr.x)) && ((dr.y < dim.y) && (-dim.y < dr.y));
-	return (result);
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move();
 }
 
-
 C2DVector Cell::dim;
+Particle* Cell::particle = NULL; // Be carefull that this pointer be initiated in future
 
 #endif
+

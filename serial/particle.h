@@ -81,9 +81,9 @@ public:
 		f.Null();
 	}
 
-	void Interact(VicsekParticle* p)
+	void Interact(VicsekParticle& p)
 	{
-		C2DVector dr = r - p->r;
+		C2DVector dr = r - p.r;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			dr.Periodic_Transform();
 		#endif
@@ -92,11 +92,11 @@ public:
 		if (d2 < 1)
 		{
 			neighbor_size++;
-			p->neighbor_size++;
-			Real dtheta = p->theta - theta;
+			p.neighbor_size++;
+			Real dtheta = p.theta - theta;
 			dtheta -= 2*PI * (int (dtheta / PI));
 			average_theta += dtheta;
-			p->average_theta -= dtheta;
+			p.average_theta -= dtheta;
 		}
 	}
 };
@@ -110,6 +110,9 @@ public:
 	ContinuousParticle();
 	void Move()
 	{
+		#ifdef COMPARE
+			torque = round(10000000000*torque)/10000000000.0;
+		#endif
 		torque = g*torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
 		theta += torque*dt;
 //		theta -= 2*PI * ((int) (theta / (PI)));
@@ -122,13 +125,19 @@ public:
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			r.Periodic_Transform();
 		#endif
+		#ifdef TRACK_PARTICLE
+			if (this == track_p && flag)
+			{
+				cout << "Particle:         " << setprecision(50)  << r << "\t" << theta << "\t" << torque << endl << flush;
+			}
+		#endif
 		Reset();
 	}
 
 	virtual void Reset();
-	void Interact(ContinuousParticle* p)
+	void Interact(ContinuousParticle& p)
 	{
-		C2DVector dr = r - p->r;
+		C2DVector dr = r - p.r;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			dr.Periodic_Transform();
 		#endif
@@ -138,17 +147,35 @@ public:
 		if (d2 < 1)
 		{
 			neighbor_size++;
-			p->neighbor_size++;
+			p.neighbor_size++;
 
 			Real d = sqrt(d2);
 
-			torque_interaction = (1-alpha)*sin(p->theta - theta)/(PI);
+			torque_interaction = (1-alpha)*sin(p.theta - theta)/(PI);
 
 			torque += torque_interaction;
-			p->torque -= torque_interaction;
+			p.torque -= torque_interaction;
 
 			torque -= alpha*(dr.x*v.y - dr.y*v.x) /(PI*d);
-			p->torque += alpha*(dr.x*p->v.y - dr.y*p->v.x) /(PI*d);
+			p.torque += alpha*(dr.x*p.v.y - dr.y*p.v.x) /(PI*d);
+
+			#ifdef TRACK_PARTICLE
+				if (this == track_p && flag)
+				{
+//					if (abs(torque) > 0.1)
+//						cout << "Intthis:     " << setprecision(100) << d2 << "\t" << torque_interaction << endl << flush;
+//						cout << "Intthis:     " << setprecision(100) << r << "\t" << d2 << endl << flush;
+				}
+			#endif
+
+			#ifdef TRACK_PARTICLE
+				if (&p == track_p && flag)
+				{
+//						cout << "Intthat:     " << setprecision(100) <<  d2 << "\t" << torque_interaction << endl << flush;
+//					if (abs(p.torque) > 0.1)
+//						cout << "Intthat:     " << setprecision(100) << p.r << "\t" << d2 << "\t" << p.theta << "\t" << torque_interaction << endl << flush;
+				}
+			#endif
 		}
 	}
 };
