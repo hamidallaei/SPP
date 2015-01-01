@@ -48,10 +48,10 @@ void Box::Init_Topology()
 	thisnode->Init_Topology();
 	#ifndef PERIODIC_BOUNDARY_CONDITION
 		wall_num = 4;
-		wall[0].Init(-Lx,-Ly,-Lx,Ly);
-		wall[1].Init(-Lx,Ly,Lx,Ly);
-		wall[2].Init(Lx,Ly,Lx,-Ly);
-		wall[3].Init(Lx,-Ly,-Lx,-Ly);
+		wall[0].Init(-Lx,-Ly,-Lx, Ly);
+		wall[1].Init(-Lx, Ly, Lx, Ly);
+		wall[2].Init( Lx, Ly, Lx,-Ly);
+		wall[3].Init( Lx,-Ly,-Lx,-Ly);
 	#endif
 }
 
@@ -64,7 +64,7 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 
 	thisnode = input_node;
 	density = input_density;
-	N = (int) round(L2*L2*density);
+	N = (int) round(Lx2*Ly2*density);
 
 	Particle::noise_amplitude = noise_amplitude / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 	ContinuousParticle::g = g;

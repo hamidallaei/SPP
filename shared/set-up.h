@@ -36,46 +36,47 @@ void Single_Vortex_Formation(Particle* particle, int N)
 void Four_Vortex_Formation(Particle* particle, int N)
 {
 	C2DVector v_cm,r,v;
-	int Nx = (int) sqrt(N) + 1;
+	int Nx = (int) sqrt(Lx*N/Ly) + 1;
+	int Ny = (int) sqrt(Ly*N/Lx) + 1;
 	for (int i = 0; i < Nx/2; i++)
-		for (int j = 0; j < Nx/2; j++)
+		for (int j = 0; j < Ny/2; j++)
 		{
-			r.x = -L + 2*i*(L/Nx) + L/Nx;
-			r.y = -L + 2*j*(L/Nx) + L/Nx;
-			v.x = -(2*(r.y/L) + 1);
-			v.y = (2*(r.x/L) + 1);
+			r.x = -Lx + 2*i*(Lx/Nx) + Lx/Nx;
+			r.y = -Ly + 2*j*(Ly/Ny) + Ly/Ny;
+			v.x = -(2*(r.y/Lx) + 1);
+			v.y = (2*(r.x/Ly) + 1);
 			particle[i + j*Nx].Init(r,v);
 			v_cm += (particle[i + j*Nx].v / N);
 		}
 	for (int i = Nx/2; i < Nx; i++)
 		for (int j = 0; j < Nx/2; j++)
 		{
-			r.x = -L + 2*i*(L/Nx) + L/Nx;
-			r.y = -L + 2*j*(L/Nx) + L/Nx;
-			v.x = (2*(r.y/L) + 1);
-			v.y = -(2*(r.x/L) - 1);
+			r.x = -Lx + 2*i*(Lx/Nx) + Lx/Nx;
+			r.y = -Ly + 2*j*(Ly/Ny) + Ly/Ny;
+			v.x = (2*(r.y/Lx) + 1);
+			v.y = -(2*(r.x/Ly) - 1);
 			particle[i + j*Nx].Init(r,v);
 			v_cm += (particle[i + j*Nx].v / N);
 		}
 	for (int i = 0; i < Nx/2; i++)
 		for (int j = Nx/2; j < Nx; j++)
 		{
-			r.x = -L + 2*i*(L/Nx) + L/Nx;
-			r.y = -L + 2*j*(L/Nx) + L/Nx;
+			r.x = -Lx + 2*i*(Lx/Nx) + Lx/Nx;
+			r.y = -Ly + 2*j*(Ly/Ny) + Ly/Ny;
 			particle[i + j*Nx].Init(r);
-			v.x = (2*(r.y/L) - 1);
-			v.y = -(2*(r.x/L) + 1);
+			v.x = (2*(r.y/Ly) - 1);
+			v.y = -(2*(r.x/Lx) + 1);
 			particle[i + j*Nx].Init(r,v);
 			v_cm += (particle[i + j*Nx].v / N);
 		}
 	for (int i = Nx/2; i < Nx; i++)
 		for (int j = Nx/2; j < Nx; j++)
 		{
-			r.x = -L + 2*i*(L/Nx) + L/Nx;
-			r.y = -L + 2*j*(L/Nx) + L/Nx;
+			r.x = -Lx + 2*i*(Lx/Nx) + Lx/Nx;
+			r.y = -Ly + 2*j*(Ly/Ny) + Ly/Ny;
 			particle[i + j*Nx].Init(r);
-			v.x = -(2*(r.y/L) - 1);
-			v.y = (2*(r.x/L) - 1);
+			v.x = -(2*(r.y/Ly) - 1);
+			v.y = (2*(r.x/Lx) - 1);
 			particle[i + j*Nx].Init(r,v);
 			v_cm += (particle[i + j*Nx].v / N);
 		}
@@ -86,11 +87,12 @@ void Four_Vortex_Formation(Particle* particle, int N)
 void Square_Lattice_Formation(Particle* particle, int N)
 {
 	C2DVector v_cm,r;
-	int Nx = (int) sqrt(N) + 1;
+	int Nx = (int) sqrt(Lx*N/Ly) + 1;
+	int Ny = (int) sqrt(Ly*N/Lx) + 1;
 	for (int i = 0; i < N; i++)
 	{
-		r.x = ((2.0*(i % Nx))/(Nx) - 1)*L;
-		r.y = ((2.0*(i / Nx))/(Nx) - 1)*L;
+		r.x = ((2.0*(i / Ny))/(Nx) - 1)*Lx;
+		r.y = ((2.0*(i % Ny))/(Ny) - 1)*Ly;
 		r = r*0.95;
 
 		particle[i].Init(r);
@@ -108,11 +110,11 @@ void Triangle_Lattice_Formation(Particle* particle, int N)
 	basis_2.x = 0.5;
 	basis_2.y = sqrt(3)/2;
 
-	int Nx = (int) sqrt(N*sqrt(3)/2) + 1;
+	int Nx = (int) sqrt((Lx*N*sqrt(3))/(2*Ly)) + 1;
 	int Ny = N / Nx + 1;
 
-	basis_1 = basis_1*((L2 - 2*sigma) / Nx);
-	basis_2 = basis_2*((L2 - 2*sigma) / Nx);
+	basis_1 = basis_1*((Lx2 - 2*sigma) / Nx);
+	basis_2 = basis_2*((Lx2 - 2*sigma) / Nx);
 
 //	basis_1 = basis_1*(sigma*1.15);
 //	basis_2 = basis_2*(sigma*1.15);
@@ -124,10 +126,10 @@ void Triangle_Lattice_Formation(Particle* particle, int N)
 	for (int i = 0; i < N; i++)
 	{
 		r = basis_1*(i % Nx) + basis_2*(i / Nx) - basis_1*(i / (2*Nx));
-		r.x -= (L - sigma);
-		r.y -= (L - sigma);
-		if ((r.y > L) || (r.y < -L) || (r.x > L) || (r.x < -L))
-			cout << r/L << endl;
+		r.x -= (Lx - sigma);
+		r.y -= (Ly - sigma);
+		if ((r.y > Ly) || (r.y < -Ly) || (r.x > Lx) || (r.x < -Lx))
+			cout << r.x/Lx << "\t" << r.y/Ly << endl;
 //		r.Periodic_Transform();
 		particle[i].Init(r);
 		v_cm += (particle[i].v / N);

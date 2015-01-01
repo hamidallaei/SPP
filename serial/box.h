@@ -48,7 +48,7 @@ void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 
 	wall_num = 4;
 	density = input_density;
-	N = (int) round(L2*L2*density);
+	N = (int) round(Lx2*Ly2*density);
 	cout << "number_of_particles = " << N << endl;
 
 	Particle::noise_amplitude = noise_amplitude / sqrt(dt);
@@ -61,15 +61,15 @@ void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 
 	for (int i = 0; i < divisor_x; i++)
 		for (int j = 0; j < divisor_y; j++)
-			cell[i][j].Init((Real) L*(2*i-divisor_x + 0.5)/divisor_x, (Real) L*(2*j-divisor_y + 0.5)/divisor_y);
+			cell[i][j].Init((Real) Lx*(2*i-divisor_x + 0.5)/divisor_x, (Real) Ly*(2*j-divisor_y + 0.5)/divisor_y);
 
 	Update_Cells();
 
 	#ifndef PERIODIC_BOUNDARY_CONDITION
-		wall[0].Init(-L,-L,-L,L);
-		wall[1].Init(-L,L,L,L);
-		wall[2].Init(L,L,L,-L);
-		wall[3].Init(L,-L,-L,-L);
+		wall[0].Init(-Lx,-Ly,-Lx, Ly);
+		wall[1].Init(-Lx, Ly, Lx, Ly);
+		wall[2].Init( Lx, Ly, Lx,-Ly);
+		wall[3].Init( Lx,-Ly,-Lx,-Ly);
 	#endif
 
 	info.str("");
@@ -88,8 +88,8 @@ void Box::Update_Cells()
 	for (int i = 0; i < N; i++)
 	{
 		int x,y;
-		x = (int) (particle[i].r.x + L)*divisor_x / L2;
-		y = (int) (particle[i].r.y + L)*divisor_y / L2;
+		x = (int) (particle[i].r.x + Lx)*divisor_x / Lx2;
+		y = (int) (particle[i].r.y + Ly)*divisor_y / Ly2;
 
 		#ifdef DEBUG
 		if ((x >= divisor_x) || (x < 0) || (y >= divisor_y) || (y < 0))

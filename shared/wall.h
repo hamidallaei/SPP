@@ -65,19 +65,19 @@ Real Wall::Intercept_x(Real y_value)
 {
 	Real dy = y_value - point_1.y;
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-		dy -= L2*((int) (dy / L));
+		dy -= Ly2*((int) (dy / Ly));
 	#endif
 	Real s = dy / direction.y;
 	if ((s > 0) && (s < length))
 	{
 		Real result = point_1.x + s * direction.x;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			result -= L2*((int) (result / L));
+			result -= Lx2*((int) (result / Lx));
 		#endif
 		return (result);
 	}
 	else
-		return (4*L);
+		return (4*Lx);
 }
 
 
@@ -85,19 +85,19 @@ Real Wall::Intercept_y(Real x_value)
 {
 	Real dx = x_value - point_1.x;
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-		dx -= L2*((int) (dx / L));
+		dx -= Lx2*((int) (dx / Lx));
 	#endif
 	Real s = dx / direction.x;
 	if ((s > 0) && (s < length))
 	{
 		Real result = point_1.y + s * direction.y;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			result -= L2*((int) (result / L));
+			result -= Ly2*((int) (result / Ly));
 		#endif
 		return (result);
 	}
 	else
-		return (4*L);
+		return (4*Ly);
 }
 
 void Wall::Translate(C2DVector delta)
