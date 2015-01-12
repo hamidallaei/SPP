@@ -8,6 +8,7 @@ struct Boundary{
 	int this_node_id;
 	int that_node_id;
 	int tag; // Tag is used for the message tags of our MPI. We must give to each boundary a uniqe tag to avoid confilicts.
+	bool is_active; // This gives information about the boundary state, whether it is an inactive boundary (no real data transformation) or an active boundary (data must be transferred). For example if the boundary condition is a bounded box, the boundaries at the edges of the box are inactive becasue there is no neighboring node beyond the boundary.
 	bool box_edge; // This give information about the boundary that is at the edge of the box or not
 	vector<Cell*> this_cell; // the cells at the boundary that are in the this_node
 	vector<Cell*> that_cell; // the cells at the boundary that are in the that_node
@@ -28,6 +29,7 @@ Boundary::Boundary()
 {
 	tag = -1;
 	box_edge = false;
+	is_active = true;
 }
 
 // Copy constructor
@@ -37,6 +39,7 @@ Boundary::Boundary(const Boundary& b)
 	this_node_id = b.this_node_id;
 	that_node_id = b.that_node_id;
 	tag = b.tag;
+	is_active = b.is_active;
 	for (int i = 0; i < b.this_cell.size(); i++)
 		this_cell.push_back(b.this_cell[i]);
 	for (int i = 0; i < b.that_cell.size(); i++)

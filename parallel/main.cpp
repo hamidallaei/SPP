@@ -90,14 +90,18 @@ int main(int argc, char *argv[])
 
 	Node thisnode;
 
-//	thisnode.seed = 0 + thisnode.node_id*112488;
-	thisnode.seed = seed;
-//	while (!thisnode.Chek_Seeds())
-//	{
-//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-//		MPI_Barrier(MPI_COMM_WORLD);
-//	}
-	C2DVector::Init_Rand(seed);
+	#ifdef COMPARE
+		thisnode.seed = seed;
+	#else
+		thisnode.seed = 0 + thisnode.node_id*112488;
+		while (!thisnode.Chek_Seeds())
+		{
+			thisnode.seed = time(NULL) + thisnode.node_id*112488;
+			MPI_Barrier(MPI_COMM_WORLD);
+		}
+	#endif
+
+	C2DVector::Init_Rand(thisnode.seed);
 
 	Real t_eq,t_sim;
 

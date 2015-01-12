@@ -97,17 +97,18 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 void Box::Interact()
 {
 // each node sends its information of boundary cells to the correspounding node.
-	#ifdef PERIODIC_BOUNDARY_CONDITION
 	for (int i = 0; i < thisnode->boundary.size(); i++)
 	{
-		thisnode->boundary[i].Send_Data();
-		thisnode->boundary[(i+4)%8].Receive_Data();
+		if (thisnode->boundary[i].is_active)
+			thisnode->boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+		if (thisnode->boundary[(i+4)%8].is_active)
+			thisnode->boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
 	}
-	#else
-		for (int i = 0; i < thisnode->boundary.size(); i++)
-			thisnode->boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-		for (int i = 0; i < thisnode->boundary.size(); i++)
-			thisnode->boundary[i].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+
+	thisnode->Self_Interact(); // Sum up interaction of particles within thisnode
+	thisnode->Boundary_Interact(); // Sum up interaction of particles in the neighboring nodes.
+
+	#ifndef PERIODIC_BOUNDARY_CONDITION
 // Sum up interaction of the walls with the particles of thisnode (in the absence of periodic boundary condition)
 		for (int i = 0; i < wall_num; i++)
 			for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
@@ -115,9 +116,6 @@ void Box::Interact()
 					for (int j = 0; j < thisnode->cell[x][y].pid.size(); j++)
 						wall[i].Interact(&particle[thisnode->cell[x][y].pid[j]]);
 	#endif
-
-	thisnode->Self_Interact(); // Sum up interaction of particles within thisnode
-	thisnode->Boundary_Interact(); // Sum up interaction of particles in the neighboring nodes.
 }
 
 // Move all particles of this node.

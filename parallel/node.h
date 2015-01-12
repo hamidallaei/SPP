@@ -229,72 +229,72 @@ void Node::Init_Topology() // This function must be called after box definition.
 		if ((idy != 0) && (idy != npy-1)) // The nodes that are not at the corners (top and bot).
 		{
 // The erase must be from the last element, to avoid lable changes and a correct delletion for other boundaries
-			boundary.erase(boundary.begin()+7); // down right
-			boundary.erase(boundary.begin()+1); // up right
-			boundary.erase(boundary.begin()); // right
+			boundary[7].is_active = false; // down right
+			boundary[1].is_active = false; // up right
+			boundary[0].is_active = false; // right
 		}
 
 	if (idx == 0) // The leftmost node
 		if ((idy != 0) && (idy != npy-1)) // The nodes that are not at the corners (top and bot).
 		{
-			boundary.erase(boundary.begin()+5); // down left
-			boundary.erase(boundary.begin()+4); // left
-			boundary.erase(boundary.begin()+3); // up left
+			boundary[5].is_active = false; // down left
+			boundary[4].is_active = false; // left
+			boundary[3].is_active = false; // up left
 		}
 
 	if (idy == (npy-1)) // The top nodes
 		if ((idx != 0) && (idx != npx-1)) // The nodes that are not at the corners (left and right).
 		{
-			boundary.erase(boundary.begin()+3); // up left
-			boundary.erase(boundary.begin()+2); // up
-			boundary.erase(boundary.begin()+1); // up right
+			boundary[3].is_active = false; // up left
+			boundary[2].is_active = false; // up
+			boundary[1].is_active = false; // up right
 		}
 
 
 	if (idy == 0) // The bottum nodes
 		if ((idx != 0) && (idx != npx-1)) // The nodes that are not at the corners (left and right).
 		{
-			boundary.erase(boundary.begin()+7); // down right
-			boundary.erase(boundary.begin()+6); // down
-			boundary.erase(boundary.begin()+5); // down left
+			boundary[7].is_active = false; // down right
+			boundary[6].is_active = false; // down
+			boundary[5].is_active = false; // down left
 		}
 
 // Here the boundaries of corner nodes are removed:
 	if (idx == 0) // The leftmost
 		if (idy == 0) // The bottum
 		{
-			boundary.erase(boundary.begin()+7);
-			boundary.erase(boundary.begin()+6);
-			boundary.erase(boundary.begin()+5);
-			boundary.erase(boundary.begin()+4);
-			boundary.erase(boundary.begin()+3);
+			boundary[7].is_active = false;
+			boundary[6].is_active = false;
+			boundary[5].is_active = false;
+			boundary[4].is_active = false;
+			boundary[3].is_active = false;
 		}
 	if (idx == npx-1) // The rightmost
 		if (idy == 0) // The bottum
 		{
-			boundary.erase(boundary.begin()+7);
-			boundary.erase(boundary.begin()+6);
-			boundary.erase(boundary.begin()+5);
-			boundary.erase(boundary.begin()+1);
-			boundary.erase(boundary.begin());
+			boundary[7].is_active = false;
+			boundary[6].is_active = false;
+			boundary[5].is_active = false;
+			boundary[1].is_active = false;
+			boundary[0].is_active = false;
 		}
 	if (idx == npx-1) // The rightmost
 		if (idy == npy-1) // The top
 		{
-			boundary.erase(boundary.begin()+7);
-			boundary.erase(boundary.begin()+3);
-			boundary.erase(boundary.begin()+2);
-			boundary.erase(boundary.begin()+1);
-			boundary.erase(boundary.begin());
+			boundary[7].is_active = false;
+			boundary[3].is_active = false;
+			boundary[2].is_active = false;
+			boundary[1].is_active = false;
+			boundary[0].is_active = false;
 		}
 	if (idx == 0) // The leftmost
 		if (idy == npy-1) // The top
 		{
-			boundary.erase(boundary.begin()+5);
-			boundary.erase(boundary.begin()+4);
-			boundary.erase(boundary.begin()+3);
-			boundary.erase(boundary.begin()+2);
-			boundary.erase(boundary.begin()+1);
+			boundary[5].is_active = false;
+			boundary[4].is_active = false;
+			boundary[3].is_active = false;
+			boundary[2].is_active = false;
+			boundary[1].is_active = false;
 		}
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -305,18 +305,13 @@ void Node::Init_Topology() // This function must be called after box definition.
 // Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast.
 void Node::Quick_Update_Cells()
 {
-	#ifdef PERIODIC_BOUNDARY_CONDITION
 		for (int i = 0; i < boundary.size(); i++)
 		{
-			boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-			boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+			if (boundary[i].is_active)
+				boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+			if (boundary[(i+4)%8].is_active)
+				boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
 		}
-	#else
-		for (int i = 0; i < boundary.size(); i++)
-			boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-		for (int i = 0; i < boundary.size(); i++)
-			boundary[i].Receive_Data(); // Receive information of i'th boundary of neighboring node.
-	#endif
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
@@ -380,19 +375,13 @@ void Node::Quick_Update_Cells()
 // Now particle indices are changed and we have to update information of boundaries. The particles of other nodes that are at boundaries
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	#ifdef PERIODIC_BOUNDARY_CONDITION
 	for (int i = 0; i < boundary.size(); i++)
 	{
-		boundary[i].Send_Particle_Ids();
-		boundary[(i+4)%8].Receive_Particle_Ids();
+		if (boundary[i].is_active)
+			boundary[i].Send_Particle_Ids();
+		if (boundary[(i+4)%8].is_active)
+			boundary[(i+4)%8].Receive_Particle_Ids();
 	}
-	#else
-	for (int i = 0; i < boundary.size(); i++)
-		boundary[i].Send_Particle_Ids();
-
-	for (int i = 0; i < boundary.size(); i++)
-		boundary[i].Receive_Particle_Ids();
-	#endif
 
 	MPI_Barrier(MPI_COMM_WORLD);
 }
