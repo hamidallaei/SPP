@@ -28,9 +28,6 @@ void Single_Vortex_Formation(Particle* particle, int N)
 			particle[i].Init(particle[i].r,v);
 			v_cm += (particle[i].v / N);
 		}
-
-	for (int i = 0; i < N; i++)
-		particle[i].v -= v_cm;
 }
 
 void Four_Vortex_Formation(Particle* particle, int N)
@@ -80,8 +77,6 @@ void Four_Vortex_Formation(Particle* particle, int N)
 			particle[i + j*Nx].Init(r,v);
 			v_cm += (particle[i + j*Nx].v / N);
 		}
-	for (int i = 0; i < N; i++)
-		particle[i].v -= v_cm;
 }
 
 void Square_Lattice_Formation(Particle* particle, int N)
@@ -98,8 +93,6 @@ void Square_Lattice_Formation(Particle* particle, int N)
 		particle[i].Init(r);
 		v_cm += (particle[i].v / N);
 	}
-	for (int i = 0; i < N; i++)
-		particle[i].v -= v_cm;
 }
 
 void Triangle_Lattice_Formation(Particle* particle, int N)
@@ -134,8 +127,6 @@ void Triangle_Lattice_Formation(Particle* particle, int N)
 		particle[i].Init(r);
 		v_cm += (particle[i].v / N);
 	}
-	for (int i = 0; i < N; i++)
-		particle[i].v -= v_cm;
 }
 
 void Clump_Formation(Particle* particle, int N, int size)

@@ -32,6 +32,8 @@ void BasicDynamicParticle::Init()
 	if (v.x < 0)
 		theta += PI;
 	theta -= 2*PI * (int (theta / (2*PI)));
+	v.x = cos(theta);
+	v.y = sin(theta);
 	Reset();
 }
 
@@ -42,6 +44,8 @@ void BasicDynamicParticle::Init(C2DVector position)
 	theta = atan(v.y/v.x);
 	if (v.x < 0)
 		theta += PI;
+	v.x = cos(theta);
+	v.y = sin(theta);
 	Reset();
 }
 
@@ -52,6 +56,8 @@ void BasicDynamicParticle::Init(C2DVector position, C2DVector velocity)
 	theta = atan(v.y/v.x);
 	if (v.x < 0)
 		theta += PI;
+	v.x = cos(theta);
+	v.y = sin(theta);
 	Reset();
 }
 
@@ -111,7 +117,7 @@ public:
 	void Move()
 	{
 		#ifdef COMPARE
-			torque = round(10000000000*torque)/10000000000.0;
+			torque = round(digits*torque)/digits;
 		#endif
 		torque = g*torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
 		theta += torque*dt;
@@ -119,8 +125,7 @@ public:
 		C2DVector old_v = v;
 		v.x = cos(theta);
 		v.y = sin(theta);
-//		v += f;
-//		r += (old_v + v)*(half_dt);
+
 		r += v*dt;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			r.Periodic_Transform();

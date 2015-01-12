@@ -8,7 +8,7 @@
 // This track an specific particle. At the buttom the id of the tracking particle is given
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (when the order of a sum is changed the result will change because of the truncation error)
-//#define COMPARE
+#define COMPARE
 
 #include <iostream>
 #include <iomanip>
@@ -21,6 +21,7 @@
 using namespace std;
 
 class VicsekParticle;
+class BasicDynamicParticle;
 class ContinuousParticle;
 
 typedef double Real;
@@ -64,8 +65,12 @@ const Real wall_sigma = wall_sigma;
 
 #ifdef TRACK_PARTICLE
 const int track = 2;
-Particle* track_p;
+BasicDynamicParticle* track_p;
 bool flag = false;
+#endif
+
+#ifdef COMPARE
+double digits = 10;
 #endif
 
 #endif

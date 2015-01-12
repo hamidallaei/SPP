@@ -11,7 +11,7 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
 		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-//		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }

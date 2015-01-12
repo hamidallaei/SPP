@@ -44,6 +44,10 @@ Box::Box()
 
 void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
 {
+	#ifdef TRACK_PARTICLE
+		track_p = &particle[track];
+	#endif
+
 	Cell::particle = particle;
 
 	wall_num = 4;
@@ -112,7 +116,7 @@ void Box::Interact()
 		for (int y = 0; y < divisor_y; y++)
 		{
 			cell[x][y].Self_Interact();
-			cell[x][y].Interact(&cell[(x+1)%diviso_x][y]);
+			cell[x][y].Interact(&cell[(x+1)%divisor_x][y]);
 			cell[x][y].Interact(&cell[x][(y+1)%divisor_x]);
 			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y+1)%divisor_y]);
 			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y-1+divisor_y)%divisor_y]);

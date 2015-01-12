@@ -30,6 +30,12 @@ inline void equilibrium(Box* box, int equilibrium_step, int saving_period, ofstr
 inline void data_gathering(Box* box, int total_step, int saving_period, ofstream& out_file)
 {
 	clock_t start_time = clock();
+
+	#ifdef TRACK_PARTICLE
+		if (!flag)
+			flag = true;
+	#endif
+
 	cout << "gathering data:" << endl;
 	int saving_time = 0;
 	for (int i = 0; i < total_step; i+=cell_update_period)
@@ -38,28 +44,8 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 		timing_information(start_time,i,total_step);
 
 		if ((i / cell_update_period) % saving_period == 0)
-		{
 			out_file << box;
-
-//			if ((i / saving_period) % 100 == 0)
-//			{
-//				stringstream address;
-//				address.str("");
-//				address << "data-" << saving_time << ".dat";
-//				ofstream velocity_field_file(address.str().c_str());
-//				box->Save_Fields(velocity_field_file);
-//				velocity_field_file.close();
-//			}
-
-//			saving_time++;
-		}
 	}
-
-//	stringstream address;
-//	address.str("");
-//	address << "data-" << box->info.str() << ".dat";
-//	ofstream velocity_field_file(address.str().c_str());
-//	velocity_field_file.close();
 
 	cout << "Finished" << endl;
 }
@@ -67,8 +53,11 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 
 int main(int argc, char *argv[])
 {
-//	C2DVector::Init_Rand(time(NULL));
-	C2DVector::Init_Rand(321);
+	#ifdef COMPARE
+		C2DVector::Init_Rand(seed);
+	#else
+		C2DVector::Init_Rand(time(NULL));
+	#endif
 
 	Box box;
 
