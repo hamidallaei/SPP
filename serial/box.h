@@ -21,7 +21,6 @@ public:
 	stringstream info;
 
 	Box();
-	void Init(Real input_volume_fraction, Real g = 2, Real alpha=0.5, Real noise_amplitude = 0.1);
 	void Update_Cells();
 	void Interact();
 	void Move();
@@ -40,47 +39,16 @@ Box::Box()
 {
 	N = 0;
 	density = 0;
-}
-
-void Box::Init(Real input_density, Real g, Real alpha, Real noise_amplitude)
-{
 	#ifdef TRACK_PARTICLE
 		track_p = &particle[track];
 	#endif
 
 	Cell::particle = particle;
 
-	wall_num = 4;
-	density = input_density;
-	N = (int) round(Lx2*Ly2*density);
-	cout << "number_of_particles = " << N << endl;
-
-	Particle::noise_amplitude = noise_amplitude / sqrt(dt);
-	ContinuousParticle::g = g;
-	ContinuousParticle::alpha = alpha;
-
-	Triangle_Lattice_Formation(particle, N);
-//	Single_Vortex_Formation(particle, N);
-//	Four_Vortex_Formation(particle, N);
-
 	for (int i = 0; i < divisor_x; i++)
 		for (int j = 0; j < divisor_y; j++)
 			cell[i][j].Init((Real) Lx*(2*i-divisor_x + 0.5)/divisor_x, (Real) Ly*(2*j-divisor_y + 0.5)/divisor_y);
-
-	Update_Cells();
-
-	#ifndef PERIODIC_BOUNDARY_CONDITION
-		wall[0].Init(-Lx,-Ly,-Lx, Ly);
-		wall[1].Init(-Lx, Ly, Lx, Ly);
-		wall[2].Init( Lx, Ly, Lx,-Ly);
-		wall[3].Init( Lx,-Ly,-Lx,-Ly);
-	#endif
-
-	info.str("");
-	info << "rho=" << density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_amplitude;
 }
-
-
 
 void Box::Update_Cells()
 {
