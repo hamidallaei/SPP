@@ -12,7 +12,7 @@ public:
 	Wall();
 	void Init(C2DVector input_p_1, C2DVector intput_p_2);
 	void Init(Real input_p_1_x, Real input_p_1_y, Real input_p_2_x, Real input_p_2_y);
-	Real Distance(C2DVector p);
+	C2DVector Distance_Vector(C2DVector input_p);
 	Real Intercept_x(Real y_value);
 	Real Intercept_y(Real x_value);
 	void Translate(C2DVector delta);
@@ -20,12 +20,12 @@ public:
 
 	void Interact(VicsekParticle* p);
 	void Interact(ContinuousParticle* p);
+	void Interact(RepulsiveParticle* p);
 };
-
 
 Wall::Wall()
 {
-	length = 0;
+	length = 0.;
 }
 
 void Wall::Init(C2DVector input_p_1, C2DVector input_p_2)
@@ -38,11 +38,10 @@ void Wall::Init(C2DVector input_p_1, C2DVector input_p_2)
 	normal.x = -direction.y;
 	normal.y = direction.x;
 	theta = atan(direction.y / direction.x);
-	if (direction.x < 0)
+	if (direction.x < 0.)
 		theta += PI;
-	theta -= 2*PI * (int (theta / (PI)));
+	theta -= 2*PI * (int (theta / (PI))); 	// -PI < theta_wall < PI 
 }
-
 
 void Wall::Init(Real input_p_1_x, Real input_p_1_y, Real input_p_2_x, Real input_p_2_y)
 {
@@ -56,7 +55,7 @@ void Wall::Init(Real input_p_1_x, Real input_p_1_y, Real input_p_2_x, Real input
 	normal.x = -direction.y;
 	normal.y = direction.x;
 	theta = atan(direction.y / direction.x);
-	if (direction.x < 0)
+	if (direction.x < 0.)
 		theta += PI;
 	theta -= 2*PI * (int (theta / (PI)));
 }
@@ -123,9 +122,37 @@ void Wall::Rotate(Real phi, C2DVector r)
 		point_2.Periodic_Transform();
 	#endif
 
-	direction = direction.Rotate(phi);
-	normal.x = -direction.y;
-	normal.y = direction.x;
+	Init(point_1, point_2);
+//	direction = direction.Rotate(phi);
+//	normal.x = -direction.y;
+//	normal.y = direction.x;
+}
+
+
+C2DVector Wall::Distance_Vector(C2DVector input_p)
+{
+	C2DVector dr_1, dr_2, dr;
+	Real d2_1, d2_2;
+	dr_1 = input_p - point_1;
+	dr_2 = input_p - point_2;
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		dr_1.Periodic_Transform();
+		dr_2.Periodic_Transform();
+	#endif
+
+	if ((dr_1*direction < length) && (dr_1*direction > 0))
+		dr = dr_1 - (direction)*(dr_1*direction);
+	else
+	{
+		d2_1 = dr_1.Square();
+		d2_2 = dr_2.Square();
+		if (d2_2 < d2_1)
+			dr = dr_2;
+		else
+			dr = dr_1;
+	}
+
+	return dr; 
 }
 
 
@@ -160,6 +187,7 @@ void Wall::Interact(VicsekParticle* p)
 		}
 }
 
+
 void Wall::Interact(ContinuousParticle* p)
 {
 		C2DVector dr_1,dr;
@@ -183,5 +211,54 @@ void Wall::Interact(ContinuousParticle* p)
 				#endif
 			}
 }
+
+
+void Wall::Interact(RepulsiveParticle* p)
+{
+	C2DVector dr = Distance_Vector(p->r);
+	Real d2 = dr.Square();
+	Real d = sqrt(d2); 	// distance of the particle from wall 
+	if (d < r_c_w)
+	{
+		C2DVector interaction_force;
+		dr /= d; 
+		Real r_c_w2 = r_c_w*r_c_w; 
+		interaction_force = dr * A_w * ( exp(- d / sigma_w ) * ( 1. / d2 + 1. / (sigma_w * d)) - exp(- r_c_w / sigma_w ) * ( 1. / r_c_w2 + 1. / (sigma_w * r_c_w)) );
+		p->f += interaction_force;
+	}
+
+	C2DVector dr_1 = p->r - point_1;
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		dr_1.Periodic_Transform();
+	#endif
+	if ((d < r_f_w) && (dr_1*direction < length) && (dr_1*direction > 0.))
+	{
+		Real torque_interaction;
+		// self propulsion direction of the particle p
+		C2DVector self_propulsion_direction;
+		self_propulsion_direction.x = cos(p->theta);
+		self_propulsion_direction.y = sin(p->theta);
+		if (dr*self_propulsion_direction < 0.)
+		{
+			Real dtheta = p->theta - theta;
+			torque_interaction = p->kesi*sin(dtheta)/PI;
+			dtheta -= 2*PI * ((int) (dtheta / (2*PI)));
+			if (dtheta < 0.)
+				dtheta += 2*PI; 		// 0 < dtheta < 2*PI
+			if ((dtheta > PI/2 && dtheta < 3*PI/2))
+				torque_interaction *= -1.;
+			p->torque -= torque_interaction;
+
+			#ifdef TRACK_PARTICLE
+				if (p == track_p)
+				{
+	//				if (abs(p->torque) > 0.1)
+//						cout << "Intwall:     " << p->r << "\t" << d2 << "\t" << p->theta << "\t" << p->torque << endl << flush;
+				}
+			#endif
+		}
+	}
+}
+
 
 #endif

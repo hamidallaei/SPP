@@ -78,8 +78,8 @@ class C2DVector
 		C2DVector Rotate(Real phi)
 		{
 			C2DVector result;
-			result.x = cos(phi)*x + sin(phi)*y;
-			result.y = -sin(phi)*x + cos(phi)*y;
+			result.x = cos(phi)*x - sin(phi)*y;
+			result.y = sin(phi)*x + cos(phi)*y;
 			return (result);
 		}
 		
@@ -162,6 +162,7 @@ class C2DVector
 			return (x*p1.x + y*p1.y);
 		}
 
+		// for binary output only (comment this function for txt output)
 		void write(std::ostream& os)
 		{
 			float temp_float;
@@ -173,6 +174,7 @@ class C2DVector
 			os.write((char*) &temp_float,sizeof(float) / sizeof(char));
 		}
 
+		// for either binary or txt output
 		friend std::ostream& operator<<(std::ostream& os, const C2DVector t)
 		{
 			os << t.x << "\t" << t.y;
@@ -181,6 +183,7 @@ class C2DVector
 
 		friend std::istream& operator>>(std::istream& is, C2DVector& t)
 		{
+			// for binary input 
 			float temp_float;
 
 			is.read((char*) &temp_float,sizeof(float) / sizeof(char));
@@ -189,6 +192,13 @@ class C2DVector
 			is.read((char*) &temp_float,sizeof(float) / sizeof(char));
 			t.y = temp_float;
 			return is;
+
+//			// for txt input
+//			is >> t.x;
+//			is >> t.y;
+
+//			return is;
+
 		}
 
 		~C2DVector()

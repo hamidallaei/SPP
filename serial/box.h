@@ -6,15 +6,15 @@
 #include "../shared/particle.h"
 #include "../shared/cell.h"
 #include "../shared/wall.h"
-#include "../shared/set-up.h"
-
+#include "../shared/geometry.h"
 
 
 class Box{
 public:
-	int N, wall_num; // N is the number of particles and wallnum is the number of walls in the system.
+	int N, Wall_num; // N is the number of particles and wallnum is total number of walls in the system.
 	Particle particle[max_N]; // Array of particles that we are going to simulate.
-	Wall wall[8]; // Array of walls in our system.
+	Geometry geometry; // the entire geometry that the particle interact with. 
+	Wall wall[50]; // Array of walls in our system.
 	Cell cell[divisor_x][divisor_y];
 
 	Real density, volume_fraction;
@@ -119,15 +119,10 @@ void Box::Interact()
 	cell[divisor_x-1][divisor_y-1].Self_Interact();
 	cell[divisor_x-1][0].Self_Interact();
 	cell[divisor_x-1][0].Interact(&cell[divisor_y-1][1]);
-
-	for (int i = 0; i < wall_num; i++)
-		for (int j = 0; j < N; j++)
-			wall[i].Interact(&particle[j]);
 	#endif
 
-//	for (int i = 0; i < N; i++)
-//		for (int j = 0; j < 4; j++)
-//			particle[i].Interact(&wall[j]);
+	for(int i = 0 ; i < N; i++)
+		geometry.Interact(&particle[i]);
 }
 
 
@@ -184,6 +179,7 @@ void Box::Make_Traj(Real scale, ofstream& data_file)
 
 std::ostream& operator<<(std::ostream& os, Box* box)
 {
+	// binary output
 	os.write((char*) &box->N, sizeof(box->N) / sizeof(char));
 	for (int i = 0; i < box->N; i++)
 	{
@@ -193,16 +189,36 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 		v.y = sin(box->particle[i].theta);
 		v.write(os);
 	}
+
+//	// txt output
+//	os.write((char*) &box->N, sizeof(box->N) / sizeof(char));
+//	for (int i = 0; i < box->N; i++)
+//	{
+//		box->particle[i].r.write(os);
+//		C2DVector v;
+//		v.x = cos(box->particle[i].theta);
+//		v.y = sin(box->particle[i].theta);
+//		v.write(os);
+//	}
 }
 
 std::istream& operator>>(std::istream& is, Box* box)
 {
+	// binary input
 	is.read((char*) &box->N, sizeof(int) / sizeof(char));
 	for (int i = 0; i < box->N; i++)
 	{
 		is >> box->particle[i].r;
 		is >> box->particle[i].v;
 	}
+
+//	// txt input
+//	is.read((char*) &box->N, sizeof(int) / sizeof(char));
+//	for (int i = 0; i < box->N; i++)
+//	{
+//		is >> box->particle[i].r;
+//		is >> box->particle[i].v;
+//	}
 }
 
 #endif

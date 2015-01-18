@@ -1,17 +1,22 @@
 #ifndef _SETUP_
 #define _SETUP_
 
-// This will set up the box for simulation. That means distributing particles in the box and their formation like random velocity or a clump or a vortex.
+// This will set up the box for simulation. That means distributing particles in the box and their formation like random velocity or a clump or a vortex. This will also defines geometry that the particles are interacting with. 
 
 #include "../shared/parameters.h"
 #include "../shared/c2dvector.h"
 #include "../shared/particle.h"
+#include "../shared/geometry.h"
+
 
 void Square_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a square lattice
 void Triangle_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a triangular lattice. This is denser.
 void Single_Vortex_Formation(Particle* particle, int N); // Vortex initial condition.
 void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the box. left top, left bot, right top and right bot.
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
+void Square_Ring_Formation(Particle* particle, int N); // Positioning particles in a square shape ring(the center is empty)
+void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta); // Defining geometry of a star shaped trap
+
 
 void Single_Vortex_Formation(Particle* particle, int N)
 {
@@ -113,9 +118,6 @@ void Triangle_Lattice_Formation(Particle* particle, int N)
 //	basis_2 = basis_2*(sigma*1.15);
 //	int Nx = (int) (L2 / basis_1.x);
 
-
-
-
 	for (int i = 0; i < N; i++)
 	{
 		r = basis_1*(i % Nx) + basis_2*(i / Nx) - basis_1*(i / (2*Nx));
@@ -157,5 +159,71 @@ void Clump_Formation(Particle* particle, int N, int size)
 		particle[i].theta = theta;
 	}
 }
+
+
+void Square_Ring_Formation(Particle* particle, int N)
+{
+	C2DVector r;
+
+	for (int i = 0; i < N; i++)
+	{
+		// particles appear in a box [-L/2.,L/2.]
+		particle[i].Init(L/2.);
+		// moving particles to a the outer shell 
+		if (fabs(particle[i].r.x) > L/4. || fabs(particle[i].r.y) > L/4.)
+			particle[i].r *= 2.;
+		else if (particle[i].r.x > 0. && particle[i].r.y > 0.)
+		{
+			particle[i].r.x += L/2.;
+			particle[i].r.y += L/2.;
+		}
+		else if (particle[i].r.x > 0. && particle[i].r.y < 0.)
+		{
+			particle[i].r.x += L/2.;
+			particle[i].r.y -= L/2.;
+		}
+		else if (particle[i].r.x < 0. && particle[i].r.y > 0.)
+		{
+			particle[i].r.x -= L/2.;
+			particle[i].r.y += L/2.;
+		}
+		else if (particle[i].r.x < 0. && particle[i].r.y < 0.)
+		{
+			particle[i].r.x -= L/2.;
+			particle[i].r.y -= L/2.;
+		}
+	}
+}
+
+
+void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta)
+{
+	// Star Trap (points)
+	C2DVector end_point[100];
+	Real theta, alpha, beta;
+	theta = 0.; 
+	end_point[0].x = r_big*cos(theta);
+	end_point[0].y = r_big*sin(theta);
+
+	alpha = theta + (1./2.)*(2.*PI/N_hands) - half_delta;
+	beta  = theta + (1./2.)*(2.*PI/N_hands) + half_delta;
+
+	end_point[1].x = r_small*cos(alpha);
+	end_point[1].y = r_small*sin(alpha);
+
+	end_point[2].x = r_small*cos(beta);
+	end_point[2].y = r_small*sin(beta);
+
+	for (int i = 3; i < 3*N_hands; i++)
+		end_point[i] = end_point[i-3].Rotate(2.*PI/N_hands);
+
+	// Star Trap (walls)
+	for (int i = 0; i < (3*(N_hands-1)+1); i+=3)
+	{
+		geometry->Add_Wall(end_point[i], end_point[i+1]);
+		geometry->Add_Wall(end_point[i+2], end_point[(i+3)%(3*N_hands)]);
+	}
+}
+
 
 #endif
