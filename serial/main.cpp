@@ -73,6 +73,9 @@ void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude
 	box->geometry.Add_Wall(-Lx, Ly, Lx, Ly);
 	#endif
 
+	box->Wall_num = box->geometry.wall_num;
+	cout << "Wall_num = "<< box->Wall_num << endl; 
+
 	box->Update_Cells();
 
 	box->info.str("");
