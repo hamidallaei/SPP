@@ -76,7 +76,7 @@ void Init(Box* box, Real input_density, Real g, Real kesi, Real noise_amplitude,
 	int N_hands = n_hands;
 	Real half_delta = (1./2.)*delta; 
 
-	Trap_Initialization(&box->geometry, N_hands, half_delta);
+	Star_Trap_Initialization(&box->geometry, N_hands, half_delta);
 
 	box->Wall_num = box->geometry.wall_num;
 	cout << "Wall_num = "<< box->Wall_num << endl; 
