@@ -2,6 +2,7 @@
 #include "../shared/c2dvector.h"
 #include "../shared/particle.h"
 #include "../shared/cell.h"
+#include "../shared/set-up.h"
 #include "box.h"
 
 inline void timing_information(clock_t start_time, int i_step, int total_step)
@@ -50,10 +51,9 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 	cout << "Finished" << endl;
 }
 
+
 void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude)
 {
-
-	box->wall_num = 4;
 	box->density = input_density;
 	box->N = (int) round(Lx2*Ly2*box->density);
 	cout << "number_of_particles = " << box->N << endl;
@@ -67,16 +67,16 @@ void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude
 //	Four_Vortex_Formation(particle, N);
 
 	#ifndef PERIODIC_BOUNDARY_CONDITION
-		box->wall[0].Init(-Lx,-Ly,-Lx, Ly);
-		box->wall[1].Init(-Lx, Ly, Lx, Ly);
-		box->wall[2].Init( Lx, Ly, Lx,-Ly);
-		box->wall[3].Init( Lx,-Ly,-Lx,-Ly);
+	box->geometry.Add_Wall(Lx, Ly, Lx, -Ly);
+	box->geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
+	box->geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
+	box->geometry.Add_Wall(-Lx, Ly, Lx, Ly);
 	#endif
 
 	box->Update_Cells();
 
 	box->info.str("");
-	box->info << "rho=" << box->density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_amplitude;
+	box->info << "rho=" << box->density <<  "-g=" << ContinuousParticle::g << "-alpha=" << ContinuousParticle::alpha << "-noise=" << noise_amplitude;
 }
 
 int main(int argc, char *argv[])

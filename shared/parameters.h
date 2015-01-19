@@ -72,10 +72,6 @@ const long int equilibrium_step = 5000;
 const long int total_step = 5000;
 
 // Interactions
-//const Real repulsion_strength = 5;
-//const Real wall_repulsion_strength = 10*repulsion_strength;
-//const Real sigma = 1;
-//const Real wall_sigma = wall_sigma;
 const Real A_p = 1.;		// interaction strength
 const Real A_w = 50.;
 const Real sigma_p = .5;		// sigma in Yukawa Potential
@@ -84,7 +80,8 @@ const Real r_f_p = 1.;		// flocking radius with particles
 const Real r_f_w = 1.;		// aligning radius with walls
 const Real r_c_p = .5; 		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
-const Real sigma = sigma_p;
+
+const Real sigma = sigma_p;	// HAMID! pay attention to sigma! your original sigma was 1. mine is = sigma_p = 0.5
 
 
 #ifdef TRACK_PARTICLE
