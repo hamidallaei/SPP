@@ -62,15 +62,15 @@ void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude
 	ContinuousParticle::g = g;
 	ContinuousParticle::alpha = alpha;
 
-	Triangle_Lattice_Formation(box->particle, box->N);
+	Triangle_Lattice_Formation(box->particle, box->N, 1);
 //	Single_Vortex_Formation(particle, N);
 //	Four_Vortex_Formation(particle, N);
 
 	#ifndef PERIODIC_BOUNDARY_CONDITION
-	box->geometry.Add_Wall(Lx, Ly, Lx, -Ly);
-	box->geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
-	box->geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
-	box->geometry.Add_Wall(-Lx, Ly, Lx, Ly);
+		box->geometry.Add_Wall(Lx, Ly, Lx, -Ly);
+		box->geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
+		box->geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
+		box->geometry.Add_Wall(-Lx, Ly, Lx, Ly);
 	#endif
 
 	box->Wall_num = box->geometry.wall_num;

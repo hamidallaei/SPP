@@ -51,7 +51,6 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 	cout << "Finished" << endl;
 }
 
-
 void Init(Box* box, Real input_density, Real g, Real kesi, Real noise_amplitude, int n_hands, Real delta)
 {
 	box->density = input_density;
@@ -111,3 +110,4 @@ int main(int argc, char *argv[])
 
 	out_file.close();
 }
+

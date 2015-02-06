@@ -81,9 +81,6 @@ const Real r_f_w = 1.;		// aligning radius with walls
 const Real r_c_p = .5; 		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
 
-const Real sigma = sigma_p;	// HAMID! pay attention to sigma! your original sigma was 1. mine is = sigma_p = 0.5
-
-
 #ifdef TRACK_PARTICLE
 const int track = 2;
 BasicDynamicParticle* track_p;

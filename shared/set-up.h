@@ -10,7 +10,7 @@
 
 
 void Square_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a square lattice
-void Triangle_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a triangular lattice. This is denser.
+void Triangle_Lattice_Formation(Particle* particle, int N, double sigma); // Positioning partilces in a triangular lattice. This is denser.
 void Single_Vortex_Formation(Particle* particle, int N); // Vortex initial condition.
 void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the box. left top, left bot, right top and right bot.
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
@@ -23,7 +23,7 @@ void Single_Vortex_Formation(Particle* particle, int N)
 	C2DVector v_cm,v;
 	v_cm.Null();
 
-	Triangle_Lattice_Formation(particle, N);
+	Triangle_Lattice_Formation(particle, N, 1);
 
 	for (int i = 0; i < N; i++)
 		{
@@ -100,7 +100,7 @@ void Square_Lattice_Formation(Particle* particle, int N)
 	}
 }
 
-void Triangle_Lattice_Formation(Particle* particle, int N)
+void Triangle_Lattice_Formation(Particle* particle, int N, double sigma)
 {
 	C2DVector v_cm,r,basis_1, basis_2;
 	basis_1.x = 1;
