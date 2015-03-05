@@ -206,7 +206,7 @@ void Field::Draw(string info)
 	gp << "set output \"figures/" << info << "-density.eps\"\n";
 	gp << "set pm3d map\n";
 //	gp << "set palette model XYZ rgbformulae 3,5,15\n";
-	gp << "set palette rgb 21,22,23; set title \"hot (black-red-yellow-white)\"\n";
+	gp << "set palette rgb 21,22,23; notitle";
 //	gp << "set palette defined (0 \"white\", 20 \"violet\")\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
