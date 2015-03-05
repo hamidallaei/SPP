@@ -27,15 +27,15 @@ int main(int argc, char** argv)
 		boost::replace_all(name, "-r-v.bin", "");
 
 //		sceneset->Plot_Fields(21, 40, name);
-//		sceneset->Plot_Averaged_Fields(81, name);
+		sceneset->Plot_Averaged_Fields(128, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 40, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //		sceneset->Plot_Density_Contour(101, 0.2, name);
 
 
-		boost::replace_all(name, "rho=", "");
-		boost::replace_all(name, "-noise=", "\t");
+//		boost::replace_all(name, "rho=", "");
+//		boost::replace_all(name, "-noise=", "\t");
 
 //		Stat<double>	angular_momentum_data;
 //		Compute_Angular_Momentum(sceneset, &angular_momentum_data);
@@ -48,8 +48,8 @@ int main(int argc, char** argv)
 //		int r = rand() % Scene::number_of_particles;
 //		Trajectory(sceneset,r);
 //		Angle_Time(sceneset, 12);
-		for (int j = 0; j < Scene::number_of_particles; j++)
-			Angular_Velocity_Time(sceneset, j);
+//		for (int j = 0; j < Scene::number_of_particles; j++)
+//			Angular_Velocity_Time(sceneset, j);
 
 //		Compute_Fluctuation(sceneset);
 

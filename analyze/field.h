@@ -12,7 +12,6 @@ public:
 
 	C2DVector r,v,W;
 	Real density;
-	Real volume_fraction;
 	Real cohesion; // cohesion shows the amount of velocity cohesion
 	Real omega;
 	Real curl;
@@ -51,7 +50,6 @@ void Field_Cell::Reset()
 	W.Null();
 	density = 0;
 	cohesion = 0;
-	volume_fraction = 0;
 	curl = 0;
 	omega = 0;
 }
@@ -66,7 +64,6 @@ void Field_Cell::Compute_Fields(Real L)
 	v.Null();
 	cohesion = omega = 0;
 	density = particle.size()/(dim_x*dim_x);
-	volume_fraction = PI*sigma*sigma*density;
 	for (int i = 0; i < particle.size(); i++)
 	{
 		v += particle[i]->v;
@@ -157,7 +154,7 @@ void Field::Save(ofstream& data_file)
 	for (int i = 0; i < grid_dim_x; i++)
 	{
 		for (int j = 0; j < grid_dim_x; j++)
-			data_file << cell[i][j].r << "\t" << cell[i][j].v << "\t" << cell[i][j].volume_fraction << "\t"<< cell[i][j].cohesion << "\t" << cell[i][j].curl << "\t" << cell[i][j].omega << "\t" << cell[i][j].W << endl;
+			data_file << cell[i][j].r << "\t" << cell[i][j].v << "\t" << cell[i][j].density << "\t"<< cell[i][j].cohesion << "\t" << cell[i][j].curl << "\t" << cell[i][j].omega << "\t" << cell[i][j].W << endl;
 		data_file << endl;
 	}
 }
@@ -208,7 +205,9 @@ void Field::Draw(string info)
 
 	gp << "set output \"figures/" << info << "-density.eps\"\n";
 	gp << "set pm3d map\n";
-	gp << "set palette defined (0 \"white\", 20 \"violet\")\n";
+//	gp << "set palette model XYZ rgbformulae 3,5,15\n";
+	gp << "set palette rgb 21,22,23; set title \"hot (black-red-yellow-white)\"\n";
+//	gp << "set palette defined (0 \"white\", 20 \"violet\")\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
 	gp << "splot \"data.dat\" using 1:2:5\n";
@@ -216,7 +215,6 @@ void Field::Draw(string info)
 
 	gp << "set output \"figures/" << info << "-cohesion.eps\"\n";
 	gp << "set pm3d map\n";
-	gp << "set palette defined (-1 \"cyan\", 1 \"blue\")\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
 	gp << "splot \"data.dat\" using 1:2:6\n";
@@ -228,23 +226,24 @@ void Field::Draw(string info)
 //	gp << "splot \"data.dat\" using 1:2:7\n";
 //	gp.send1d(pts);
 
-	gp << "set size 0.73,1.0\n";
-	gp << "set lmargin at screen 0.07\n";
-	gp << "set rmargin at screen 0.70\n";
-	gp << "set bmargin at screen 0.07\n";
-	gp << "set tmargin at screen 0.97\n";
+//	gp << "set size 0.73,1.0\n";
+//	gp << "set lmargin at screen 0.07\n";
+//	gp << "set rmargin at screen 0.70\n";
+//	gp << "set bmargin at screen 0.07\n";
+//	gp << "set tmargin at screen 0.97\n";
 
+	gp << "l=3.33\n";
 	gp << "set output \"figures/"<< info << "-velocity-vector.eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)) with vectors notitle\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):5 with vectors lc palette notitle\n";
 //	gp.send1d(pts);
 
-	gp << "l=2\n";
+	gp << "l=1\n";
 	gp << "set output \"figures/"<< info << "-W.eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)) with vectors notitle\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):5 with vectors lc palette notitle\n";
 //	gp.send1d(pts);
 }
 
@@ -399,7 +398,6 @@ void Field::Add(Field* f)
 				cell[x][y].v += f->cell[x][y].v;
 				cell[x][y].W += f->cell[x][y].W;
 				cell[x][y].density += f->cell[x][y].density;
-				cell[x][y].volume_fraction += f->cell[x][y].volume_fraction;
 				cell[x][y].cohesion += f->cell[x][y].cohesion;
 				cell[x][y].omega += f->cell[x][y].omega;
 				cell[x][y].curl += f->cell[x][y].curl;
@@ -420,7 +418,6 @@ void Field::Average()
 			cell[x][y].v /= sample;
 			cell[x][y].W /= sample;
 			cell[x][y].density /= sample;
-			cell[x][y].volume_fraction /= sample;
 			cell[x][y].cohesion /= sample;
 			cell[x][y].omega /= sample;
 			cell[x][y].curl /= sample;
