@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	#ifdef COMPARE
 		thisnode.seed = seed;
 	#else
-		thisnode.seed = 0 + thisnode.node_id*112488;
+		thisnode.seed = time(NULL) + thisnode.node_id*112488;
 		while (!thisnode.Chek_Seeds())
 		{
 			thisnode.seed = time(NULL) + thisnode.node_id*112488;
