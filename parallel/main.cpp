@@ -72,7 +72,113 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	return(t);
 }
 
+void Change_Noise(int argc, char *argv[], Node* thisnode)
+{
+	Real input_rho = atof(argv[1]);
+	Real input_g = atof(argv[2]);
+	Real input_alpha = atof(argv[3]);
 
+	vector<Real> noise_list;
+	for (int i = 4; i < argc; i++)
+		noise_list.push_back(atof(argv[i]));
+
+	Real t_eq,t_sim;
+
+	Box box;
+	box.Init(thisnode, input_rho, input_g, input_alpha, 0);
+
+	ofstream out_file;
+
+	for (int i = 0; i < noise_list.size(); i++)
+	{
+		Particle::noise_amplitude = noise_list[i] / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		box.info.str("");
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
+
+		if (thisnode->node_id == 0)
+		{
+			stringstream address;
+			address.str("");
+			address << box.info.str() << "-r-v.bin";
+			out_file.open(address.str().c_str());
+		}
+
+		if (thisnode->node_id == 0)
+			cout << " Box information is: " << box.info.str() << endl;
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode->node_id == 0)
+			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
+
+		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode->node_id == 0)
+		{
+			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
+			out_file.close();
+		}
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void Change_Alpha(int argc, char *argv[], Node* thisnode)
+{
+	Real input_rho = atof(argv[1]);
+	Real input_g = atof(argv[2]);
+	Real input_noise = atof(argv[3]);
+
+	vector<Real> alpha_list;
+	for (int i = 4; i < argc; i++)
+		alpha_list.push_back(atof(argv[i]));
+
+	Real t_eq,t_sim;
+
+	Box box;
+	box.Init(thisnode, input_rho, input_g, alpha_list[0], 0);
+
+	ofstream out_file;
+
+	Particle::noise_amplitude = input_noise / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+
+	for (int i = 0; i < alpha_list.size(); i++)
+	{
+		Particle::alpha = alpha_list[i];
+		box.info.str("");
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << input_noise << "-cooling";
+
+		if (thisnode->node_id == 0)
+		{
+			stringstream address;
+			address.str("");
+			address << box.info.str() << "-r-v.bin";
+			out_file.open(address.str().c_str());
+		}
+
+		if (thisnode->node_id == 0)
+			cout << " Box information is: " << box.info.str() << endl;
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode->node_id == 0)
+			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
+
+		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (thisnode->node_id == 0)
+		{
+			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
+			out_file.close();
+		}
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
 
 int main(int argc, char *argv[])
 {
@@ -80,13 +186,9 @@ int main(int argc, char *argv[])
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
-	Real input_rho = atof(argv[1]);
-	Real input_g = atof(argv[2]);
-	Real input_alpha = atof(argv[3]);
-	vector<Real> noise_list;
 
-	for (int i = 4; i < argc; i++)
-		noise_list.push_back(atof(argv[i]));
+
+
 
 	Node thisnode;
 
@@ -103,46 +205,8 @@ int main(int argc, char *argv[])
 
 	C2DVector::Init_Rand(thisnode.seed);
 
-	Real t_eq,t_sim;
-
-	Box box;
-	box.Init(&thisnode, input_rho, input_g, input_alpha, 0);
-
-	ofstream out_file;
-
-	for (int i = 0; i < noise_list.size(); i++)
-	{
-		Particle::noise_amplitude = noise_list[i] / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
-		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
-
-		if (thisnode.node_id == 0)
-		{
-			stringstream address;
-			address.str("");
-			address << box.info.str() << "-r-v.bin";
-			out_file.open(address.str().c_str());
-		}
-
-		if (thisnode.node_id == 0)
-			cout << " Box information is: " << box.info.str() << endl;
-
-		MPI_Barrier(MPI_COMM_WORLD);
-		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (thisnode.node_id == 0)
-			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
-
-		t_sim = data_gathering(&box, total_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (thisnode.node_id == 0)
-		{
-			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
-			out_file.close();
-		}
-	}
+	Change_Noise(argc, argv, &thisnode);
+//	Change_Alpha(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

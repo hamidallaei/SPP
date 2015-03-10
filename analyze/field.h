@@ -232,18 +232,19 @@ void Field::Draw(string info)
 //	gp << "set bmargin at screen 0.07\n";
 //	gp << "set tmargin at screen 0.97\n";
 
-	gp << "l=3.33\n";
+	gp << "set palette rgb 0,3,21\n";
+	gp << "l=2\n";
 	gp << "set output \"figures/"<< info << "-velocity-vector.eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):5 with vectors lc palette notitle\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):(($3**2 + $4**2)**0.5) with vectors lc palette notitle\n";
 //	gp.send1d(pts);
 
 	gp << "l=1\n";
 	gp << "set output \"figures/"<< info << "-W.eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):5 with vectors lc palette notitle\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):(($9**2 + $10**2)**0.5) with vectors lc palette notitle\n";
 //	gp.send1d(pts);
 }
 

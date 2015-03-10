@@ -76,8 +76,8 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 	{
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
-		Triangle_Lattice_Formation(particle, N, 1);
-	//	Single_Vortex_Formation(particle, N);
+//		Triangle_Lattice_Formation(particle, N, 1);
+		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
