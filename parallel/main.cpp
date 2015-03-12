@@ -159,9 +159,20 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 		}
 
 		if (thisnode->node_id == 0)
+		{
 			cout << " Box information is: " << box.info.str() << endl;
+			Triangle_Lattice_Formation(box.particle, box.N, 1);
+		}
 
 		MPI_Barrier(MPI_COMM_WORLD);
+
+		// Master node will broadcast the particles information
+		thisnode->Root_Bcast();
+		// Any node update cells, knowing particles and their cell that they are inside.
+		thisnode->Full_Update_Cells();
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
 		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
@@ -205,8 +216,8 @@ int main(int argc, char *argv[])
 
 	C2DVector::Init_Rand(thisnode.seed);
 
-	Change_Noise(argc, argv, &thisnode);
-//	Change_Alpha(argc, argv, &thisnode);
+//	Change_Noise(argc, argv, &thisnode);
+	Change_Alpha(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
