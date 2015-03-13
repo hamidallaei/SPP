@@ -28,7 +28,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,equilibrium_step);
+//		timing_information(box->thisnode,start_time,i,equilibrium_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -58,7 +58,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,total_step);
+//		timing_information(box->thisnode,start_time,i,total_step);
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
 	}
