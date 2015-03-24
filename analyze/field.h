@@ -9,12 +9,13 @@
 class Field_Cell{
 public:
 	vector<BasicParticle*> particle;
-
+	vector<Real> dtheta;
 	C2DVector r,v,W;
 	Real density;
 	Real cohesion; // cohesion shows the amount of velocity cohesion
 	Real omega;
 	Real curl;
+	Real theta_ave;
 	static Real dim_x;
 
 	Field_Cell();
@@ -23,6 +24,7 @@ public:
 	void Reset();
 	void Add(BasicParticle* p);
 	void Compute_Fields(Real L);
+	void Delta_Theta_Stat();
 };
 
 Real Field_Cell::dim_x = 0;
@@ -62,16 +64,22 @@ void Field_Cell::Add(BasicParticle* p)
 void Field_Cell::Compute_Fields(Real L)
 {
 	v.Null();
-	cohesion = omega = 0;
+	dtheta.clear();
+	theta_ave = cohesion = omega = 0;
 	density = particle.size()/(dim_x*dim_x);
 	for (int i = 0; i < particle.size(); i++)
 	{
 		v += particle[i]->v;
+		Real theta_i = atan2(particle[i]->v.y,particle[i]->v.x);
+		dtheta.push_back(theta_i);
+		theta_ave += theta_i;
 		omega += (particle[i]->r - r).x*particle[i]->v.y - (particle[i]->r - r).y*particle[i]->v.x;
 		for (int j = i+1; j < particle.size(); j++)
 			cohesion += (particle[i]->v*particle[j]->v)/sqrt(particle[i]->v.Square()*particle[j]->v.Square());
 	}
 	v /= particle.size();
+	if (particle.size() > 0)
+		theta_ave /= particle.size();
 	omega /= particle.size();
 	cohesion /= particle.size()*(particle.size() - 1);
 	cohesion *= 2;
@@ -82,6 +90,10 @@ void Field_Cell::Compute_Fields(Real L)
 		omega = 0;
 		v.Null();
 		W.Null();
+	}
+	for (int i = 0; i < particle.size(); i++)
+	{
+		dtheta[i] -= theta_ave;
 	}
 }
 
@@ -95,6 +107,8 @@ public:
 	void Init();
 	void Compute(BasicParticle* particle, int N);
 	void Save(ofstream& data_file);
+	void Save_Theta_Deviation(ofstream& data_file);
+	void Angle_Deviation(ofstream& data_file);
 	void Draw(string);
 	void Draw_Section(string, int);
 	void Draw_Density_Contour(string, double);
@@ -156,6 +170,16 @@ void Field::Save(ofstream& data_file)
 		for (int j = 0; j < grid_dim_x; j++)
 			data_file << cell[i][j].r << "\t" << cell[i][j].v << "\t" << cell[i][j].density << "\t"<< cell[i][j].cohesion << "\t" << cell[i][j].curl << "\t" << cell[i][j].omega << "\t" << cell[i][j].W << endl;
 		data_file << endl;
+	}
+}
+
+void Field::Save_Theta_Deviation(ofstream& data_file)
+{
+	for (int i = 0; i < grid_dim_x; i++)
+	{
+		for (int j = 0; j < grid_dim_x; j++)
+			for (int n = 0; n < cell[i][j].dtheta.size(); n++)
+				data_file << std::setprecision(20) << cell[i][j].dtheta[n] << endl;
 	}
 }
 
@@ -396,8 +420,10 @@ void Field::Add(Field* f)
 		{
 			for (int y = 0; y < grid_dim_x; y++)
 			{
+				cell[x][y].dtheta.insert(cell[x][y].dtheta.end(), f->cell[x][y].dtheta.begin(), f->cell[x][y].dtheta.end());
 				cell[x][y].v += f->cell[x][y].v;
 				cell[x][y].W += f->cell[x][y].W;
+				cell[x][y].theta_ave += f->cell[x][y].theta_ave;
 				cell[x][y].density += f->cell[x][y].density;
 				cell[x][y].cohesion += f->cell[x][y].cohesion;
 				cell[x][y].omega += f->cell[x][y].omega;
@@ -418,6 +444,7 @@ void Field::Average()
 		{
 			cell[x][y].v /= sample;
 			cell[x][y].W /= sample;
+			cell[x][y].theta_ave /= sample;
 			cell[x][y].density /= sample;
 			cell[x][y].cohesion /= sample;
 			cell[x][y].omega /= sample;

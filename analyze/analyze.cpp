@@ -26,21 +26,23 @@ int main(int argc, char** argv)
 
 		boost::replace_all(name, "-r-v.bin", "");
 
+//		sceneset->Save_Theta_Deviation(120, 0, sceneset->scene.size(), "theta-stat.dat");
 //		sceneset->Plot_Fields(21, 40, name);
-		sceneset->Plot_Averaged_Fields(128, name);
+//		sceneset->Plot_Averaged_Fields(128, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 40, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //		sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //		sceneset->Plot_Density_Contour(101, 0.2, name);
 
 
-//		boost::replace_all(name, "rho=", "");
-//		boost::replace_all(name, "-noise=", "\t");
+		boost::replace_all(name, "rho=", "");
+		boost::replace_all(name, "-noise=", "\t");
+		boost::replace_all(name, "-cooling", "\t");
 
-//		Stat<double>	angular_momentum_data;
-//		Compute_Angular_Momentum(sceneset, &angular_momentum_data);
-//		cout << name << "\t" << fabs(angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
-//		angular_momentum_data.Reset();
+		Stat<double>	angular_momentum_data;
+		Compute_Angular_Momentum(sceneset, &angular_momentum_data);
+		cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
+		angular_momentum_data.Reset();
 
 //		Time_AutoCorrelation(sceneset);
 //		Spatial_AutoCorrelation(sceneset, 50, 5);

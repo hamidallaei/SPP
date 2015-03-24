@@ -111,6 +111,7 @@ public:
 	~SceneSet();
 	void Read();
 	void Write(int, int); // write from a time to the end
+	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int grid_dim, string name);
 	void Plot_Averaged_Fields_Section(int grid_dim, int y, string info);
@@ -193,6 +194,24 @@ void SceneSet::Write(int start, int limit)
 	}
 	else
 		cout << "I will not cut the file because it is short enough!" << endl;
+}
+
+void SceneSet::Save_Theta_Deviation(int grid_dim, int start_t, int end_t, string info)
+{
+	Field averaged_field(grid_dim, L);
+	for (int i = start_t; i < scene.size() && i < end_t; i++)
+	{
+		Field f(grid_dim, L);
+		f.Compute(scene[i].particle, Scene::number_of_particles);
+		averaged_field.Add(&f);
+	}
+	averaged_field.Average();
+	stringstream address("");
+	address << info;
+	ofstream outfile(address.str().c_str());
+	averaged_field.Save_Theta_Deviation(outfile);
+	outfile.close();
+	averaged_field.Reset();
 }
 
 void SceneSet::Plot_Fields(int grid_dim, int t, string name)
