@@ -50,6 +50,12 @@ class C2DVector
 			y = gsl_ran_flat (gsl_r, -amplitude, amplitude);
 		}
 
+		void Rand(const Real amplitude_x, const Real amplitude_y) // Choose random numbers for components of the vector in [-Lx, Lx] for x and [-Ly, Ly] for y
+		{
+			x = gsl_ran_flat (gsl_r, -amplitude_x, amplitude_x);
+			y = gsl_ran_flat (gsl_r, -amplitude_y, amplitude_y);
+		}
+
 		void Rand_Lattice()
 		{
 			x = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*Lx) - Lx;

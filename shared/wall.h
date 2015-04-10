@@ -18,6 +18,7 @@ public:
 	void Translate(C2DVector delta);
 	void Rotate(Real phi, C2DVector r);
 
+	void Interact(BasicDynamicParticle* p);
 	void Interact(VicsekParticle* p);
 	void Interact(ContinuousParticle* p);
 	void Interact(RepulsiveParticle* p);
@@ -155,6 +156,9 @@ C2DVector Wall::Distance_Vector(C2DVector input_p)
 	return dr; 
 }
 
+void Wall::Interact(BasicDynamicParticle* p)
+{
+}
 
 void Wall::Interact(VicsekParticle* p)
 {

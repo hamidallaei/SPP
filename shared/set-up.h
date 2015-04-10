@@ -11,6 +11,8 @@
 
 void Square_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a square lattice
 void Triangle_Lattice_Formation(Particle* particle, int N, double sigma); // Positioning partilces in a triangular lattice. This is denser.
+void Random_Formation(Particle* particle, int N); // Positioning partilces Randomly
+void Random_Formation(Particle* particle, int N, double sigma); // Positioning partilces Randomly, but distant from walls
 void Single_Vortex_Formation(Particle* particle, int N); // Vortex initial condition.
 void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the box. left top, left bot, right top and right bot.
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
@@ -131,6 +133,24 @@ void Triangle_Lattice_Formation(Particle* particle, int N, double sigma)
 	}
 }
 
+void Random_Formation(Particle* particle, int N)
+{
+	Random_Formation(particle, N, 0);
+}
+
+void Random_Formation(Particle* particle, int N, double sigma)
+{
+	C2DVector r;
+	for (int i = 0; i < N; i++)
+	{
+		r.Rand(Lx-sigma, Ly-sigma);
+		if ((r.y > Ly) || (r.y < -Ly) || (r.x > Lx) || (r.x < -Lx))
+			cout << r.x/Lx << "\t" << r.y/Ly << endl;
+		r.Periodic_Transform();
+		particle[i].Init(r);
+	}
+}
+
 void Clump_Formation(Particle* particle, int N, int size)
 {
 	C2DVector v_cm, r, basis_1, basis_2;
@@ -168,29 +188,29 @@ void Square_Ring_Formation(Particle* particle, int N)
 	for (int i = 0; i < N; i++)
 	{
 		// particles appear in a box [-L/2.,L/2.]
-		particle[i].Init(L/2.);
+		particle[i].Init(Lx/2.);
 		// moving particles to a the outer shell 
-		if (fabs(particle[i].r.x) > L/4. || fabs(particle[i].r.y) > L/4.)
+		if (fabs(particle[i].r.x) > Lx/4. || fabs(particle[i].r.y) > Ly/4.)
 			particle[i].r *= 2.;
 		else if (particle[i].r.x > 0. && particle[i].r.y > 0.)
 		{
-			particle[i].r.x += L/2.;
-			particle[i].r.y += L/2.;
+			particle[i].r.x += Lx/2.;
+			particle[i].r.y += Ly/2.;
 		}
 		else if (particle[i].r.x > 0. && particle[i].r.y < 0.)
 		{
-			particle[i].r.x += L/2.;
-			particle[i].r.y -= L/2.;
+			particle[i].r.x += Lx/2.;
+			particle[i].r.y -= Ly/2.;
 		}
 		else if (particle[i].r.x < 0. && particle[i].r.y > 0.)
 		{
-			particle[i].r.x -= L/2.;
-			particle[i].r.y += L/2.;
+			particle[i].r.x -= Lx/2.;
+			particle[i].r.y += Ly/2.;
 		}
 		else if (particle[i].r.x < 0. && particle[i].r.y < 0.)
 		{
-			particle[i].r.x -= L/2.;
-			particle[i].r.y -= L/2.;
+			particle[i].r.x -= Lx/2.;
+			particle[i].r.y -= Ly/2.;
 		}
 	}
 }

@@ -1,7 +1,7 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
-//#define PERIODIC_BOUNDARY_CONDITION
+#define PERIODIC_BOUNDARY_CONDITION
 
 // This is for checking particles outside of the box
 //#define DEBUG
@@ -23,11 +23,13 @@ using namespace std;
 class BasicDynamicParticle;
 class VicsekParticle;
 class ContinuousParticle;
+class MarkusParticle;
 class RepulsiveParticle;
 
 typedef double Real;
 //typedef VicsekParticle Particle;
-typedef ContinuousParticle Particle;
+//typedef ContinuousParticle Particle;
+typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
 int seed = 1241;
@@ -38,8 +40,8 @@ const int max_wall_num = 8;
 const int max_N = 50000;
 
 // Box
-const int Lx_int = 60;
-const int Ly_int = 60;
+const int Lx_int = 10;
+const int Ly_int = 10;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -64,12 +66,12 @@ const int npy = 2; // For parallel use only
 const int tag_max = 32767; // For parallel use only
 
 // Time
-const Real dt = 0.005;
+const Real dt = 0.01;
 const Real half_dt = dt/2;
 const int cell_update_period = 20;
-const int saving_period = 2000;
-const long int equilibrium_step = 200000;
-const long int total_step = 200000;
+const int saving_period = 1;
+const long int equilibrium_step = 1000;
+const long int total_step = 1000;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength
