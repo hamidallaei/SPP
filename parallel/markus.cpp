@@ -2,7 +2,7 @@
 #include "../shared/c2dvector.h"
 #include "../shared/particle.h"
 #include "../shared/cell.h"
-#include "markus_box.h"
+#include "box.h"
 
 inline void timing_information(Node* node, clock_t start_time, int i_step, int total_step)
 {
@@ -85,7 +85,10 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 	Real t_eq,t_sim;
 
 	Box box;
-	box.Init(thisnode, input_rho, input_mu_plus, input_mu_minus, 0);
+	box.Init(thisnode, input_rho);
+
+	MarkusParticle::mu_plus = input_mu_plus;
+	MarkusParticle::mu_minus = input_mu_minus;
 
 	ofstream out_file;
 

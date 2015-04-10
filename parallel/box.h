@@ -23,7 +23,7 @@ public:
 
 	Box();
 	void Init_Topology(); // Initialize the wall positions and numbers.
-	void Init(Node* input_node,Real input_volume_fraction, Real g = 2, Real alpha=0.5, Real noise_amplitude = 0.1); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
+	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
 	void One_Step(); // One full step, composed of interaction computation and move.
@@ -56,7 +56,7 @@ void Box::Init_Topology()
 }
 
 // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real noise_amplitude)
+void Box::Init(Node* input_node, Real input_density)
 {
 	#ifdef TRACK_PARTICLE
 	track_p = &particle[track];
@@ -66,10 +66,6 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 	density = input_density;
 	N = (int) round(Lx2*Ly2*density);
 
-	Particle::noise_amplitude = noise_amplitude / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
-	ContinuousParticle::g = g;
-	ContinuousParticle::alpha = alpha;
-
 	Init_Topology(); // Adding walls
 
 	if (thisnode->node_id == 0)
@@ -77,7 +73,8 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
 //		Triangle_Lattice_Formation(particle, N, 1);
-		Single_Vortex_Formation(particle, N);
+		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls
+//		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -89,7 +86,6 @@ void Box::Init(Node* input_node, Real input_density, Real g, Real alpha, Real no
 
 // Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
 	info.str("");
-	info << "rho=" << density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_amplitude;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
@@ -99,10 +95,12 @@ void Box::Interact()
 // each node sends its information of boundary cells to the correspounding node.
 	for (int i = 0; i < thisnode->boundary.size(); i++)
 	{
-		if (thisnode->boundary[i].is_active)
-			thisnode->boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
 		if (thisnode->boundary[(i+4)%8].is_active)
 			thisnode->boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+		if (thisnode->boundary[i].is_active)
+			thisnode->boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+//		cout << thisnode->node_id << "\tRecieved\t" << i << endl;
+		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
 	thisnode->Self_Interact(); // Sum up interaction of particles within thisnode

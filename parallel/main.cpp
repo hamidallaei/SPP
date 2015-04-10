@@ -84,8 +84,12 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 
 	Real t_eq,t_sim;
 
+	Particle::noise_amplitude = 0;
+	Particle::g = input_g;
+	Particle::alpha = input_alpha;
+
 	Box box;
-	box.Init(thisnode, input_rho, input_g, input_alpha, 0);
+	box.Init(thisnode, input_rho);
 
 	ofstream out_file;
 
@@ -137,12 +141,14 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 
 	Real t_eq,t_sim;
 
+	Particle::noise_amplitude = input_noise / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+	Particle::g = input_g;
+	Particle::alpha = 0;
+
 	Box box;
-	box.Init(thisnode, input_rho, input_g, alpha_list[0], 0);
+	box.Init(thisnode, input_rho);
 
 	ofstream out_file;
-
-	Particle::noise_amplitude = input_noise / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 
 	for (int i = 0; i < alpha_list.size(); i++)
 	{
