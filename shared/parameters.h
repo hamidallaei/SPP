@@ -43,10 +43,10 @@ const int Ly_int = 60;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
-const Real L = L_int;
 const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
-const Real L2 = 2*L;
+//const Real L = L_int; No need to these variables
+//const Real L2 = 2*L; No need to these variables
 
 // Trap
 const Real r_big = 15; 

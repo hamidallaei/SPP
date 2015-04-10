@@ -151,8 +151,8 @@ void Window_Fluctuation(SceneSet* s, int number_of_windows, double& mean, double
 				Np[x][y] = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)
 		{
-			int x = (int) floor(number_of_windows*(s->scene[i].particle[j].r.x / L + 1)/2);
-			int y = (int) floor(number_of_windows*(s->scene[i].particle[j].r.y / L + 1)/2);
+			int x = (int) floor(number_of_windows*(s->scene[i].particle[j].r.x / s->scene[i].L + 1)/2);
+			int y = (int) floor(number_of_windows*(s->scene[i].particle[j].r.y / s->scene[i].L + 1)/2);
 			Np[x][y]++;
 		}
 		for (int x = 0; x < number_of_windows; x++)
