@@ -23,6 +23,7 @@ struct Node{
 
 	void Get_Box_Info(int size, Particle* p);
 	void Init_Topology();
+	void Send_Receive_Data(); // Send and Receive data of each neighboring cell
 	void Quick_Update_Cells(); // Update particles that are inside each cell
 	void Full_Update_Cells(); // Befor this function, Gather and Bcast must be called to have appropirate behaviour.
 	void Send_To_Root(); // Send thisnode information (particle position and angles) to the root node.
@@ -301,18 +302,58 @@ void Node::Init_Topology() // This function must be called after box definition.
 // All nodes are ready
 }
 
+// Send_Receive_Data will update boundary cells of each node with its neighboring nodes
+// each node sends its information of boundary cells to the correspounding node.
+void Node::Send_Receive_Data()
+{
+	for (int i = 0; i < boundary.size(); i++)
+	{
+		if (i % 4 != 2)
+		{
+			if (idx % 2 == 0)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+			if (idx % 2 == 1)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+		}
+		else
+		{
+			if (idy % 2 == 0)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			if (idy % 2 == 1)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+}
 
 // Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast.
 void Node::Quick_Update_Cells()
 {
-		for (int i = 0; i < boundary.size(); i++)
-		{
-			if (boundary[i].is_active)
-				boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
-			if (boundary[(i+4)%8].is_active)
-				boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
-		}
-
+	Send_Receive_Data();
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	vector<int> node_pid; // pid is particle ids that possibly are within this node
@@ -377,10 +418,45 @@ void Node::Quick_Update_Cells()
 
 	for (int i = 0; i < boundary.size(); i++)
 	{
-		if (boundary[i].is_active)
-			boundary[i].Send_Particle_Ids();
-		if (boundary[(i+4)%8].is_active)
-			boundary[(i+4)%8].Receive_Particle_Ids();
+		if (i % 4 != 2)
+		{
+			if (idx % 2 == 0)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node.
+			if (idx % 2 == 1)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+		}
+		else
+		{
+			if (idy % 2 == 0)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			if (idy % 2 == 1)
+			{
+				if (boundary[i].is_active)
+					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+			}
+			else
+				if (boundary[(i+4)%8].is_active)
+					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);

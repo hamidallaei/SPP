@@ -92,16 +92,8 @@ void Box::Init(Node* input_node, Real input_density)
 // Here the intractio of particles are computed that is the applied tourque to each particle.
 void Box::Interact()
 {
-// each node sends its information of boundary cells to the correspounding node.
-	for (int i = 0; i < thisnode->boundary.size(); i++)
-	{
-		if (thisnode->boundary[(i+4)%8].is_active)
-			thisnode->boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
-		if (thisnode->boundary[i].is_active)
-			thisnode->boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
-//		cout << thisnode->node_id << "\tRecieved\t" << i << endl;
-		MPI_Barrier(MPI_COMM_WORLD);
-	}
+	thisnode->Send_Receive_Data();
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	thisnode->Self_Interact(); // Sum up interaction of particles within thisnode
 	thisnode->Boundary_Interact(); // Sum up interaction of particles in the neighboring nodes.
