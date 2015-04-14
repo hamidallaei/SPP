@@ -270,7 +270,7 @@ public:
 			{
 				Real alpha = atan2(-dr.y,-dr.x);
 				torque += kapa*sin(theta - alpha);
-				p.torque -= kapa*sin(p.theta + alpha);
+				p.torque -= kapa*sin(p.theta - alpha);
 			}
 
 			#ifdef TRACK_PARTICLE

@@ -5,7 +5,7 @@
 
 // This is for checking particles outside of the box
 //#define DEBUG
-// This tracks a specific particle. The id of the tracking particle is given below. 
+// This tracks a specific particle. The id of the tracking particle is given below.
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (if we change order of a sum, the result will change because of the truncation error)
 //#define COMPARE
@@ -37,7 +37,7 @@ int seed = 1241;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 50000;
+const int max_N = 80000;
 
 // Box
 const int Lx_int = 10;
@@ -51,8 +51,8 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Trap
-const Real r_big = 15; 
-const Real r_small = 6; 
+const Real r_big = 15;
+const Real r_small = 6;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/11;
@@ -66,19 +66,19 @@ const int npy = 2; // For parallel use only. This number must be even to avoid d
 const int tag_max = 32767; // For parallel use only
 
 // Time
-const Real dt = 0.01;
+const Real dt = 0.005;
 const Real half_dt = dt/2;
-const int cell_update_period = 20;
+const int cell_update_period = 5;
 const int saving_period = 1;
-const long int equilibrium_step = 1000;
-const long int total_step = 1000;
+const long int equilibrium_step = 10000;
+const long int total_step = 5000;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength
 const Real A_w = 50.;
 const Real sigma_p = .5;		// sigma in Yukawa Potential
 const Real sigma_w = 1.;
-const Real r_f_p = 1.;		// flocking radius with particles 
+const Real r_f_p = 1.;		// flocking radius with particles
 const Real r_f_w = 1.;		// aligning radius with walls
 const Real r_c_p = .5; 		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls

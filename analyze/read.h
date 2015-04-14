@@ -53,7 +53,6 @@ void Scene::Init(int num)
 void Scene::Reset()
 {
 	delete [] particle;
-	particle = NULL;
 }
 
 void Scene::Draw()
@@ -65,15 +64,16 @@ void Scene::Draw()
 
 void Scene::Skip_File(std::istream& in, int n)
 {
-	in.read((char*) &number_of_particles, sizeof(int) / sizeof(char));
-	for (int i = 0; i < number_of_particles; i++)
+	for (int i = 0; i < n; i++)
 	{
-		in >> particle[i].r;
-		in >> particle[i].v;
+		in.read((char*) &number_of_particles, sizeof(int) / sizeof(char));
+		C2DVector temp_r, temp_v;
+		for (int j = 0; j < number_of_particles; j++)
+		{
+			in >> temp_r;
+			in >> temp_v;
+		}
 	}
-	in.ignore(numeric_limits<streamsize>::max(), '\n');
-	for (int i = 0; i < (n*(number_of_particles+1)); i++)
-		in.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
 std::istream& operator>>(std::istream& is, Scene& scene)
@@ -109,7 +109,7 @@ public:
 
 	SceneSet(string input_address);
 	~SceneSet();
-	void Read();
+	void Read(int skip = 0);
 	void Write(int, int); // write from a time to the end
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
@@ -142,14 +142,15 @@ SceneSet::~SceneSet()
 	scene.clear();
 }
 
-void SceneSet::Read()
+void SceneSet::Read(int skip)
 {
 	int counter = 0;
 	static Scene temp_scene;
 	L = 0;
 
-//	temp_scene.Skip_File(input_file, 3800);
 	input_file.open(address.str().c_str());
+	if (skip > 0)
+		temp_scene.Skip_File(input_file, skip);
 
 	while (!input_file.eof())
 	{

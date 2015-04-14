@@ -20,10 +20,10 @@ int main(int argc, char** argv)
 		string name = argv[i];
 		SceneSet* sceneset = new SceneSet(name);
 		cout << "Reading the file" << endl;
-		sceneset->Read();
+		sceneset->Read(999);
 		cout << "Finished" << endl;
 		cout << "Write the file" << endl;
-		sceneset->Write(500, 1400);
+		sceneset->Write(0, 1000);
 		cout << "Finished" << endl;
 
 		delete sceneset;
