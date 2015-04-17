@@ -18,6 +18,10 @@ public:
 	void Init(Real x, Real y);
 	void Delete();
 	void Add(int p); // Add a particle id to the list of pid of this cell.
+	void Clear_Neighbor_List(); // This will clean the neighbor list of particles inside this cell
+	void Neighbor_List(); // Adding neighboring particles to their list in a cell but each pair of close particles are presented only one time as a member of neighbor list of one of the pair particles.
+	void Neighbor_List(Cell* c); // Adding neighboring particles of different cells to the neighbor list of particles.
+	void Interact(); // Interacting using nieghbor list. Particles outside of this cell are also considered.
 	void Interact(Cell* c); // Interact all particles wihtin this cell with the cell c
 	void Self_Interact(); // Interact all particles within this cell with themselve
 	void Move();
@@ -41,6 +45,50 @@ void Cell::Delete()
 void Cell::Add(int p)
 {
 	pid.push_back(p);
+}
+
+void Cell::Clear_Neighbor_List()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].neighbor_id.clear();
+}
+
+void Cell::Neighbor_List(Cell* c)
+{
+	for (int i = 0; i < pid.size(); i++)
+	{
+		for (int j = 0; j < c->pid.size(); j++)
+		{
+			C2DVector dr = particle[pid[i]].r - particle[c->pid[j]].r;
+			#ifdef PERIODIC_BOUNDARY_CONDITION
+				dr.Periodic_Transform();
+			#endif
+			Real d = sqrt(dr.Square());
+			if (d < Particle::rv)
+				particle[pid[i]].neighbor_id.push_back(c->pid[j]);
+		}
+	}
+}
+
+void Cell::Neighbor_List()
+{
+	for (int i = 0; i < pid.size(); i++)
+	{
+		for (int j = i+1; j < pid.size(); j++)
+		{
+			C2DVector dr = particle[pid[i]].r - particle[pid[j]].r;
+			Real d = sqrt(dr.Square());
+			if (d < Particle::rv)
+				particle[pid[i]].neighbor_id.push_back(pid[j]);
+		}
+	}
+}
+
+void Cell::Interact()
+{
+	for (int i = 0; i < pid.size(); i++)
+		for (int j = 0; j < particle[pid[i]].neighbor_id.size(); j++)
+			particle[pid[i]].Interact(particle[particle[pid[i]].neighbor_id[j]]);
 }
 
 void Cell::Interact(Cell* c)

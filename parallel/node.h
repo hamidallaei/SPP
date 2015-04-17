@@ -26,11 +26,15 @@ struct Node{
 	void Send_Receive_Data(); // Send and Receive data of each neighboring cell
 	void Quick_Update_Cells(); // Update particles that are inside each cell
 	void Full_Update_Cells(); // Befor this function, Gather and Bcast must be called to have appropirate behaviour.
+	void Update_Self_Neighbor_List(); // Updating neighborlist of particles inside cells within this node. But the pairs inside the node are considered
+	void Update_Boundary_Neighbor_List(); // Updating neighborlist of particles inside cells within this node. But one the particles is outside this node.
+	void Update_Neighbor_List(); // Updating neighborlist of particles inside cells within this node. All the pairs are considered.
 	void Send_To_Root(); // Send thisnode information (particle position and angles) to the root node.
 	void Root_Receive(); // Receive the sent information by other nodes
 	void Root_Gather(); // Gather the information by root. Like a Send_To_Root() and Root_Receive() function.
 	void Root_Bcast(); // Send all informations in root to other nodes
 
+	void Neighbor_List_Interact(); // Interact using neighbor list
 	void Self_Interact(); // Compute interaction of particles withing thisnode
 	void Boundary_Interact(); // Compute interaction of particles of thisnode at the boundaries with the particles of neighboring node at the sam boundary.
 	void Move(); // Move all particles within thisnode
@@ -350,7 +354,7 @@ void Node::Send_Receive_Data()
 	}
 }
 
-// Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast.
+// Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast. Here neighobr list of each particle is computed as well.
 void Node::Quick_Update_Cells()
 {
 	Send_Receive_Data();
@@ -491,6 +495,206 @@ void Node::Full_Update_Cells()
 	}
 }
 
+// Using the information of particles we update a list for each particle showing the neighboring particles. But we are considering the third newton law. That means particles within the same node are counted once as neighbor in the neighbor list of one of the two particles.
+void Node::Update_Self_Neighbor_List()
+{
+// Each cell must interact with itself and 4 of its 8 neihbors that are right cell, up cell, righ up and right down. Because each intertion compute the torque to both particles we need to use 4 of the 8 directions.
+
+// Self interaction
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+			cell[x][y].Neighbor_List();
+// right, up and up right cells:
+// The righmost cells and top cells must be excluded to avoid nieghbor node interactions.
+	for (int x = head_cell_idx; x < (tail_cell_idx-1); x++)
+		for (int y = head_cell_idy; y < (tail_cell_idy-1); y++)
+		{
+// No need for % divisor_x and % divisor_y because we are only considering interaction of cells inside thisnode.
+			cell[x][y].Neighbor_List(&cell[x+1][y]);
+			cell[x][y].Neighbor_List(&cell[x][y+1]);
+			cell[x][y].Neighbor_List(&cell[x+1][y+1]);
+		}
+
+// The rest that I forgot:
+	for (int x = head_cell_idx; x < (tail_cell_idx-1); x++)
+		cell[x][tail_cell_idy-1].Neighbor_List(&cell[x+1][tail_cell_idy-1]);
+	for (int y = head_cell_idy; y < (tail_cell_idy-1); y++)
+		cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx-1][y+1]);
+
+// right down cell:
+// The righmost cells and buttom cells must be excluded to avoid nieghbor node interactions.
+	for (int x = head_cell_idx; x < (tail_cell_idx-1); x++)
+		for (int y = head_cell_idy+1; y < (tail_cell_idy); y++)
+			cell[x][y].Neighbor_List(&cell[x+1][y-1]);	
+}
+
+// Interaction of thisnode particles with particles outside of thisnode
+void Node::Update_Boundary_Neighbor_List()
+{
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+// The first and last columns are excluded to avoid multiple interaction for the same pair of cells
+	for (int x = (head_cell_idx+1); x < (tail_cell_idx-1); x++)
+	{
+// Buttom cells of thisnode interacting
+		cell[x][head_cell_idy].Neighbor_List(&cell[x][(head_cell_idy-1+divisor_y)%divisor_y]);
+		cell[x][head_cell_idy].Neighbor_List(&cell[(x+1)%divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]);
+		cell[x][head_cell_idy].Neighbor_List(&cell[(x-1+divisor_x)%divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]);
+
+// Top cells of thisnode interacting
+		cell[x][tail_cell_idy-1].Neighbor_List(&cell[x][tail_cell_idy%divisor_y]);
+		cell[x][tail_cell_idy-1].Neighbor_List(&cell[(x+1)%divisor_x][tail_cell_idy%divisor_y]);
+		cell[x][tail_cell_idy-1].Neighbor_List(&cell[(x-1+divisor_x)%divisor_x][tail_cell_idy%divisor_y]);
+	}
+
+// The first and last rows are excluded to avoid multiple interaction for the same pair of cells
+	for (int y = (head_cell_idy+1); y < (tail_cell_idy-1); y++)
+	{
+// Left cells of this node
+		cell[head_cell_idx][y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][y]);
+		cell[head_cell_idx][y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(y+1)%divisor_y]);
+		cell[head_cell_idx][y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(y-1+divisor_y)%divisor_y]);
+
+// Right cells of this node
+		cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx % divisor_x][y]);
+		cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx % divisor_x][(y+1)%divisor_y]);
+		cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx % divisor_x][(y-1+divisor_y)%divisor_y]);
+	}
+
+// Interaction of corners:
+// Left Buttom:
+	cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[(head_cell_idx+1)%divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]); // 7
+	cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx][(head_cell_idy-1+divisor_y)%divisor_y]); // 6
+	cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]); // 5
+	cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][head_cell_idy]); // 4
+	cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(head_cell_idy+1)%divisor_y]); // 3
+// Left Top:
+	cell[head_cell_idx][(tail_cell_idy-1+divisor_y)%divisor_y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(tail_cell_idy-2+divisor_y)%divisor_y]); // 5
+	cell[head_cell_idx][(tail_cell_idy-1+divisor_y)%divisor_y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][(tail_cell_idy-1+divisor_y)%divisor_y]); // 4
+	cell[head_cell_idx][(tail_cell_idy-1+divisor_y)%divisor_y].Neighbor_List(&cell[(head_cell_idx-1+divisor_x) % divisor_x][tail_cell_idy%divisor_y]); // 3
+	cell[head_cell_idx][(tail_cell_idy-1+divisor_y)%divisor_y].Neighbor_List(&cell[head_cell_idx][tail_cell_idy%divisor_y]); // 2
+	cell[head_cell_idx][(tail_cell_idy-1+divisor_y)%divisor_y].Neighbor_List(&cell[(head_cell_idx+1)%divisor_x][tail_cell_idy%divisor_y]); // 1
+// Right Top:
+	cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[(tail_cell_idx-2+divisor_x)%divisor_x][tail_cell_idy%divisor_y]); // 3
+	cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx-1][tail_cell_idy%divisor_y]); // 2
+	cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx % divisor_x][tail_cell_idy%divisor_y]); // 1
+	cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx % divisor_x][tail_cell_idy-1]); // 0
+	cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx % divisor_x][(tail_cell_idy-2+divisor_y)%divisor_y]); // 7
+// Right Buttom:
+	cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx % divisor_x][(head_cell_idy+1)%divisor_y]); // 1
+	cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx % divisor_x][head_cell_idy]); // 0
+	cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx % divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]); // 7
+	cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx-1][(head_cell_idy-1+divisor_y)%divisor_y]); // 6
+	cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[(tail_cell_idx-2+divisor_x)%divisor_x][(head_cell_idy-1+divisor_y)%divisor_y]); // 5
+	#else
+// In future I'm going to remove the if conditions for a better performance
+
+
+// Right cells of thisnode interacting
+	if (tail_cell_idx != divisor_x)
+		for (int y = (head_cell_idy+1); y < (tail_cell_idy-1); y++) // The first and last rows are excluded to avoid multiple interaction for the same pair of cells
+		{
+			cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx][y]);
+			cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx][y+1]);
+			cell[tail_cell_idx-1][y].Neighbor_List(&cell[tail_cell_idx][y-1]);
+		}
+
+// Top cells of thisnode interacting
+	if (tail_cell_idy != divisor_y) // If tail_cell y cordinate is not at the top
+		for (int x = (head_cell_idx+1); x < (tail_cell_idx-1); x++) // The first and last columns are excluded to avoid multiple interaction for the same pair of cells
+		{
+			cell[x][tail_cell_idy-1].Neighbor_List(&cell[x][tail_cell_idy]);
+			cell[x][tail_cell_idy-1].Neighbor_List(&cell[x+1][tail_cell_idy]);
+			cell[x][tail_cell_idy-1].Neighbor_List(&cell[x-1][tail_cell_idy]);
+		}
+
+// Left cells of thisnode interacting
+	if (head_cell_idx != 0)
+		for (int y = (head_cell_idy+1); y < (tail_cell_idy-1); y++) // The first and last rows are excluded to avoid multiple interaction for the same pair of cells
+		{
+			cell[head_cell_idx][y].Neighbor_List(&cell[head_cell_idx-1][y]);
+			cell[head_cell_idx][y].Neighbor_List(&cell[head_cell_idx-1][y+1]);
+			cell[head_cell_idx][y].Neighbor_List(&cell[head_cell_idx-1][y-1]);
+		}
+
+// Buttom cells of thisnode interacting
+	if (head_cell_idy != 0) // If head_cell y cordinate is not at the bottom
+		for (int x = (head_cell_idx+1); x < (tail_cell_idx-1); x++) // The first and last columns are excluded to avoid multiple interaction for the same pair of cells
+		{
+			cell[x][head_cell_idy].Neighbor_List(&cell[x][head_cell_idy-1]);
+			cell[x][head_cell_idy].Neighbor_List(&cell[x+1][head_cell_idy-1]);
+			cell[x][head_cell_idy].Neighbor_List(&cell[x-1][head_cell_idy-1]);
+		}
+
+// Interaction of corners:
+// Left Buttom:
+	if (head_cell_idx != 0)
+	{
+		cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx-1][head_cell_idy]); // left: Number 4
+		cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx-1][head_cell_idy+1]); // up left: Number 3
+		if (head_cell_idy != 0)
+			cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx-1][head_cell_idy-1]); // down left: Number 5
+	}
+	if (head_cell_idy != 0)
+	{
+		cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx][head_cell_idy-1]); // down: Number 6
+		cell[head_cell_idx][head_cell_idy].Neighbor_List(&cell[head_cell_idx+1][head_cell_idy-1]); // down right: Number 7
+	}
+	
+// Left Top:
+	if (head_cell_idx != 0)
+	{
+		cell[head_cell_idx][tail_cell_idy-1].Neighbor_List(&cell[head_cell_idx-1][tail_cell_idy-1]); // left: Number 4
+		cell[head_cell_idx][tail_cell_idy-1].Neighbor_List(&cell[head_cell_idx-1][tail_cell_idy-2]); // down left: Number 5
+		if (tail_cell_idy != divisor_y)
+			cell[head_cell_idx][tail_cell_idy-1].Neighbor_List(&cell[head_cell_idx-1][tail_cell_idy]); // up left: Number 3
+	}
+	if (tail_cell_idy != divisor_y)
+	{
+		cell[head_cell_idx][tail_cell_idy-1].Neighbor_List(&cell[head_cell_idx][tail_cell_idy]); // up: Number 2
+		cell[head_cell_idx][tail_cell_idy-1].Neighbor_List(&cell[head_cell_idx+1][tail_cell_idy]); // up right: Number 1
+	}
+
+// Right Top:
+	if (tail_cell_idx != divisor_x)
+	{
+		cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx][tail_cell_idy-1]); // right: Number 0
+		cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx][tail_cell_idy-2]); // down right: Number 7
+		if (tail_cell_idy != divisor_y)
+			cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx][tail_cell_idy]); // up right: Number 1
+	}
+	if (tail_cell_idy != divisor_y)
+	{
+		cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx-1][tail_cell_idy]); // up: Number 2
+		cell[tail_cell_idx-1][tail_cell_idy-1].Neighbor_List(&cell[tail_cell_idx-2][tail_cell_idy]); // up left: Number 3
+	}
+
+// Right Buttom:
+	if (tail_cell_idx != divisor_x)
+	{
+		cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx][head_cell_idy]); // right: Number 0
+		cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx][head_cell_idy+1]); // up right: Number 1
+		if (head_cell_idy != 0)
+			cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx][head_cell_idy-1]); // down right: Number 7
+	}
+	if (head_cell_idy != 0)
+	{
+		cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx-1][head_cell_idy-1]); // down: Number 6
+		cell[tail_cell_idx-1][head_cell_idy].Neighbor_List(&cell[tail_cell_idx-2][head_cell_idy-1]); // down: Number 5
+	}
+	#endif
+}
+
+// This function must be called after transfer of data between nodes.
+void Node::Update_Neighbor_List()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+			cell[x][y].Clear_Neighbor_List();
+	Update_Self_Neighbor_List();
+	Update_Boundary_Neighbor_List();
+}
+
+
 // Sending information to Master node
 void Node::Send_To_Root()
 {
@@ -603,6 +807,15 @@ void Node::Root_Bcast()
 	}
 	delete [] data_buffer;
 	MPI_Barrier(MPI_COMM_WORLD); // We want to make sure that all the nodes have the same information at the end (finished their task).
+}
+
+// Interaction of all particles within thisnode
+void Node::Neighbor_List_Interact()
+{
+// Self interaction
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+			cell[x][y].Interact();
 }
 
 // Interaction of all particles within thisnode

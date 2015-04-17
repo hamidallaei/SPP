@@ -3,6 +3,7 @@
 
 #include "c2dvector.h"
 #include "parameters.h"
+#include <vector>
 
 class BasicParticle{
 public:
@@ -14,6 +15,8 @@ public:
 	int neighbor_size;
 	Real theta;
 	static Real noise_amplitude;
+	static Real rv; // Radius cut off for verlet list
+	vector<int> neighbor_id; // id of neighboring particles
 
 	void Init();
 	void Init(C2DVector);
@@ -424,6 +427,7 @@ Real RepulsiveParticle::g = .5;
 Real RepulsiveParticle::kesi = .5;
 
 Real BasicDynamicParticle::noise_amplitude = .1;
+Real BasicDynamicParticle::rv = 1 + (dt*21);
 
 
 #endif

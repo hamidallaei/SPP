@@ -39,12 +39,12 @@ int main(int argc, char** argv)
 		boost::replace_all(name, "-noise=", "\t");
 		boost::replace_all(name, "-cooling", "\t");
 
-		Stat<double>	angular_momentum_data;
-		Compute_Angular_Momentum(sceneset, &angular_momentum_data);
-		cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
-		angular_momentum_data.Reset();
+//		Stat<double>	angular_momentum_data;
+//		Compute_Angular_Momentum(sceneset, &angular_momentum_data);
+//		cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
+//		angular_momentum_data.Reset();
 
-//		Time_AutoCorrelation(sceneset);
+		Time_AutoCorrelation(sceneset);
 //		Spatial_AutoCorrelation(sceneset, 50, 5);
 
 //		int r = rand() % Scene::number_of_particles;

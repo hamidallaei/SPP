@@ -203,10 +203,6 @@ int main(int argc, char *argv[])
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
-
-
-
-
 	Node thisnode;
 
 	#ifdef COMPARE
@@ -222,8 +218,8 @@ int main(int argc, char *argv[])
 
 	C2DVector::Init_Rand(thisnode.seed);
 
-//	Change_Noise(argc, argv, &thisnode);
-	Change_Alpha(argc, argv, &thisnode);
+	Change_Noise(argc, argv, &thisnode);
+//	Change_Alpha(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

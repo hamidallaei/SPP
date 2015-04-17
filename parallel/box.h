@@ -84,6 +84,10 @@ void Box::Init(Node* input_node, Real input_density)
 // Any node update cells, knowing particles and their cell that they are inside.
 	thisnode->Full_Update_Cells();
 
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
 // Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
 	info.str("");
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -95,8 +99,14 @@ void Box::Interact()
 	thisnode->Send_Receive_Data();
 	MPI_Barrier(MPI_COMM_WORLD);
 
+	#ifdef verlet_list
+// with verlet list:
+	thisnode->Neighbor_List_Interact();
+	#else
+// without verlet list:
 	thisnode->Self_Interact(); // Sum up interaction of particles within thisnode
 	thisnode->Boundary_Interact(); // Sum up interaction of particles in the neighboring nodes.
+	#endif
 
 	#ifndef PERIODIC_BOUNDARY_CONDITION
 // Sum up interaction of the walls with the particles of thisnode (in the absence of periodic boundary condition)
@@ -132,6 +142,9 @@ void Box::Multi_Step(int steps)
 		MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
 	}
 	thisnode->Quick_Update_Cells();
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
 }
 
 // Translate position of all particles with vector d
@@ -145,6 +158,9 @@ void Box::Translate(C2DVector d)
 	}
 	thisnode->Root_Bcast();
 	thisnode->Full_Update_Cells();
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
 }
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.

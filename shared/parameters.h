@@ -2,7 +2,7 @@
 #define _PARAMETERS_
 
 #define PERIODIC_BOUNDARY_CONDITION
-
+#define verlet_list
 // This is for checking particles outside of the box
 //#define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
@@ -40,8 +40,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 10;
-const int Ly_int = 10;
+const int Lx_int = 60;
+const int Ly_int = 60;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -68,9 +68,9 @@ const int tag_max = 32767; // For parallel use only
 // Time
 const Real dt = 0.005;
 const Real half_dt = dt/2;
-const int cell_update_period = 5;
+const int cell_update_period = 20;
 const int saving_period = 1;
-const long int equilibrium_step = 10000;
+const long int equilibrium_step = 5000;
 const long int total_step = 5000;
 
 // Interactions
