@@ -16,6 +16,7 @@ public:
 	Real theta;
 	static Real noise_amplitude;
 	static Real rv; // Radius cut off for verlet list
+	static Real speed;
 	vector<int> neighbor_id; // id of neighboring particles
 
 	void Init();
@@ -77,7 +78,7 @@ public:
 		C2DVector old_v = v;
 		v.x = cos(theta);
 		v.y = sin(theta);
-		r += v*dt;
+		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			r.Periodic_Transform();
 		#endif
@@ -114,7 +115,7 @@ public:
 class ContinuousParticle: public BasicDynamicParticle {
 public:
 	Real torque;
-	static Real g;
+	static Real g, gw;
 	static Real alpha;
 
 	ContinuousParticle();
@@ -130,7 +131,7 @@ public:
 		v.x = cos(theta);
 		v.y = sin(theta);
 
-		r += v*dt;
+		r += v*(speed*dt);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			r.Periodic_Transform();
 		#endif
@@ -226,7 +227,7 @@ public:
 		v.x = cos(theta);
 		v.y = sin(theta);
 
-		r += v*dt;
+		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			r.Periodic_Transform();
 		#endif
@@ -343,6 +344,7 @@ public:
 			f.x = round(digits*f.x)/digits;
 			f.y = round(digits*f.y)/digits;
 		#endif
+		v *= speed;
 		v += f;
 		r += v*dt;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
@@ -426,8 +428,11 @@ void RepulsiveParticle::Reset()
 Real RepulsiveParticle::g = .5;
 Real RepulsiveParticle::kesi = .5;
 
+Real ContinuousParticle::gw = 20;
+
 Real BasicDynamicParticle::noise_amplitude = .1;
 Real BasicDynamicParticle::rv = 1 + (dt*21);
+Real BasicDynamicParticle::speed = 1;
 
 
 #endif

@@ -205,7 +205,7 @@ void Wall::Interact(ContinuousParticle* p)
 			d2 = dr.Square();
 			if (d2 < 1)
 			{
-				p->torque += (40.0/p->g)*((p->v.x*dr.y - p->v.y*dr.x)/(2*PI*(d2)));
+				p->torque += (p->gw)*((p->v.x*dr.y - p->v.y*dr.x)/(2*PI*(d2)));
 				#ifdef TRACK_PARTICLE
 					if (p == track_p)
 					{
