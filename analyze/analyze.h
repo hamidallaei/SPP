@@ -51,9 +51,9 @@ double Time_AutoCorrelationPoint(SceneSet* s, int tau)
 	return result;
 }
 
-void Time_AutoCorrelation(SceneSet* s)
+void Time_AutoCorrelation(SceneSet* s, int step)
 {
-	for (int i = 0; i < (s->scene.size() - 5); i+=20)
+	for (int i = 0; i < (s->scene.size() - 5); i+=step)
 		cout << i << "\t" << Time_AutoCorrelationPoint(s, i) << endl;
 }
 

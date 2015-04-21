@@ -153,39 +153,45 @@ int main(int argc, char** argv)
 		save = true;
 
 	sceneset = new SceneSet(argv[argc-1]);
-	sceneset->Read();
-	box_dim = sceneset->L;
+	bool read_state = sceneset->Read();
 
-	string name = argv[argc-1];
-	string::size_type position_of_txt = name.find("-r-v", 0);
-	name.erase(position_of_txt);
-
-	stringstream address("");
-	address << name << ".mpg";
-
-	if (save)
+	if (read_state)
 	{
-//		writer.open(address.str().c_str(), CV_FOURCC('F','L','V','1'), 20, cv::Size(window_width,window_height), true);
-		writer.open(address.str().c_str(), CV_FOURCC('P','I','M','1'), 20, cv::Size(window_width,window_height), true);
+		box_dim = sceneset->L;
+
+		string name = argv[argc-1];
+		string::size_type position_of_txt = name.find("-r-v", 0);
+		name.erase(position_of_txt);
+
+		stringstream address("");
+		address << name << ".mpg";
+
+		if (save)
+		{
+//			writer.open(address.str().c_str(), CV_FOURCC('F','L','V','1'), 20, cv::Size(window_width,window_height), true);
+			writer.open(address.str().c_str(), CV_FOURCC('P','I','M','1'), 20, cv::Size(window_width,window_height), true);
+		}
+		else
+			cv::VideoCapture cap(0);
+
+		address.str("");
+		address << "screen-shot-" << name << ".png";
+		global_address = address.str().c_str();
+
+		glutInit(&glargc, glargv);
+		glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+		glutInitWindowSize (window_width, window_height);
+		glutInitWindowPosition (100, 100);
+		glutCreateWindow ("Created By Hamid!");
+		Init ();
+		glutDisplayFunc(Display);
+		glutReshapeFunc(Reshape);
+		glutSpecialFunc(SpecialInput);
+		glutKeyboardFunc(KeyboardInput);
+		glutMainLoop();
 	}
 	else
-		cv::VideoCapture cap(0);
-
-	address.str("");
-	address << "screen-shot-" << name << ".png";
-	global_address = address.str().c_str();
-
-	glutInit(&glargc, glargv);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
-	glutInitWindowSize (window_width, window_height);
-	glutInitWindowPosition (100, 100);
-	glutCreateWindow ("Created By Hamid!");
-	Init ();
-	glutDisplayFunc(Display);
-	glutReshapeFunc(Reshape);
-	glutSpecialFunc(SpecialInput);
-	glutKeyboardFunc(KeyboardInput);
-	glutMainLoop();
+		cout << "Can not open the file" << endl;
 
 	return 0;
 }

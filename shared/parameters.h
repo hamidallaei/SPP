@@ -1,7 +1,8 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
-#define PERIODIC_BOUNDARY_CONDITION
+//#define PERIODIC_BOUNDARY_CONDITION
+#define CIRCULAR_BOX
 #define verlet_list
 // This is for checking particles outside of the box
 //#define DEBUG
@@ -28,8 +29,8 @@ class RepulsiveParticle;
 
 typedef double Real;
 //typedef VicsekParticle Particle;
-//typedef ContinuousParticle Particle;
-typedef MarkusParticle Particle;
+typedef ContinuousParticle Particle;
+//typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
 int seed = 1241;
@@ -40,8 +41,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 60;
-const int Ly_int = 60;
+const int Lx_int = 20;
+const int Ly_int = 20;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -69,9 +70,9 @@ const int tag_max = 32767; // For parallel use only
 const Real dt = 0.005;
 const Real half_dt = dt/2;
 const int cell_update_period = 20;
-const int saving_period = 1;
-const long int equilibrium_step = 5000;
-const long int total_step = 5000;
+const int saving_period = 20;
+const long int equilibrium_step = 0;
+const long int total_step = 100000;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength

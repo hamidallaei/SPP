@@ -109,7 +109,7 @@ public:
 
 	SceneSet(string input_address);
 	~SceneSet();
-	void Read(int skip = 0);
+	bool Read(int skip = 0);
 	void Write(int, int); // write from a time to the end
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
@@ -142,46 +142,44 @@ SceneSet::~SceneSet()
 	scene.clear();
 }
 
-void SceneSet::Read(int skip)
+bool SceneSet::Read(int skip)
 {
 	int counter = 0;
 	static Scene temp_scene;
 	L = 0;
 
 	input_file.open(address.str().c_str());
-	if (skip > 0)
-		temp_scene.Skip_File(input_file, skip);
-
-	while (!input_file.eof())
+	if (input_file.is_open())
 	{
-		counter++;
-		input_file >> temp_scene;
-		scene.push_back(temp_scene);
-		for (int i = 0; i < Scene::number_of_particles; i++)
+		if (skip > 0)
+			temp_scene.Skip_File(input_file, skip);
+
+		while (!input_file.eof())
 		{
-			if (abs(temp_scene.particle[i].r.x) > L)
-				L = abs(temp_scene.particle[i].r.x);
-			if (abs(temp_scene.particle[i].r.y) > L)
-				L = abs(temp_scene.particle[i].r.y);
+			counter++;
+			input_file >> temp_scene;
+			scene.push_back(temp_scene);
+			for (int i = 0; i < Scene::number_of_particles; i++)
+			{
+				if (abs(temp_scene.particle[i].r.x) > L)
+					L = abs(temp_scene.particle[i].r.x);
+				if (abs(temp_scene.particle[i].r.y) > L)
+					L = abs(temp_scene.particle[i].r.y);
+			}
+			if (counter*sizeof(temp_scene) > (3000000000))
+				return(false);
 		}
 	}
+	else
+		return (false);
 	input_file.close();
 
 	scene.pop_back();
 
-//	for (int i = 0; i < (counter-1); i++)
-//	{
-//		for (int j = 0; j < scene[i].number_of_particles; j++)
-//		{
-//			scene[i].particle[j].v = (scene[i+1].particle[j].r - scene[i].particle[j].r);
-//			scene[i].particle[j].v.Periodic_Transform();
-//		}
-//	}
-
-
-
 	L = round(L+0.1);
 	L += 0.5;
+
+	return (true);
 }
 
 void SceneSet::Write(int start, int limit)

@@ -73,7 +73,8 @@ void Box::Init(Node* input_node, Real input_density)
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
 //		Triangle_Lattice_Formation(particle, N, 1);
-		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls
+//		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls
+		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);
 	}
@@ -109,12 +110,25 @@ void Box::Interact()
 	#endif
 
 	#ifndef PERIODIC_BOUNDARY_CONDITION
+		#ifdef CIRCULAR_BOX
+// Sum up interaction of the circualr boundary with the particles of thisnode (in the absence of periodic boundary condition)
+		for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
+			for (int y = thisnode->head_cell_idy; y < thisnode->tail_cell_idy; y++)
+				for (int j = 0; j < thisnode->cell[x][y].pid.size(); j++)
+				{
+					int i = thisnode->cell[x][y].pid[j];
+					Real r = sqrt(particle[i].r.Square());
+					if (r > (Lx-1))
+						particle[i].torque += 40*Particle::g*(particle[i].v.y*particle[i].r.x - particle[i].v.x*particle[i].r.y) / (2*M_PI*r*(Lx-r));
+				}
+		#else
 // Sum up interaction of the walls with the particles of thisnode (in the absence of periodic boundary condition)
 		for (int i = 0; i < wall_num; i++)
 			for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
 				for (int y = thisnode->head_cell_idy; y < thisnode->tail_cell_idy; y++)
 					for (int j = 0; j < thisnode->cell[x][y].pid.size(); j++)
 						wall[i].Interact(&particle[thisnode->cell[x][y].pid[j]]);
+		#endif
 	#endif
 }
 

@@ -13,6 +13,7 @@ void Square_Lattice_Formation(Particle* particle, int N); // Positioning partilc
 void Triangle_Lattice_Formation(Particle* particle, int N, double sigma); // Positioning partilces in a triangular lattice. This is denser.
 void Random_Formation(Particle* particle, int N); // Positioning partilces Randomly
 void Random_Formation(Particle* particle, int N, double sigma); // Positioning partilces Randomly, but distant from walls
+void Random_Formation_Circle(Particle* particle, int N, double r); // Positioning partilces Randomly in a circle with radius r
 void Single_Vortex_Formation(Particle* particle, int N); // Vortex initial condition.
 void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the box. left top, left bot, right top and right bot.
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
@@ -146,6 +147,21 @@ void Random_Formation(Particle* particle, int N, double sigma)
 		r.Rand(Lx-sigma, Ly-sigma);
 		if ((r.y > Ly) || (r.y < -Ly) || (r.x > Lx) || (r.x < -Lx))
 			cout << r.x/Lx << "\t" << r.y/Ly << endl;
+		r.Periodic_Transform();
+		particle[i].Init(r);
+	}
+}
+
+void Random_Formation_Circle(Particle* particle, int N, double radius)
+{
+	C2DVector r;
+	for (int i = 0; i < N; i++)
+	{
+		Real a = gsl_ran_flat(r.gsl_r, 0, (radius*radius)/2);
+		a = sqrt(2*a);
+		Real b = gsl_ran_flat(r.gsl_r, -M_PI, M_PI);
+		r.x = a*cos(b);
+		r.y = a*sin(b);
 		r.Periodic_Transform();
 		particle[i].Init(r);
 	}
