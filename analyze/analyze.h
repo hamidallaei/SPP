@@ -184,4 +184,27 @@ double Compute_Fluctuation(SceneSet* s)
 	}
 }
 
+// Find radial density.
+void Radial_Density(SceneSet* s, int number_of_points)
+{
+	Real rho[number_of_points];
+	int counter = 0;
+	for (int i = 0; i < s->scene.size(); i++)
+	{
+		counter++;
+		for (int j = 0; j < Scene::number_of_particles; j++)
+		{
+			Real r = sqrt(s->scene[i].particle[j].r.Square());
+			int index = (int) (number_of_points*r/s->L);
+			rho[index]++;
+		}
+	}
+	for (int i = 1; i < number_of_points; i++)
+	{
+		Real r = s->L*i/number_of_points;
+		rho[i] /= (s->L*counter/number_of_points);
+		rho[i] /= 2*M_PI*r;
+		cout << r << "\t" << rho[i] << endl;
+	}
+}
 

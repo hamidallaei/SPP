@@ -48,8 +48,8 @@ int main(int argc, char** argv)
 //			cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
 //			angular_momentum_data.Reset();
 
-			cout << name << endl;
-			Time_AutoCorrelation(sceneset, 10);
+			cout << "# " << name << endl;
+//			Time_AutoCorrelation(sceneset, 10);
 //			Spatial_AutoCorrelation(sceneset, 50, 5);
 
 //			int r = rand() % Scene::number_of_particles;
@@ -59,6 +59,8 @@ int main(int argc, char** argv)
 //			Angular_Velocity_Time(sceneset, j);
 
 //			Compute_Fluctuation(sceneset);
+
+			Radial_Density(sceneset, 50);
 
 			delete sceneset;
 		}
