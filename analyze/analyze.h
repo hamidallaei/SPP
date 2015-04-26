@@ -10,6 +10,7 @@
 #include"read.h"
 #include"statistics.h"
 #include"field.h"
+#include"pair-set.h"
 
 using namespace std;
 
@@ -151,8 +152,8 @@ void Window_Fluctuation(SceneSet* s, int number_of_windows, double& mean, double
 				Np[x][y] = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)
 		{
-			int x = (int) floor(number_of_windows*(s->scene[i].particle[j].r.x / s->scene[i].L + 1)/2);
-			int y = (int) floor(number_of_windows*(s->scene[i].particle[j].r.y / s->scene[i].L + 1)/2);
+			int x = (int) floor(number_of_windows*(s->scene[i].particle[j].r.x / s->L + 1)/2);
+			int y = (int) floor(number_of_windows*(s->scene[i].particle[j].r.y / s->L + 1)/2);
 			Np[x][y]++;
 		}
 		for (int x = 0; x < number_of_windows; x++)
@@ -206,5 +207,27 @@ void Radial_Density(SceneSet* s, int number_of_points)
 		rho[i] /= 2*M_PI*r;
 		cout << r << "\t" << rho[i] << endl;
 	}
+}
+
+// Liapanove Exponent: Find distance growth in time
+void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
+{
+	int interval = (s->scene.size() - frames) / number_of_pair_sets;
+	Pair_Set ps[number_of_pair_sets];
+	Pair_Set::sceneset = s;
+	for (int i = 0; i < number_of_pair_sets; i++)
+		ps[i].Find_Close_Particle(r_cut, i*interval);
+
+	Real md2[number_of_points] = {0};
+	int tau[number_of_points];
+	for (int i = 0; i < number_of_points; i++)
+	{
+		tau[i] = i*frames / (number_of_points);
+		for (int j = 0; j < number_of_pair_sets; j++)
+			md2[i] += ps[j].Find_Mean_Square_Distance(tau[i]);
+		md2[i] / number_of_pair_sets;
+	}
+	for (int i = 1; i < number_of_points; i++)
+		cout << tau[i] << "\t" << md2[i] - md2[0] << endl;
 }
 

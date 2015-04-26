@@ -9,7 +9,6 @@
 class Scene{
 public:
 	VisualParticle* particle;
-	static float L;
 	static float density;
 	static float noise;
 	static int number_of_particles;
@@ -25,7 +24,6 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, Scene& scene);
 };
 
-float Scene::L;
 float Scene::density;
 float Scene::noise;
 int Scene::number_of_particles;
@@ -101,6 +99,7 @@ class SceneSet{
 public:
 	vector<Scene> scene;
 	Real L;
+	Real L_min;
 	stringstream address;
 	string info;
 	ifstream input_file;
@@ -177,6 +176,7 @@ bool SceneSet::Read(int skip)
 	scene.pop_back();
 
 	L = round(L+0.1);
+	L_min = L;
 	L += 0.5;
 
 	return (true);
