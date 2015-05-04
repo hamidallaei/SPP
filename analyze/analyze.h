@@ -190,26 +190,76 @@ void Radial_Density(SceneSet* s, int number_of_points)
 {
 	Real rho[number_of_points];
 	int counter = 0;
+	double radius[number_of_points];
+	radius[0] = 1;
+	double factor = pow((s->L/radius[0]-0),1.0/number_of_points);
+	for (int i = 1; i < number_of_points; i++)
+		radius[i] = factor*radius[i-1];
 	for (int i = 0; i < s->scene.size(); i++)
 	{
 		counter++;
 		for (int j = 0; j < Scene::number_of_particles; j++)
 		{
 			Real r = sqrt(s->scene[i].particle[j].r.Square());
-			int index = (int) (number_of_points*r/s->L);
+			int index = (int) (log(r/radius[0]) / log(factor));
 			rho[index]++;
 		}
 	}
 	for (int i = 1; i < number_of_points; i++)
 	{
-		Real r = s->L*i/number_of_points;
-		rho[i] /= (s->L*counter/number_of_points);
-		rho[i] /= 2*M_PI*r;
-		cout << r << "\t" << rho[i] << endl;
+		rho[i] /= 2*M_PI*(radius[i]*radius[i] - radius[i-1]*radius[i-1]);
+		rho[i] /= s->scene.size();
+		cout << sqrt(radius[i-1]*radius[i]) << "\t" << rho[i] << endl;
 	}
 }
 
-// Liapanove Exponent: Find distance growth in time
+// Find radial density.
+void Pair_Distribution(SceneSet* s, Real lx,int grid_size)
+{
+	double bin[grid_size][grid_size];
+	int counter = 0;
+
+	for (int x = 0; x < grid_size; x++)
+		for (int y = 0; y < grid_size; y++)
+		{
+			bin[x][y] = 0;
+		}
+
+	for (int i = s->scene.size()/2; i < s->scene.size(); i+=100)
+	{
+		for (int j = 0; j < Scene::number_of_particles; j++)
+			for (int k = 0; k < Scene::number_of_particles; k++)
+			{
+				if (j != k)
+				{
+					C2DVector dr = s->scene[i].particle[k].r - s->scene[i].particle[j].r;
+					C2DVector tdr = dr;
+					tdr.y = s->scene[i].particle[j].v * dr;
+					tdr.x = (s->scene[i].particle[j].v.y * dr.x) - (s->scene[i].particle[j].v.x * dr.y);
+					if (fabs(tdr.x) < lx && fabs(tdr.y) < lx)
+					{
+						int x = (int) (grid_size*((tdr.x / lx) + 1)/2);
+						int y = (int) (grid_size*((tdr.y / lx) + 1)/2);
+						bin[x][y]++;
+					}
+				}
+			}
+		counter++;
+	}
+
+	for (int x = 0; x < grid_size; x++)
+	{
+		for (int y = 0; y < grid_size; y++)
+		{
+			bin[x][y] /= (Scene::number_of_particles*(4*lx*lx/grid_size/grid_size));
+			bin[x][y] /= counter;
+			cout << ((2.0*x)/grid_size-1)*lx << "\t" << ((2.0*y)/grid_size-1)*lx << "\t" << bin[x][y] << endl;
+		}
+		cout << endl;
+	}
+}
+
+// Find distance growth in time (Diffusion)
 void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 {
 	int interval = (s->scene.size() - frames) / number_of_pair_sets;

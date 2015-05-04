@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 //			cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
 //			angular_momentum_data.Reset();
 
-			cout << "# " << name << endl;
+//			cout << "# " << name << endl;
 //			Time_AutoCorrelation(sceneset, 10);
 //			Spatial_AutoCorrelation(sceneset, 50, 5);
 
@@ -60,10 +60,12 @@ int main(int argc, char** argv)
 
 //			Compute_Fluctuation(sceneset);
 
-//			Radial_Density(sceneset, 50);
+			Radial_Density(sceneset, 50);
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
-			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01);
+//			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01);
+
+//			Pair_Distribution(sceneset, 6,400);
 
 			delete sceneset;
 		}
