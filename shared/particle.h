@@ -5,6 +5,12 @@
 #include "parameters.h"
 #include <vector>
 
+class BasicParticle0{
+public:
+	C2DVector r;
+	Real theta;
+};
+
 class BasicParticle{
 public:
 	C2DVector r,v;
