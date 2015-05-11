@@ -207,7 +207,7 @@ void Radial_Density(SceneSet* s, int number_of_points)
 	}
 	for (int i = 1; i < number_of_points; i++)
 	{
-		rho[i] /= 2*M_PI*(radius[i]*radius[i] - radius[i-1]*radius[i-1]);
+		rho[i] /= M_PI*(radius[i]*radius[i] - radius[i-1]*radius[i-1]);
 		rho[i] /= s->scene.size();
 		cout << sqrt(radius[i-1]*radius[i]) << "\t" << rho[i] << endl;
 	}
@@ -279,5 +279,32 @@ void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points,
 	}
 	for (int i = 1; i < number_of_points; i++)
 		cout << tau[i] << "\t" << md2[i] - md2[0] << endl;
+}
+
+// Find distance growth in time (Lyapanov)
+bool Lyapunov_Exponent(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_min, Real r_max)
+{
+	int total_frame = s->scene.size();
+	int interval = (total_frame - frames) / number_of_pair_sets;
+	Pair_Set ps[number_of_pair_sets];
+	Pair_Set::sceneset = s;
+	if (interval < 0)
+		return(false);
+	for (int i = 0; i < number_of_pair_sets; i++)
+		ps[i].Find_Particle(r_min, r_max, i*interval);
+
+	Real lambda[number_of_points] = {0};
+	int tau[number_of_points];
+
+	for (int i = 0; i < number_of_points; i++)
+	{
+		tau[i] = i*frames / (number_of_points);
+		for (int j = 0; j < number_of_pair_sets; j++)
+			lambda[i] += ps[j].Find_Short_Lyapunov_Exponent(tau[i]);
+		lambda[i] / number_of_pair_sets;
+	}
+	for (int i = 1; i < number_of_points; i++)
+		cout << tau[i] << "\t" << lambda[i] << endl;
+	return(true);
 }
 

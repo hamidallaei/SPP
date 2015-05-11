@@ -60,10 +60,11 @@ int main(int argc, char** argv)
 
 //			Compute_Fluctuation(sceneset);
 
-			Radial_Density(sceneset, 50);
+//			Radial_Density(sceneset, 250);
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 //			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01);
+			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);
 
