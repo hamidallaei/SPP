@@ -10,7 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <cmath>
-#include "read.h"
+#include "read-visual.h"
 #include "../shared/c2dvector.h"
 
 unsigned int window_width = 650;

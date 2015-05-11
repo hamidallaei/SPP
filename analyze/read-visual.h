@@ -2,12 +2,13 @@
 #define _READ_
 
 #include "../shared/c2dvector.h"
+#include "visualparticle.h"
 #include "field.h"
 #include <boost/algorithm/string.hpp>
 
 class Scene{
 public:
-	BasicParticle* particle;
+	VisualParticle* particle;
 	static float density;
 	static float noise;
 	static int number_of_particles;
@@ -16,6 +17,7 @@ public:
 	~Scene();
 	void Init(int);
 	void Reset();
+	void Draw();
 	void Auto_Correlation();
 	void Skip_File(std::istream& is, int n);
 	friend std::istream& operator>>(std::istream& is, Scene& scene);
@@ -43,12 +45,19 @@ Scene::~Scene()
 void Scene::Init(int num)
 {
 	number_of_particles = num;
-	particle = new BasicParticle[number_of_particles];
+	particle = new VisualParticle[number_of_particles];
 }
 
 void Scene::Reset()
 {
 	delete [] particle;
+}
+
+void Scene::Draw()
+{
+	glColor3f(VisualParticle::color.red, VisualParticle::color.green, VisualParticle::color.blue);
+	for (int i = 0; i < number_of_particles; i++)
+		particle[i].Draw();
 }
 
 void Scene::Skip_File(std::istream& in, int n)
@@ -68,7 +77,7 @@ void Scene::Skip_File(std::istream& in, int n)
 std::istream& operator>>(std::istream& is, Scene& scene)
 {
 	is.read((char*) &(scene.number_of_particles), sizeof(int) / sizeof(char));
-	scene.particle = new BasicParticle[scene.number_of_particles];
+	scene.particle = new VisualParticle[scene.number_of_particles];
 	for (int i = 0; i < scene.number_of_particles; i++)
 	{
 		is >> scene.particle[i].r;

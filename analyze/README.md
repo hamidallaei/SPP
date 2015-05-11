@@ -10,4 +10,4 @@ g++ -O3 -lboost_system -lboost_iostreams -lGL -lGLU -lglut -lgsl -lcblas -lopenc
 then copy "show" to serial folder 
 
 To compile the analyzer:
-g++ -O3 analyze.cpp -lboost_system -lboost_iostreams -lGL -lGLU -lglut -lgsl -lcblas -o analyze.out
+g++ -O3 analyze.cpp -lboost_system -lboost_iostreams -lgsl -lcblas -o analyze.out

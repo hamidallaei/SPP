@@ -1,6 +1,3 @@
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
 #include <boost/algorithm/string.hpp>
 
 #include<iostream>
@@ -268,10 +265,11 @@ void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points,
 	for (int i = 0; i < number_of_pair_sets; i++)
 		ps[i].Find_Close_Particle(r_cut, i*interval);
 
-	Real md2[number_of_points] = {0};
+	Real* md2 = new Real[number_of_points];
 	int tau[number_of_points];
 	for (int i = 0; i < number_of_points; i++)
 	{
+		md2[i] = 0;
 		tau[i] = i*frames / (number_of_points);
 		for (int j = 0; j < number_of_pair_sets; j++)
 			md2[i] += ps[j].Find_Mean_Square_Distance(tau[i]);
@@ -293,11 +291,12 @@ bool Lyapunov_Exponent(SceneSet* s, int frames, int number_of_points, int number
 	for (int i = 0; i < number_of_pair_sets; i++)
 		ps[i].Find_Particle(r_min, r_max, i*interval);
 
-	Real lambda[number_of_points] = {0};
+	Real* lambda = new Real[number_of_points];
 	int tau[number_of_points];
 
 	for (int i = 0; i < number_of_points; i++)
 	{
+		lambda[i] = 0;
 		tau[i] = i*frames / (number_of_points);
 		for (int j = 0; j < number_of_pair_sets; j++)
 			lambda[i] += ps[j].Find_Short_Lyapunov_Exponent(tau[i]);

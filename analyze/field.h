@@ -2,6 +2,7 @@
 #define _FIELD_
 
 #include "../shared/c2dvector.h"
+#include "../shared/particle.h"
 #include <boost/tuple/tuple.hpp>
 #include "gnuplot-iostream.h"
 #include <vector>
