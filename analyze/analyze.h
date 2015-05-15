@@ -185,11 +185,13 @@ double Compute_Fluctuation(SceneSet* s)
 // Find radial density.
 void Radial_Density(SceneSet* s, int number_of_points)
 {
-	Real rho[number_of_points];
+	double* rho = new double[number_of_points];
+	for (int i = 0; i < number_of_points; i++)
+		rho[i] = 0;
 	int counter = 0;
 	double radius[number_of_points];
 	radius[0] = 1;
-	double factor = pow((s->L/radius[0]-0),1.0/number_of_points);
+	double factor = pow(((s->L+1)/radius[0]-0),1.0/number_of_points);
 	for (int i = 1; i < number_of_points; i++)
 		radius[i] = factor*radius[i-1];
 	for (int i = 0; i < s->scene.size(); i++)
@@ -199,7 +201,8 @@ void Radial_Density(SceneSet* s, int number_of_points)
 		{
 			Real r = sqrt(s->scene[i].particle[j].r.Square());
 			int index = (int) (log(r/radius[0]) / log(factor));
-			rho[index]++;
+			if (index >= 0)
+				rho[index]++;
 		}
 	}
 	for (int i = 1; i < number_of_points; i++)
@@ -208,6 +211,8 @@ void Radial_Density(SceneSet* s, int number_of_points)
 		rho[i] /= s->scene.size();
 		cout << sqrt(radius[i-1]*radius[i]) << "\t" << rho[i] << endl;
 	}
+
+	delete [] rho;
 }
 
 // Find radial density.
@@ -277,6 +282,8 @@ void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points,
 	}
 	for (int i = 1; i < number_of_points; i++)
 		cout << tau[i] << "\t" << md2[i] - md2[0] << endl;
+
+	delete [] md2;
 }
 
 // Find distance growth in time (Lyapanov)
@@ -304,6 +311,8 @@ bool Lyapunov_Exponent(SceneSet* s, int frames, int number_of_points, int number
 	}
 	for (int i = 1; i < number_of_points; i++)
 		cout << tau[i] << "\t" << lambda[i] << endl;
+
+	delete [] lambda;
 	return(true);
 }
 
