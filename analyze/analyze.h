@@ -11,9 +11,26 @@
 
 using namespace std;
 
+double Local_Cohesion(SceneSet* s, double rc)
+{
+	long double phi = 0;
+	long int counter = 0;
+	for (int i = 0; i < s->scene.size(); i++)
+	{
+		for (int j = 0; j < Scene::number_of_particles; j++)
+			for (int k = j+1; k < Scene::number_of_particles; k++)
+				if ((s->scene[i].particle[j].r - s->scene[i].particle[k].r).Square() < (rc*rc))
+				{
+					phi += s->scene[i].particle[j].v*s->scene[i].particle[k].v;
+					counter++;
+				}
+	}
+	phi /= counter;
+	return(phi);
+}
+
 void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 {
-	double L = 0;
 	for (int i = 0; i < s->scene.size(); i++)
 	{
 		C2DVector p;
@@ -58,10 +75,12 @@ void Time_AutoCorrelation(SceneSet* s, int step)
 void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 {
 	double bin[size];
+	int num[size];
 
 	for (int x = 0; x < size; x++)
 	{
 		bin[x] = 0;
+		num[x] = 0;
 	}
 
 	for (int i = s->scene.size()/2; i < s->scene.size(); i+=100)
@@ -74,7 +93,8 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 				if (r < rc)
 				{
 					int x = (int) round(size*(r / rc));
-						bin[x]++;
+					num[x]++;
+					bin[x] += s->scene[i].particle[j].v * s->scene[i].particle[k].v;
 				}
 			}
 	}
@@ -82,9 +102,13 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 	for (int x = 1; x < size; x++)
 	{
 		double r = (x*rc)/size;
-		bin[x] /= Scene::number_of_particles*((s->scene.size() - s->scene.size()/2)/100);
-		bin[x] /= 3.1415*((r+rc/ size)*(r+rc/ size) - r*r)/2;
-		bin[x] -= Scene::number_of_particles / (4*s->L*s->L);
+//		bin[x] /= Scene::number_of_particles*((s->scene.size() - s->scene.size()/2)/100);
+//		bin[x] /= 3.1415*((r+rc/ size)*(r+rc/ size) - r*r)/2;
+//		bin[x] -= Scene::number_of_particles / (4*s->L*s->L);
+		if (num[x] != 0)
+		  bin[x] /= num[x];
+		else
+		  bin[x] = 0;
 		cout << r << "\t" << bin[x] << endl;
 	}
 }

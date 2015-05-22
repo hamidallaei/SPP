@@ -363,46 +363,23 @@ void Field::Draw_Section(string info, int y)
 
 void Field::Draw_Density_Contour(string info, Real rho)
 {
-	Gnuplot gp;
-
-	ofstream temp_file("data.dat");
 
 	C2DVector r[grid_dim_x];
-
 	for (int x = 0; x < grid_dim_x; x++)
 		for (int y = (grid_dim_x-3); y > 1; y--)
 		{
-			if ((1 - cell[x][y-1].density / cell[x][y].density) > rho)
+			if (fabs(log(cell[x][y-1].density / cell[x][y].density)/(L/grid_dim_x)) > rho)
 			{
-//				r[x] = cell[x][y].r + (cell[x][y+1].r - cell[x][y].r)*((rho - cell[x][y].density) / (cell[x][y+1].density - cell[x][y].density));
-				r[x] = cell[x][y].r;
-				r[x].y = (L - r[x].y);
+				r[x] = cell[x][y].r / (2*L);
+				r[x].y = (0.5 - r[x].y);
+				r[x].x += 0.5;
 				y = 0;
 			}
 		}
-					
 
 	for (int x = 0; x < grid_dim_x; x++)
 		if (fabs(r[x].y) > 0.001)
-			temp_file << std::fixed << std::setprecision(8) << r[x] << endl;
-
-	gp << "L=" << L << "\n";
-
-	gp << "set term postscript eps enhanced color size 800,800 \n";
-	gp << "reset\n";
-
-	gp << "set term postscript eps enhanced color font \"Times-Roman,25\"\n";
-
-	gp << "set style line 1 lc rgb '#FF8000' lt 1 lw 2 pt 7 pi 0 ps 1.5\n";
-	gp << "set style line 2 lc rgb '#008000' lt 1 lw 2 pt 4 pi 0 ps 1.5\n";
-	gp << "set pointintervalbox 3\n";
-
-	gp << "set log y\n";
-	gp << "set xlabel \"x\"\n";
-	gp << "set ylabel \"y\"\n";
-	gp << "set output \"figures/" << info << "-contour-rho=" << std::fixed << std::setprecision(1) << rho  << ".eps\"\n";
-	gp << "set xrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2 ls 1\n";// ti \"{/Symbol r}\"\n";
+			cout << std::fixed << std::setprecision(8) << r[x] << endl;
 }
 
 void Field::Reset()

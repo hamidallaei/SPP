@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 		bool read_state = sceneset->Read();
 		if (read_state)
 		{
-			sceneset->L -= 0.5;
+			sceneset->L -= 0.5-0.1;
 			Real box_dim = sceneset->L;
 
 			boost::replace_all(name, "-r-v.bin", "");
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 40, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
-//			sceneset->Plot_Density_Contour(101, 0.2, name);
+//			sceneset->Plot_Density_Contour(61, 0.1, name);
 
 
 			boost::replace_all(name, "rho=", "");
@@ -42,6 +42,7 @@ int main(int argc, char** argv)
 //			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
 //			cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
 //			angular_momentum_data.Reset();
+			cout << name << "\t" << Local_Cohesion(sceneset, 10) << endl;
 
 //			cout << "# " << name << endl;
 //			Time_AutoCorrelation(sceneset, 10);
@@ -55,11 +56,11 @@ int main(int argc, char** argv)
 
 //			Compute_Fluctuation(sceneset);
 
-//			Radial_Density(sceneset, 250);
+//			Radial_Density(sceneset, 200);
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 //			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01);
-			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
+//			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);
 
