@@ -33,7 +33,7 @@ typedef double Real;
 typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
-int seed = 1241;
+long int seed = 9348;
 
 const Real PI = M_PI;
 
@@ -41,8 +41,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 20;
-const int Ly_int = 20;
+const int Lx_int = 5;
+const int Ly_int = 5;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;

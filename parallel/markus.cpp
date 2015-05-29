@@ -138,8 +138,9 @@ void Init_Nodes(Node& thisnode)
 			thisnode.seed = time(NULL) + thisnode.node_id*112488;
 			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		C2DVector::Init_Rand(thisnode.seed);
 	#endif
+	C2DVector::Init_Rand(thisnode.seed);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int main(int argc, char *argv[])

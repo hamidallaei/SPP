@@ -164,6 +164,7 @@ void Box::Add_Deviation(const State_Hyper_Vector& dsv)
 	for (int i = 0; i < N; i++)
 	{
 		particle[i].r += dsv.particle[i].r;
+		particle[i].r.Periodic_Transform();
 		particle[i].theta += dsv.particle[i].theta;
 		particle[i].v.x = cos(particle[i].theta);
 		particle[i].v.y = sin(particle[i].theta);
@@ -275,7 +276,7 @@ Real Box::Rlative_Change(int tau)
 	
 	Save(gamma);
 	Load(gamma_0);
-	dgamma.Rand(0.0001,0.0001);
+	dgamma.Rand(0.0000001,0.000001);
 	MPI_Barrier(MPI_COMM_WORLD);
 	Add_Deviation(dgamma);
 
@@ -297,7 +298,10 @@ Real Box::Mean_Rlative_Change(int tau, int number_of_tries)
 {
 	Real result = 0;
 	for (int i = 0; i < number_of_tries; i++)
-		result += Rlative_Change(tau);
+	{
+		Real rc = Rlative_Change(tau);
+		result += rc;
+	}
 	result /= number_of_tries;
 	return (result);
 }
@@ -305,7 +309,7 @@ Real Box::Mean_Rlative_Change(int tau, int number_of_tries)
 // Finding the largest lyapunov exponent
 void Box::Lyapunov_Exponent()
 {
-	for (int i = 5; i < 1000; i+=50)
+	for (int i = 10; i < 1000; i+=10)
 	{
 		Real mrc = Mean_Rlative_Change(i, 1000);
 		if (thisnode->node_id == 0)
