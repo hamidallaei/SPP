@@ -12,13 +12,16 @@ public:
 	BasicParticle0* particle;
 	
 	State_Hyper_Vector(int, int);
-	
-	State_Hyper_Vector& operator= ( const State_Hyper_Vector& sv);
-	State_Hyper_Vector& operator+ (const State_Hyper_Vector& s1) const;
-	State_Hyper_Vector& operator- (const State_Hyper_Vector& s1) const;
-	Real operator* (const State_Hyper_Vector& s1) const;
+	State_Hyper_Vector(const State_Hyper_Vector&);
 
-	void Set_C2DVector_Rand_Generator();
+	State_Hyper_Vector& operator= ( const State_Hyper_Vector& sv);
+	const State_Hyper_Vector operator+ (const State_Hyper_Vector& s1);
+	const State_Hyper_Vector operator- (const State_Hyper_Vector& s1);
+	State_Hyper_Vector& operator+= (const State_Hyper_Vector& s1);
+	State_Hyper_Vector& operator-= (const State_Hyper_Vector& s1);
+	const Real operator* (const State_Hyper_Vector& s1) const;
+
+	void Set_C2DVector_Rand_Generator() const;
 	void Get_C2DVector_Rand_Generator();
 
 	void Rand(const Real position_amplitude, const Real angle_amplitude);
@@ -44,7 +47,7 @@ State_Hyper_Vector::State_Hyper_Vector(int particle_number, int seed = 0) : N(pa
 
 State_Hyper_Vector::State_Hyper_Vector(const State_Hyper_Vector& sv) : N(sv.N)
 {
-	Init_Random_Generator();
+	Init_Random_Generator(0);
 	gsl_rng_memcpy (gsl_r, sv.gsl_r);
 	particle = new BasicParticle0[N];
 	for (int i = 0; i < N; i++)
@@ -65,32 +68,61 @@ State_Hyper_Vector& State_Hyper_Vector::operator= ( const State_Hyper_Vector& sv
 	return *this;
 }
 
-State_Hyper_Vector& State_Hyper_Vector::operator+ (const State_Hyper_Vector& s1) const
+// Alwayse retun random generator of the lhs
+const State_Hyper_Vector State_Hyper_Vector::operator+ (const State_Hyper_Vector& s1)
+{
+	State_Hyper_Vector result(*this);
+	for (int i = 0; i < N; i++)
+	{
+		result.particle[i].r = (particle[i].r + s1.particle[i].r);
+		result.particle[i].r.Periodic_Transform();
+		result.particle[i].theta = particle[i].theta + s1.particle[i].theta;
+		result.particle[i].theta -= 2*M_PI*floor(result.particle[i].theta / (2*M_PI));
+	}
+	return result;
+}
+
+// Alwayse retun random generator of the lhs
+const State_Hyper_Vector State_Hyper_Vector::operator- (const State_Hyper_Vector& s1)
+{
+	State_Hyper_Vector result(*this);
+	for (int i = 0; i < N; i++)
+	{
+		result.particle[i].r = (particle[i].r - s1.particle[i].r);
+		result.particle[i].r.Periodic_Transform();
+		result.particle[i].theta = particle[i].theta - s1.particle[i].theta;
+		result.particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
+	}
+	return result;
+}
+
+// Alwayse retun random generator of the lhs
+State_Hyper_Vector& State_Hyper_Vector::operator+= (const State_Hyper_Vector& s1)
 {
 	for (int i = 0; i < N; i++)
 	{
 		particle[i].r = (particle[i].r + s1.particle[i].r);
 		particle[i].r.Periodic_Transform();
 		particle[i].theta = particle[i].theta + s1.particle[i].theta;
-		particle[i].theta -= (int) (result.particle[i].theta / (2*M_PI));
+		particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
 	}
 	return *this;
 }
 
-
-State_Hyper_Vector State_Hyper_Vector::operator- (const State_Hyper_Vector& s1) const
+// Alwayse retun random generator of the lhs
+State_Hyper_Vector& State_Hyper_Vector::operator-= (const State_Hyper_Vector& s1)
 {
 	for (int i = 0; i < N; i++)
 	{
 		particle[i].r = (particle[i].r - s1.particle[i].r);
 		particle[i].r.Periodic_Transform();
 		particle[i].theta = particle[i].theta - s1.particle[i].theta;
-		particle[i].theta -= (int) (result.particle[i].theta / (2*M_PI));
+		particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
 	}
 	return *this;
 }
 
-Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
+const Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
 {
 	Real result = 0;
 
@@ -102,7 +134,7 @@ Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
 	return result;
 }
 
-void State_Hyper_Vector::Set_C2DVector_Rand_Generator()
+void State_Hyper_Vector::Set_C2DVector_Rand_Generator() const
 {
 	gsl_rng_memcpy (C2DVector::gsl_r, gsl_r);
 }

@@ -2,7 +2,7 @@
 #define _PARAMETERS_
 
 //#define PERIODIC_BOUNDARY_CONDITION
-#define CIRCULAR_BOX
+//#define CIRCULAR_BOX
 #define verlet_list
 // This is for checking particles outside of the box
 //#define DEBUG
@@ -29,8 +29,8 @@ class RepulsiveParticle;
 
 typedef double Real;
 //typedef VicsekParticle Particle;
-typedef ContinuousParticle Particle;
-//typedef MarkusParticle Particle;
+//typedef ContinuousParticle Particle;
+typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
 int seed = 1241;

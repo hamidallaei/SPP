@@ -7,6 +7,7 @@
 #include "../shared/cell.h"
 #include "../shared/wall.h"
 #include "../shared/set-up.h"
+#include "../shared/state-hyper-vector.h"
 #include "node.h"
 
 
@@ -25,14 +26,16 @@ public:
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
 
-	void Load(const State_Hyper_Vector&);
-	void Save(State_Hyper_Vector&);
+	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
+	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
 	
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
+
+	void Lyapunov_Exponent(); // Finding the largest lyapunov exponent
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
 	friend std::istream& operator>>(std::istream& is, Box* box); // Input
@@ -104,7 +107,7 @@ void Box::Load(const State_Hyper_Vector& sv)
 	if (N != sv.N)
 	{
 		cout << "Error: Number of particles in state vectors differ from box" << endl;
-		exit();
+		exit(0);
 	}
 	for (int i = 0; i < N; i++)
 	{
@@ -117,12 +120,12 @@ void Box::Load(const State_Hyper_Vector& sv)
 }
 
 // Saving state of the box.
-void Box::Save(State_Hyper_Vector& sv)
+void Box::Save(State_Hyper_Vector& sv) const
 {
 	if (N != sv.N)
 	{
 		cout << "Error: Number of particles in state vectors differ from box" << endl;
-		exit();
+		exit(0);
 	}
 	for (int i = 0; i < N; i++)
 	{
@@ -214,6 +217,12 @@ void Box::Translate(C2DVector d)
 	thisnode->Update_Neighbor_List();
 	#endif
 }
+
+// Finding the largest lyapunov exponent
+void Box::Lyapunov_Exponent()
+{
+}
+
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.
 std::ostream& operator<<(std::ostream& os, Box* box)
