@@ -16,7 +16,6 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-
 inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, ofstream& out_file)
 {
 	clock_t start_time, end_time;
@@ -39,7 +38,6 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	Real t = (Real) (end_time - start_time) / CLOCKS_PER_SEC;
 	return(t);
 }
-
 
 inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file)
 {
@@ -129,19 +127,8 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-
-int main(int argc, char *argv[])
+void Init_Nodes(Node& thisnode)
 {
-	int this_node_id, total_nodes;
-	MPI_Status status;
-	MPI_Init(&argc, &argv);
-
-
-
-
-
-	Node thisnode;
-
 	#ifdef COMPARE
 		thisnode.seed = seed;
 	#else
@@ -151,9 +138,18 @@ int main(int argc, char *argv[])
 			thisnode.seed = time(NULL) + thisnode.node_id*112488;
 			MPI_Barrier(MPI_COMM_WORLD);
 		}
+		C2DVector::Init_Rand(thisnode.seed);
 	#endif
+}
 
-	C2DVector::Init_Rand(thisnode.seed);
+int main(int argc, char *argv[])
+{
+	int this_node_id, total_nodes;
+	MPI_Status status;
+	MPI_Init(&argc, &argv);
+
+	Node thisnode;
+	Init_Nodes(thisnode);
 
 	Change_Noise(argc, argv, &thisnode);
 
