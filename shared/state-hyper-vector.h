@@ -4,38 +4,41 @@
 #include "c2dvector.h"
 
 class State_Hyper_Vector{
-	void Init_Random_Generator();
+	gsl_rng* gsl_r;
+	void Init_Random_Generator(int);
 	~State_Hyper_Vector();
 public:
-	gsl_rng* gsl_r;
 	int N;
 	BasicParticle0* particle;
 	
-	State_Hyper_Vector(int);
+	State_Hyper_Vector(int, int);
 	
 	State_Hyper_Vector& operator= ( const State_Hyper_Vector& sv);
 	State_Hyper_Vector& operator+ (const State_Hyper_Vector& s1) const;
 	State_Hyper_Vector& operator- (const State_Hyper_Vector& s1) const;
 	Real operator* (const State_Hyper_Vector& s1) const;
 
+	void Set_C2DVector_Rand_Generator();
+	void Get_C2DVector_Rand_Generator();
+
 	void Rand(const Real position_amplitude, const Real angle_amplitude);
 	Real Square() const;
 	Real Magnitude() const;
 };
 
-void State_Hyper_Vector::Init_Random_Generator()
+void State_Hyper_Vector::Init_Random_Generator(int seed)
 {
 	const gsl_rng_type * T;
 	gsl_rng_env_setup();
-	gsl_rng_default_seed = 0;
+	gsl_rng_default_seed = seed;
 	T = gsl_rng_default;
 	gsl_r = gsl_rng_alloc (T);
 	gsl_rng_memcpy (gsl_r, C2DVector::gsl_r);
 }
 
-State_Hyper_Vector::State_Hyper_Vector(int particle_number) : N(particle_number)
+State_Hyper_Vector::State_Hyper_Vector(int particle_number, int seed = 0) : N(particle_number)
 {
-	Init_Random_Generator();
+	Init_Random_Generator(seed);
 	particle = new BasicParticle0[N];
 }
 
@@ -97,6 +100,16 @@ Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
 		result += cos(particle[i].theta - s1.particle[i].theta);
 	}
 	return result;
+}
+
+void State_Hyper_Vector::Set_C2DVector_Rand_Generator()
+{
+	gsl_rng_memcpy (C2DVector::gsl_r, gsl_r);
+}
+
+void State_Hyper_Vector::Get_C2DVector_Rand_Generator()
+{
+	gsl_rng_memcpy (gsl_r, C2DVector::gsl_r);
 }
 
 void State_Hyper_Vector::Rand(const Real position_amplitude, const Real angle_amplitude)

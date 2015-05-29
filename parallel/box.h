@@ -24,6 +24,10 @@ public:
 	Box();
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
+
+	void Load(const State_Hyper_Vector&);
+	void Save(State_Hyper_Vector&);
+	
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
 	void One_Step(); // One full step, composed of interaction computation and move.
@@ -92,6 +96,40 @@ void Box::Init(Node* input_node, Real input_density)
 // Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
 	info.str("");
 	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+// Loading a state to the box.
+void Box::Load(const State_Hyper_Vector& sv)
+{
+	if (N != sv.N)
+	{
+		cout << "Error: Number of particles in state vectors differ from box" << endl;
+		exit();
+	}
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].r = sv.particle[i].r;
+		particle[i].theta = sv.particle[i].theta;
+		particle[i].v.x = cos(particle[i].theta);
+		particle[i].v.y = sin(particle[i].theta);
+	}
+	sv.Set_C2DVector_Rand_Generator();
+}
+
+// Saving state of the box.
+void Box::Save(State_Hyper_Vector& sv)
+{
+	if (N != sv.N)
+	{
+		cout << "Error: Number of particles in state vectors differ from box" << endl;
+		exit();
+	}
+	for (int i = 0; i < N; i++)
+	{
+		sv.particle[i].r = particle[i].r;
+		sv.particle[i].theta = particle[i].theta;
+	}
+	sv.Get_C2DVector_Rand_Generator();
 }
 
 // Here the intractio of particles are computed that is the applied tourque to each particle.
