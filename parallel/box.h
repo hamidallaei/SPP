@@ -36,6 +36,8 @@ public:
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
 
+	Real Rlative_Change(int tau);
+	Real Mean_Rlative_Change(int tau, int number_of_tries);
 	void Lyapunov_Exponent(); // Finding the largest lyapunov exponent
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
@@ -256,11 +258,60 @@ void Box::Translate(C2DVector d)
 	#endif
 }
 
+// Finding the relative change of perturbation
+Real Box::Rlative_Change(int tau)
+{
+	State_Hyper_Vector gamma(N);
+	State_Hyper_Vector gamma_prime(N);
+	State_Hyper_Vector gamma_0(N);
+	State_Hyper_Vector dgamma(N);
+	
+	Save(gamma_0);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	for (int i = 0; i < tau/20; i++)
+		Multi_Step(20);
+	Multi_Step(tau % 20);
+	
+	Save(gamma);
+	Load(gamma_0);
+	dgamma.Rand(0.0001,0.0001);
+	MPI_Barrier(MPI_COMM_WORLD);
+	Add_Deviation(dgamma);
+
+	for (int i = 0; i < tau/20; i++)
+		Multi_Step(20);
+	Multi_Step(tau % 20);
+
+	Save(gamma_prime);
+	Load(gamma);
+
+	Real d1 = (gamma_prime - gamma).Square();
+	Real d0 = dgamma.Square();
+
+	return (sqrt(d1/d0));
+}
+
+// Finding the mean relative change of perturbation
+Real Box::Mean_Rlative_Change(int tau, int number_of_tries)
+{
+	Real result = 0;
+	for (int i = 0; i < number_of_tries; i++)
+		result += Rlative_Change(tau);
+	result /= number_of_tries;
+	return (result);
+}
+
 // Finding the largest lyapunov exponent
 void Box::Lyapunov_Exponent()
 {
+	for (int i = 5; i < 1000; i+=50)
+	{
+		Real mrc = Mean_Rlative_Change(i, 1000);
+		if (thisnode->node_id == 0)
+			cout << i << "\t" << mrc << endl;
+	}
 }
-
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.
 std::ostream& operator<<(std::ostream& os, Box* box)
