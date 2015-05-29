@@ -1,7 +1,7 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
-//#define PERIODIC_BOUNDARY_CONDITION
+#define PERIODIC_BOUNDARY_CONDITION
 //#define CIRCULAR_BOX
 #define verlet_list
 // This is for checking particles outside of the box
@@ -71,8 +71,8 @@ const Real dt = 0.005;
 const Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 20;
-const long int equilibrium_step = 0;
-const long int total_step = 100000;
+const long int equilibrium_step = 1000;
+const long int total_step = 1000;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength

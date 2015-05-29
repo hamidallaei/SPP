@@ -162,7 +162,7 @@ Real State_Hyper_Vector::Square() const
 	for (int i = 0; i < N; i++)
 	{
 		result += particle[i].r * particle[i].r;
-		result += 1;
+		result += 0;
 	}
 	return result;
 }
@@ -174,7 +174,7 @@ Real State_Hyper_Vector::Magnitude() const
 	for (int i = 0; i < N; i++)
 	{
 		result += particle[i].r * particle[i].r;
-		result += 1;
+		result += 0;
 	}
 	return sqrt(result);
 }

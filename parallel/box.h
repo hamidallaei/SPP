@@ -120,6 +120,10 @@ void Box::Load(const State_Hyper_Vector& sv)
 	sv.Set_C2DVector_Rand_Generator();
 	MPI_Barrier(MPI_COMM_WORLD);
 	thisnode->Root_Bcast();
+	thisnode->Full_Update_Cells();
+	#ifdef verlet_list
+		thisnode->Update_Neighbor_List();
+	#endif
 }
 
 // Saving state of the box.
@@ -138,7 +142,12 @@ void Box::Save(State_Hyper_Vector& sv) const
 		sv.particle[i].theta = particle[i].theta;
 	}
 	sv.Get_C2DVector_Rand_Generator();
+// We need to make sure that indexing of particles are the same to exactly recompute the same values. Therefor at a saving we update cells and neighore list therefore if we load the same sv and update cells and neighore list we will come to the same indexing
 	MPI_Barrier(MPI_COMM_WORLD);
+	thisnode->Full_Update_Cells();
+	#ifdef verlet_list
+		thisnode->Update_Neighbor_List();
+	#endif
 }
 
 // Add argument state vector as a deviation to the state of the box
@@ -158,6 +167,10 @@ void Box::Add_Deviation(const State_Hyper_Vector& dsv)
 		particle[i].v.y = sin(particle[i].theta);
 	}
 	thisnode->Root_Bcast();
+	thisnode->Full_Update_Cells();
+	#ifdef verlet_list
+		thisnode->Update_Neighbor_List();
+	#endif
 }
 
 // Here the intractio of particles are computed that is the applied tourque to each particle.
