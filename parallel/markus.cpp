@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 	Node thisnode;
 	Init_Nodes(thisnode);
 
-	Change_Noise(argc, argv, &thisnode);
+//	Change_Noise(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

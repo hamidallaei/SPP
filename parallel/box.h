@@ -28,7 +28,8 @@ public:
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
 	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
-	
+	void Add_Deviation(const State_Hyper_Vector&); // Add argument state vector as a deviation to the state of the box
+
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
 	void One_Step(); // One full step, composed of interaction computation and move.
@@ -117,6 +118,8 @@ void Box::Load(const State_Hyper_Vector& sv)
 		particle[i].v.y = sin(particle[i].theta);
 	}
 	sv.Set_C2DVector_Rand_Generator();
+	MPI_Barrier(MPI_COMM_WORLD);
+	thisnode->Root_Bcast();
 }
 
 // Saving state of the box.
@@ -127,12 +130,34 @@ void Box::Save(State_Hyper_Vector& sv) const
 		cout << "Error: Number of particles in state vectors differ from box" << endl;
 		exit(0);
 	}
+	thisnode->Root_Gather();
+	thisnode->Root_Bcast();
 	for (int i = 0; i < N; i++)
 	{
 		sv.particle[i].r = particle[i].r;
 		sv.particle[i].theta = particle[i].theta;
 	}
 	sv.Get_C2DVector_Rand_Generator();
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+// Add argument state vector as a deviation to the state of the box
+void Box::Add_Deviation(const State_Hyper_Vector& dsv)
+{
+	thisnode->Root_Gather();
+	if (N != dsv.N)
+	{
+		cout << "Error: Number of particles in state vectors differ from box" << endl;
+		exit(0);
+	}
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].r += dsv.particle[i].r;
+		particle[i].theta += dsv.particle[i].theta;
+		particle[i].v.x = cos(particle[i].theta);
+		particle[i].v.y = sin(particle[i].theta);
+	}
+	thisnode->Root_Bcast();
 }
 
 // Here the intractio of particles are computed that is the applied tourque to each particle.

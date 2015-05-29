@@ -6,13 +6,13 @@
 class State_Hyper_Vector{
 	gsl_rng* gsl_r;
 	void Init_Random_Generator(int);
-	~State_Hyper_Vector();
 public:
 	int N;
 	BasicParticle0* particle;
 	
 	State_Hyper_Vector(int, int);
 	State_Hyper_Vector(const State_Hyper_Vector&);
+	~State_Hyper_Vector();
 
 	State_Hyper_Vector& operator= ( const State_Hyper_Vector& sv);
 	const State_Hyper_Vector operator+ (const State_Hyper_Vector& s1);
