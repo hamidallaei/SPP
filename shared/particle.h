@@ -279,8 +279,9 @@ public:
 			if (d < kisi_r)
 			{
 				Real alpha = atan2(-dr.y,-dr.x);
-				torque += kapa*sin(theta - alpha);
-				p.torque -= kapa*sin(p.theta - alpha);
+				Real factor = (kisi_r - d);
+				torque += factor*kapa*sin(theta - alpha);
+				p.torque -= factor*kapa*sin(p.theta - alpha);
 			}
 
 			#ifdef TRACK_PARTICLE

@@ -14,6 +14,7 @@ void Triangle_Lattice_Formation(Particle* particle, int N, double sigma); // Pos
 void Random_Formation(Particle* particle, int N); // Positioning partilces Randomly
 void Random_Formation(Particle* particle, int N, double sigma); // Positioning partilces Randomly, but distant from walls
 void Random_Formation_Circle(Particle* particle, int N, double r); // Positioning partilces Randomly in a circle with radius r
+void Polar_Formation(Particle* particle, int N); // Polar state
 void Single_Vortex_Formation(Particle* particle, int N); // Vortex initial condition.
 void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the box. left top, left bot, right top and right bot.
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
@@ -164,6 +165,18 @@ void Random_Formation_Circle(Particle* particle, int N, double radius)
 		r.y = a*sin(b);
 		r.Periodic_Transform();
 		particle[i].Init(r);
+	}
+}
+
+// Polar state
+void Polar_Formation(Particle* particle, int N)
+{
+	Random_Formation(particle,N);
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].theta = 0;
+		particle[i].v.x = 1;
+		particle[i].v.y = 0;
 	}
 }
 

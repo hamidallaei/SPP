@@ -161,22 +161,16 @@ Real State_Hyper_Vector::Square() const
 
 	for (int i = 0; i < N; i++)
 	{
-		result += particle[i].r * particle[i].r;
-		result += 0;
+//		result += particle[i].r * particle[i].r;
+		Real dtheta = particle[i].theta - 2*M_PI*ceil((particle[i].theta - M_PI) / (2*M_PI));
+		result += dtheta*dtheta;
 	}
 	return result;
 }
 
 Real State_Hyper_Vector::Magnitude() const
 {
-	Real result = 0;
-
-	for (int i = 0; i < N; i++)
-	{
-		result += particle[i].r * particle[i].r;
-		result += 0;
-	}
-	return sqrt(result);
+	return sqrt(Square());
 }
 
 #endif

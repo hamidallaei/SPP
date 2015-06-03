@@ -67,11 +67,11 @@ const int npy = 2; // For parallel use only. This number must be even to avoid d
 const int tag_max = 32767; // For parallel use only
 
 // Time
-const Real dt = 0.005;
+const Real dt = 0.001;
 const Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 20;
-const long int equilibrium_step = 1000;
+const long int equilibrium_step = 10000;
 const long int total_step = 1000;
 
 // Interactions

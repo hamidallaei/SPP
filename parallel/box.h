@@ -10,6 +10,7 @@
 #include "../shared/state-hyper-vector.h"
 #include "node.h"
 
+#include <boost/algorithm/string.hpp>
 
 class Box{
 public:
@@ -17,7 +18,7 @@ public:
 	Particle particle[max_N]; // Array of particles that we are going to simulate.
 	Wall wall[8]; // Array of walls in our system.
 
-	Real density, volume_fraction;
+	Real density;
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
 	Node* thisnode; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
@@ -25,6 +26,7 @@ public:
 	Box();
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
+	bool Init(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
 	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
@@ -37,7 +39,7 @@ public:
 	void Translate(C2DVector d); // Translate position of all particles with vector d
 
 	Real Rlative_Change(int tau);
-	Real Mean_Rlative_Change(int tau, int number_of_tries);
+	Real Mean_Rlative_Change(int tau, int number_of_tries, Real& error);
 	void Lyapunov_Exponent(); // Finding the largest lyapunov exponent
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
@@ -73,8 +75,9 @@ void Box::Init(Node* input_node, Real input_density)
 	#endif
 
 	thisnode = input_node;
+
 	density = input_density;
-	N = (int) round(Lx2*Ly2*density);
+	N = (int) round(Lx2*Ly2*input_density);
 
 	Init_Topology(); // Adding walls
 
@@ -82,9 +85,10 @@ void Box::Init(Node* input_node, Real input_density)
 	{
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
+		Polar_Formation(particle,N);
 //		Triangle_Lattice_Formation(particle, N, 1);
-//		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls
-		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
+//		Random_Formation(particle, N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+//		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);
 	}
@@ -103,6 +107,83 @@ void Box::Init(Node* input_node, Real input_density)
 	info.str("");
 	MPI_Barrier(MPI_COMM_WORLD);
 }
+
+
+// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
+bool Box::Init(Node* input_node, const string input_name)
+{
+	#ifdef TRACK_PARTICLE
+	track_p = &particle[track];
+	#endif
+
+	Real input_mu_plus;
+	Real input_mu_minus;
+	Real input_Dphi;
+	Real input_L;
+
+	string name = input_name;
+	stringstream address(name);
+	ifstream is;
+	is.open(address.str().c_str());
+	if (!is.is_open())
+		return false;
+
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-mu+=", "\t");
+	boost::replace_all(name, "-mu-=", "\t");
+	boost::replace_all(name, "-Dphi=", "\t");
+	boost::replace_all(name, "-L=", "\t");
+
+	stringstream ss_name(name);
+	ss_name >> density;
+	ss_name >> input_mu_plus;
+	ss_name >> input_mu_minus;
+	ss_name >> input_Dphi;
+	ss_name >> input_L;
+
+	Particle::mu_plus = input_mu_plus;
+	Particle::mu_minus = input_mu_minus;
+	Particle::D_phi = input_Dphi;
+
+	thisnode = input_node;
+
+	is.read((char*) &N, sizeof(int) / sizeof(char));
+	if (N < 0 || N > 1000000)
+		return (false);
+
+	for (int i = 0; i < N; i++)
+	{
+		is >> particle[i].r;
+		is >> particle[i].v;
+	}
+
+	is.close();
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	Init_Topology(); // Adding walls
+
+	if (thisnode->node_id == 0)
+	{
+		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
+// Master node will broadcast the particles information
+	thisnode->Root_Bcast();
+// Any node update cells, knowing particles and their cell that they are inside.
+	thisnode->Full_Update_Cells();
+
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
+// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+	info.str("");
+	return (true);
+}
+
 
 // Loading a state to the box.
 void Box::Load(const State_Hyper_Vector& sv)
@@ -276,7 +357,7 @@ Real Box::Rlative_Change(int tau)
 	
 	Save(gamma);
 	Load(gamma_0);
-	dgamma.Rand(0.0000001,0.000001);
+	dgamma.Rand(0.0,0.00000001);
 	MPI_Barrier(MPI_COMM_WORLD);
 	Add_Deviation(dgamma);
 
@@ -294,26 +375,39 @@ Real Box::Rlative_Change(int tau)
 }
 
 // Finding the mean relative change of perturbation
-Real Box::Mean_Rlative_Change(int tau, int number_of_tries)
+Real Box::Mean_Rlative_Change(int tau, int number_of_tries, Real& error)
 {
 	Real result = 0;
+	error = 0;
 	for (int i = 0; i < number_of_tries; i++)
 	{
 		Real rc = Rlative_Change(tau);
 		result += rc;
+		error += rc*rc;
 	}
 	result /= number_of_tries;
+	error /= number_of_tries;
+	error -= result*result;
+	error /= sqrt(number_of_tries);
 	return (result);
 }
 
 // Finding the largest lyapunov exponent
 void Box::Lyapunov_Exponent()
 {
-	for (int i = 10; i < 1000; i+=10)
+	stringstream adress;
+	adress.str("");
+	adress << info.str() << "-deviation.dat";
+	ofstream outfile(adress.str().c_str());
+	for (Real t = 0.1; t < 4; t+=0.4)
 	{
-		Real mrc = Mean_Rlative_Change(i, 1000);
 		if (thisnode->node_id == 0)
-			cout << i << "\t" << mrc << endl;
+			cout << "tau is: " << t << endl;
+		int i = (int) round(t/dt);
+		Real error;
+		Real mrc = Mean_Rlative_Change(i, 100, error);
+		if (thisnode->node_id == 0)
+			outfile << i*dt << "\t" << mrc << "\t" << error << endl;
 	}
 }
 
