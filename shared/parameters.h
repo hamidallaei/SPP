@@ -33,7 +33,7 @@ typedef double Real;
 typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
-long int seed = 9348;
+long int seed = 10;
 
 const Real PI = M_PI;
 
@@ -67,12 +67,12 @@ const int npy = 2; // For parallel use only. This number must be even to avoid d
 const int tag_max = 32767; // For parallel use only
 
 // Time
-const Real dt = 0.001;
-const Real half_dt = dt/2;
+Real dt = 0.01;
+Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 20;
 const long int equilibrium_step = 10000;
-const long int total_step = 1000;
+const long int total_step = 0;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength
@@ -85,13 +85,13 @@ const Real r_c_p = .5; 		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
 
 #ifdef TRACK_PARTICLE
-const int track = 2;
+const int track = 59;
 BasicDynamicParticle* track_p;
 bool flag = false;
 #endif
 
 #ifdef COMPARE
-double digits = 10000;
+double digits = 100000000000000000;
 #endif
 
 

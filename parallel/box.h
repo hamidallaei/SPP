@@ -85,9 +85,9 @@ void Box::Init(Node* input_node, Real input_density)
 	{
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
-		Polar_Formation(particle,N);
+//		Polar_Formation(particle,N);
 //		Triangle_Lattice_Formation(particle, N, 1);
-//		Random_Formation(particle, N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 //		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);
@@ -141,6 +141,11 @@ bool Box::Init(Node* input_node, const string input_name)
 	ss_name >> input_mu_minus;
 	ss_name >> input_Dphi;
 	ss_name >> input_L;
+	if (input_L != Lx_int)
+	{
+		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
 
 	Particle::mu_plus = input_mu_plus;
 	Particle::mu_minus = input_mu_minus;
@@ -343,13 +348,15 @@ void Box::Translate(C2DVector d)
 // Finding the relative change of perturbation
 Real Box::Rlative_Change(int tau)
 {
-	State_Hyper_Vector gamma(N);
-	State_Hyper_Vector gamma_prime(N);
-	State_Hyper_Vector gamma_0(N);
-	State_Hyper_Vector dgamma(N);
+	static State_Hyper_Vector gamma(N);
+	static State_Hyper_Vector gamma_prime(N);
+	static State_Hyper_Vector gamma_0(N);
+	static State_Hyper_Vector dgamma_0(N);
+	static State_Hyper_Vector dgamma(N);
 	
 	Save(gamma_0);
 	MPI_Barrier(MPI_COMM_WORLD);
+
 
 	for (int i = 0; i < tau/20; i++)
 		Multi_Step(20);
@@ -357,9 +364,9 @@ Real Box::Rlative_Change(int tau)
 	
 	Save(gamma);
 	Load(gamma_0);
-	dgamma.Rand(0.0,0.00000001);
+	dgamma_0.Rand(0.0,1e-3);
 	MPI_Barrier(MPI_COMM_WORLD);
-	Add_Deviation(dgamma);
+	Add_Deviation(dgamma_0);
 
 	for (int i = 0; i < tau/20; i++)
 		Multi_Step(20);
@@ -368,9 +375,23 @@ Real Box::Rlative_Change(int tau)
 	Save(gamma_prime);
 	Load(gamma);
 
-	Real d1 = (gamma_prime - gamma).Square();
-	Real d0 = dgamma.Square();
+	dgamma = gamma_prime - gamma;
 
+	Real d1 = dgamma.Square();
+	Real d0 = dgamma_0.Square();
+
+	if (thisnode->node_id == 0)
+	{
+		int index = dgamma.Max_Index();
+//		cout << tau << "\t" << d1 << endl;
+//		cout << tau << "\t" << d0 << endl;
+		cout << tau << "\t" << sqrt(d1/d0) << endl;
+		cout << tau << "\t" << log(sqrt(d1/d0)) / (tau*dt) << endl;
+		Real dtheta = dgamma.particle[index].theta;
+		dtheta -= 2*M_PI*ceil((dtheta - M_PI) / (2*M_PI));
+		cout << index << "\t" << dtheta << endl;
+	}
+	
 	return (sqrt(d1/d0));
 }
 

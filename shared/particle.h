@@ -320,7 +320,7 @@ Real MarkusParticle::mu_plus = 1;
 Real MarkusParticle::mu_minus = 1;
 Real MarkusParticle::kapa = 10;
 Real MarkusParticle::D_phi = 1;
-Real MarkusParticle::kisi_r = 0.1;
+Real MarkusParticle::kisi_r = 1.0;
 Real MarkusParticle::kisi_a = 0.2;
 Real MarkusParticle::kisi = 1;
 

@@ -27,6 +27,7 @@ public:
 	void Rand(const Real position_amplitude, const Real angle_amplitude);
 	Real Square() const;
 	Real Magnitude() const;
+	int Max_Index() const;
 };
 
 void State_Hyper_Vector::Init_Random_Generator(int seed)
@@ -150,7 +151,7 @@ void State_Hyper_Vector::Rand(const Real position_amplitude, const Real angle_am
 	{
 		particle[i].r.x = gsl_ran_flat(gsl_r, -position_amplitude, position_amplitude);
 		particle[i].r.y = gsl_ran_flat(gsl_r, -position_amplitude, position_amplitude);
-		particle[i].theta = gsl_ran_flat(gsl_r, -angle_amplitude, angle_amplitude);;
+		particle[i].theta = gsl_ran_flat(gsl_r, -angle_amplitude, angle_amplitude);
 	}
 }
 
@@ -158,7 +159,6 @@ void State_Hyper_Vector::Rand(const Real position_amplitude, const Real angle_am
 Real State_Hyper_Vector::Square() const
 {
 	Real result = 0;
-
 	for (int i = 0; i < N; i++)
 	{
 //		result += particle[i].r * particle[i].r;
@@ -171,6 +171,24 @@ Real State_Hyper_Vector::Square() const
 Real State_Hyper_Vector::Magnitude() const
 {
 	return sqrt(Square());
+}
+
+int State_Hyper_Vector::Max_Index() const
+{
+	int index = 0;
+	Real max = 0;
+	for (int i = 0; i < N; i++)
+	{
+//		result += particle[i].r * particle[i].r;
+		Real dtheta = particle[i].theta - 2*M_PI*ceil((particle[i].theta - M_PI) / (2*M_PI));
+		if (fabs(dtheta) > max)
+		{
+//			cout << fabs(dtheta) << endl;
+			max = fabs(dtheta);
+ 			index = i;
+		}
+	}
+	return (index);
 }
 
 #endif

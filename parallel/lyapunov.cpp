@@ -16,7 +16,7 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, ofstream& out_file)
+inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -27,7 +27,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-//		timing_information(box->thisnode,start_time,i,equilibrium_step);
+		timing_information(box->thisnode,start_time,i,equilibrium_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -104,7 +104,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 		address << box.info.str() << "-r-v.bin";
 		traj_file.open(address.str().c_str());
 		address.str("");
-		address << box.info.str() << "-deviation.dat";
+		address << "deviation-" << box.info.str() << ".dat";
 		out_file.open(address.str().c_str());
 	}
 
@@ -112,14 +112,17 @@ void Run(int argc, char *argv[], Node* thisnode)
 		cout << " Box information is: " << box.info.str() << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+	t_eq = equilibrium(&box, equilibrium_step, saving_period);
 	MPI_Barrier(MPI_COMM_WORLD);
+
+	dt = 1e-4;
+	half_dt = dt / 2;
 
 	if (thisnode->node_id == 0)
 		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	t_sim = Lyapunov_Exponent(&box, 4, 0.5,20.0,out_file);
+	t_sim = Lyapunov_Exponent(&box, 1, 0.1,0.2,out_file);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	traj_file << &box;
@@ -145,15 +148,12 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 	box.info.str("");
 	box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
-	ofstream out_file,traj_file;
+	ofstream out_file;
 	if (thisnode->node_id == 0)
 	{
 		stringstream address;
 		address.str("");
-		address << box.info.str() << "-r-v.bin";
-		traj_file.open(address.str().c_str());
-		address.str("");
-		address << box.info.str() << "-deviation.dat";
+		address << "deviation-" << box.info.str() << ".dat";
 		out_file.open(address.str().c_str());
 	}
 
@@ -161,32 +161,39 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 		cout << " Box information is: " << box.info.str() << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	t_sim = Lyapunov_Exponent(&box, 4, 0.5,20.0, out_file);
+	t_eq = equilibrium(&box, equilibrium_step, saving_period);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (thisnode->node_id == 0)
+		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	t_sim = Lyapunov_Exponent(&box, 16, 0.1,2, out_file);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	if (thisnode->node_id == 0)
 	{
 		cout << " Done in " << floor(t_sim / 60.0) << " minutes and " << t_sim - 60*floor(t_sim / 60.0) << " s" << endl;
 		out_file.close();
-		traj_file.close();
 	}
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	return true;
 }
 
-void Init_Nodes(Node& thisnode)
+void Init_Nodes(Node& thisnode, int input_seed = seed)
 {
-	#ifdef COMPARE
-		thisnode.seed = seed;
-	#else
-		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-		while (!thisnode.Chek_Seeds())
-		{
-			thisnode.seed = time(NULL) + thisnode.node_id*112488;
-			MPI_Barrier(MPI_COMM_WORLD);
-		}
-	#endif
+//	#ifdef COMPARE
+		thisnode.seed = input_seed;
+//	#else
+//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
+//		while (!thisnode.Chek_Seeds())
+//		{
+//			thisnode.seed = time(NULL) + thisnode.node_id*112488;
+//			MPI_Barrier(MPI_COMM_WORLD);
+//		}
+//	#endif
 	C2DVector::Init_Rand(thisnode.seed);
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -198,7 +205,7 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 
 	Node thisnode;
-	Init_Nodes(thisnode);
+	Init_Nodes(thisnode, atoi(argv[5]));
 
 	if (argc > 2)
 		Run(argc, argv, &thisnode);
