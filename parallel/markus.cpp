@@ -27,7 +27,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,equilibrium_step);
+//		timing_information(box->thisnode,start_time,i,equilibrium_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -56,7 +56,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,total_step);
+//		timing_information(box->thisnode,start_time,i,total_step);
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
 	}
@@ -95,7 +95,7 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 		Particle::D_phi = D_list[i];
 		Particle::noise_amplitude = sqrt(2*D_list[i]) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
-		box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi;
+		box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
 		if (thisnode->node_id == 0)
 		{
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 	Node thisnode;
 	Init_Nodes(thisnode);
 
-//	Change_Noise(argc, argv, &thisnode);
+	Change_Noise(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

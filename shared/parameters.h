@@ -41,8 +41,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 5;
-const int Ly_int = 5;
+const int Lx_int = 10;
+const int Ly_int = 10;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -63,16 +63,16 @@ const int divisor_y = max_divisor_y;
 
 // Parallel Use only
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks
-const int npy = 2; // For parallel use only. This number must be even to avoid dead locks
+const int npy = 4; // For parallel use only. This number must be even to avoid dead locks
 const int tag_max = 32767; // For parallel use only
 
 // Time
-Real dt = 0.01;
+Real dt = 0.005;
 Real half_dt = dt/2;
 const int cell_update_period = 20;
-const int saving_period = 20;
-const long int equilibrium_step = 10000;
-const long int total_step = 0;
+const int saving_period = 10;
+const long int equilibrium_step = 100000;
+const long int total_step = 200000;
 
 // Interactions
 const Real A_p = 1.;		// interaction strength
