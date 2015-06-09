@@ -1,6 +1,3 @@
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
 #include <boost/algorithm/string.hpp>
 
 #include<iostream>
@@ -24,7 +21,7 @@ int main(int argc, char** argv)
 		cout << "Finished" << endl;
 		cout << "Write the file" << endl;
 		if (read_state)
-			sceneset->Write(0, 1000);
+			sceneset->Write(0, 1);
 		else
 			cout << "Can not read the file" << endl;
 		cout << "Finished" << endl;
