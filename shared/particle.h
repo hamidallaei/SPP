@@ -279,7 +279,7 @@ public:
 			if (d < kisi_r)
 			{
 				Real alpha = atan2(-dr.y,-dr.x);
-				Real factor = (kisi_r - d);
+				Real factor = (1.0 - d / kisi_r);
 				torque += factor*kapa*sin(theta - alpha);
 				p.torque -= factor*kapa*sin(p.theta - alpha);
 			}
@@ -318,7 +318,7 @@ void MarkusParticle::Reset()
 
 Real MarkusParticle::mu_plus = 1;
 Real MarkusParticle::mu_minus = 1;
-Real MarkusParticle::kapa = 40.0;
+Real MarkusParticle::kapa = 0;//40.0;
 Real MarkusParticle::D_phi = 1;
 Real MarkusParticle::kisi_r = 0.1;
 Real MarkusParticle::kisi_a = 0.2;

@@ -8,6 +8,7 @@ class State_Hyper_Vector{
 	void Init_Random_Generator(int);
 public:
 	int N;
+	Real growth;
 	BasicParticle0* particle;
 	
 	State_Hyper_Vector(int, int);
@@ -19,7 +20,10 @@ public:
 	const State_Hyper_Vector operator- (const State_Hyper_Vector& s1);
 	State_Hyper_Vector& operator+= (const State_Hyper_Vector& s1);
 	State_Hyper_Vector& operator-= (const State_Hyper_Vector& s1);
+	const State_Hyper_Vector operator* (const Real factor);
+	const State_Hyper_Vector operator/ (const Real factor);
 	const Real operator* (const State_Hyper_Vector& s1) const;
+
 
 	void Set_C2DVector_Rand_Generator() const;
 	void Get_C2DVector_Rand_Generator();
@@ -27,6 +31,8 @@ public:
 	void Rand(const Real position_amplitude, const Real angle_amplitude);
 	Real Square() const;
 	Real Magnitude() const;
+	void Periodic_Transform();
+	void Unit();
 	int Max_Index() const;
 };
 
@@ -76,10 +82,9 @@ const State_Hyper_Vector State_Hyper_Vector::operator+ (const State_Hyper_Vector
 	for (int i = 0; i < N; i++)
 	{
 		result.particle[i].r = (particle[i].r + s1.particle[i].r);
-		result.particle[i].r.Periodic_Transform();
 		result.particle[i].theta = particle[i].theta + s1.particle[i].theta;
-		result.particle[i].theta -= 2*M_PI*floor(result.particle[i].theta / (2*M_PI));
 	}
+	result.Periodic_Transform();
 	return result;
 }
 
@@ -90,10 +95,9 @@ const State_Hyper_Vector State_Hyper_Vector::operator- (const State_Hyper_Vector
 	for (int i = 0; i < N; i++)
 	{
 		result.particle[i].r = (particle[i].r - s1.particle[i].r);
-		result.particle[i].r.Periodic_Transform();
 		result.particle[i].theta = particle[i].theta - s1.particle[i].theta;
-		result.particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
 	}
+	result.Periodic_Transform();
 	return result;
 }
 
@@ -103,10 +107,9 @@ State_Hyper_Vector& State_Hyper_Vector::operator+= (const State_Hyper_Vector& s1
 	for (int i = 0; i < N; i++)
 	{
 		particle[i].r = (particle[i].r + s1.particle[i].r);
-		particle[i].r.Periodic_Transform();
 		particle[i].theta = particle[i].theta + s1.particle[i].theta;
-		particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
 	}
+	Periodic_Transform();
 	return *this;
 }
 
@@ -116,11 +119,35 @@ State_Hyper_Vector& State_Hyper_Vector::operator-= (const State_Hyper_Vector& s1
 	for (int i = 0; i < N; i++)
 	{
 		particle[i].r = (particle[i].r - s1.particle[i].r);
-		particle[i].r.Periodic_Transform();
 		particle[i].theta = particle[i].theta - s1.particle[i].theta;
-		particle[i].theta -= 2*M_PI*floor(particle[i].theta / (2*M_PI));
 	}
+	Periodic_Transform();
 	return *this;
+}
+
+// Alwayse retun random generator of the vector
+const State_Hyper_Vector State_Hyper_Vector::operator* (const Real factor)
+{
+	State_Hyper_Vector result(*this);
+	for (int i = 0; i < N; i++)
+	{
+		result.particle[i].r = particle[i].r*factor;
+		result.particle[i].theta = particle[i].theta*factor;
+	}
+	result.Periodic_Transform();
+	return result;
+}
+
+const State_Hyper_Vector State_Hyper_Vector::operator/ (const Real factor)
+{
+	State_Hyper_Vector result(*this);
+	for (int i = 0; i < N; i++)
+	{
+		result.particle[i].r = particle[i].r/factor;
+		result.particle[i].theta = particle[i].theta/factor;
+	}
+	result.Periodic_Transform();
+	return result;
 }
 
 const Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
@@ -130,7 +157,7 @@ const Real State_Hyper_Vector::operator* (const State_Hyper_Vector& s1) const
 	for (int i = 0; i < N; i++)
 	{
 		result += particle[i].r * s1.particle[i].r;
-		result += cos(particle[i].theta - s1.particle[i].theta);
+		result += particle[i].theta * s1.particle[i].theta;
 	}
 	return result;
 }
@@ -153,6 +180,7 @@ void State_Hyper_Vector::Rand(const Real position_amplitude, const Real angle_am
 		particle[i].r.y = gsl_ran_flat(gsl_r, -position_amplitude, position_amplitude);
 		particle[i].theta = gsl_ran_flat(gsl_r, -angle_amplitude, angle_amplitude);
 	}
+	Periodic_Transform();
 }
 
 
@@ -161,7 +189,7 @@ Real State_Hyper_Vector::Square() const
 	Real result = 0;
 	for (int i = 0; i < N; i++)
 	{
-//		result += particle[i].r * particle[i].r;
+		result += particle[i].r * particle[i].r;
 		Real dtheta = particle[i].theta - 2*M_PI*ceil((particle[i].theta - M_PI) / (2*M_PI));
 		result += dtheta*dtheta;
 	}
@@ -171,6 +199,20 @@ Real State_Hyper_Vector::Square() const
 Real State_Hyper_Vector::Magnitude() const
 {
 	return sqrt(Square());
+}
+
+void State_Hyper_Vector::Periodic_Transform()
+{
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].r.Periodic_Transform();
+		particle[i].theta = particle[i].theta - 2*M_PI*ceil((particle[i].theta - M_PI) / (2*M_PI));
+	}	
+}
+
+void State_Hyper_Vector::Unit()
+{
+	*this = *this / Magnitude();
 }
 
 int State_Hyper_Vector::Max_Index() const

@@ -41,8 +41,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 10;
-const int Ly_int = 10;
+const int Lx_int = 3;
+const int Ly_int = 3;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -63,7 +63,7 @@ const int divisor_y = max_divisor_y;
 
 // Parallel Use only
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks
-const int npy = 4; // For parallel use only. This number must be even to avoid dead locks
+const int npy = 2; // For parallel use only. This number must be even to avoid dead locks
 const int tag_max = 32767; // For parallel use only
 
 // Time

@@ -17,11 +17,11 @@ int main(int argc, char** argv)
 		string name = argv[i];
 		SceneSet* sceneset = new SceneSet(name);
 		cout << "Reading the file" << endl;
-		bool read_state = sceneset->Read(999);
+		bool read_state = sceneset->Read(1);
 		cout << "Finished" << endl;
 		cout << "Write the file" << endl;
 		if (read_state)
-			sceneset->Write(0, 1);
+			sceneset->Write(0, 0);
 		else
 			cout << "Can not read the file" << endl;
 		cout << "Finished" << endl;

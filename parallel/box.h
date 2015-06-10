@@ -36,6 +36,7 @@ public:
 	void Move(); // Move all particles of this node.
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
+	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
 
 	Real Rlative_Change(int tau);
@@ -329,6 +330,14 @@ void Box::Multi_Step(int steps)
 	#endif
 }
 
+// Several steps with a cell upgrade call after each interval.
+void Box::Multi_Step(int steps, int interval)
+{
+	for (int i = 0; i < steps/interval; i++)
+		Multi_Step(interval);
+	Multi_Step(steps % interval);
+}
+
 // Translate position of all particles with vector d
 void Box::Translate(C2DVector d)
 {
@@ -357,14 +366,11 @@ Real Box::Rlative_Change(int tau)
 	Save(gamma_0);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-
-	for (int i = 0; i < tau/20; i++)
-		Multi_Step(20);
-	Multi_Step(tau % 20);
+	Multi_Step(tau, 20);
 	
 	Save(gamma);
 	Load(gamma_0);
-	dgamma_0.Rand(0.0,1e-3);
+	dgamma_0.Rand(0.0,1e-8);
 	MPI_Barrier(MPI_COMM_WORLD);
 	Add_Deviation(dgamma_0);
 
@@ -379,18 +385,6 @@ Real Box::Rlative_Change(int tau)
 
 	Real d1 = dgamma.Square();
 	Real d0 = dgamma_0.Square();
-
-	if (thisnode->node_id == 0)
-	{
-		int index = dgamma.Max_Index();
-//		cout << tau << "\t" << d1 << endl;
-//		cout << tau << "\t" << d0 << endl;
-		cout << tau << "\t" << sqrt(d1/d0) << endl;
-		cout << tau << "\t" << log(sqrt(d1/d0)) / (tau*dt) << endl;
-		Real dtheta = dgamma.particle[index].theta;
-		dtheta -= 2*M_PI*ceil((dtheta - M_PI) / (2*M_PI));
-		cout << index << "\t" << dtheta << endl;
-	}
 	
 	return (sqrt(d1/d0));
 }
@@ -416,20 +410,6 @@ Real Box::Mean_Rlative_Change(int tau, int number_of_tries, Real& error)
 // Finding the largest lyapunov exponent
 void Box::Lyapunov_Exponent()
 {
-	stringstream adress;
-	adress.str("");
-	adress << info.str() << "-deviation.dat";
-	ofstream outfile(adress.str().c_str());
-	for (Real t = 0.1; t < 4; t+=0.4)
-	{
-		if (thisnode->node_id == 0)
-			cout << "tau is: " << t << endl;
-		int i = (int) round(t/dt);
-		Real error;
-		Real mrc = Mean_Rlative_Change(i, 100, error);
-		if (thisnode->node_id == 0)
-			outfile << i*dt << "\t" << mrc << "\t" << error << endl;
-	}
 }
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.
