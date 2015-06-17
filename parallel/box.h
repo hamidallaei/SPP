@@ -30,7 +30,6 @@ public:
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
 	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
-	void Add_Deviation(const State_Hyper_Vector&); // Add argument state vector as a deviation to the state of the box
 
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
@@ -38,10 +37,6 @@ public:
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
-
-	Real Rlative_Change(int tau);
-	Real Mean_Rlative_Change(int tau, int number_of_tries, Real& error);
-	void Lyapunov_Exponent(); // Finding the largest lyapunov exponent
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
 	friend std::istream& operator>>(std::istream& is, Box* box); // Input
@@ -239,30 +234,6 @@ void Box::Save(State_Hyper_Vector& sv) const
 	#endif
 }
 
-// Add argument state vector as a deviation to the state of the box
-void Box::Add_Deviation(const State_Hyper_Vector& dsv)
-{
-	thisnode->Root_Gather();
-	if (N != dsv.N)
-	{
-		cout << "Error: Number of particles in state vectors differ from box" << endl;
-		exit(0);
-	}
-	for (int i = 0; i < N; i++)
-	{
-		particle[i].r += dsv.particle[i].r;
-		particle[i].r.Periodic_Transform();
-		particle[i].theta += dsv.particle[i].theta;
-		particle[i].v.x = cos(particle[i].theta);
-		particle[i].v.y = sin(particle[i].theta);
-	}
-	thisnode->Root_Bcast();
-	thisnode->Full_Update_Cells();
-	#ifdef verlet_list
-		thisnode->Update_Neighbor_List();
-	#endif
-}
-
 // Here the intractio of particles are computed that is the applied tourque to each particle.
 void Box::Interact()
 {
@@ -352,64 +323,6 @@ void Box::Translate(C2DVector d)
 	#ifdef verlet_list
 	thisnode->Update_Neighbor_List();
 	#endif
-}
-
-// Finding the relative change of perturbation
-Real Box::Rlative_Change(int tau)
-{
-	static State_Hyper_Vector gamma(N);
-	static State_Hyper_Vector gamma_prime(N);
-	static State_Hyper_Vector gamma_0(N);
-	static State_Hyper_Vector dgamma_0(N);
-	static State_Hyper_Vector dgamma(N);
-	
-	Save(gamma_0);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	Multi_Step(tau, 20);
-	
-	Save(gamma);
-	Load(gamma_0);
-	dgamma_0.Rand(0.0,1e-8);
-	MPI_Barrier(MPI_COMM_WORLD);
-	Add_Deviation(dgamma_0);
-
-	for (int i = 0; i < tau/20; i++)
-		Multi_Step(20);
-	Multi_Step(tau % 20);
-
-	Save(gamma_prime);
-	Load(gamma);
-
-	dgamma = gamma_prime - gamma;
-
-	Real d1 = dgamma.Square();
-	Real d0 = dgamma_0.Square();
-	
-	return (sqrt(d1/d0));
-}
-
-// Finding the mean relative change of perturbation
-Real Box::Mean_Rlative_Change(int tau, int number_of_tries, Real& error)
-{
-	Real result = 0;
-	error = 0;
-	for (int i = 0; i < number_of_tries; i++)
-	{
-		Real rc = Rlative_Change(tau);
-		result += rc;
-		error += rc*rc;
-	}
-	result /= number_of_tries;
-	error /= number_of_tries;
-	error -= result*result;
-	error /= sqrt(number_of_tries);
-	return (result);
-}
-
-// Finding the largest lyapunov exponent
-void Box::Lyapunov_Exponent()
-{
 }
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.

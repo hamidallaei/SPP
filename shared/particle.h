@@ -40,8 +40,7 @@ void BasicDynamicParticle::Init()
 	theta = atan(v.y/v.x);
 	if (v.x < 0)
 		theta += PI;
-	theta -= 2*PI * (int (theta / (2*PI)));
-	v.x = cos(theta);
+	theta -= 2*PI * (int (theta / (2*PI)));v.x = cos(theta);
 	v.y = sin(theta);
 	Reset();
 }
@@ -318,7 +317,7 @@ void MarkusParticle::Reset()
 
 Real MarkusParticle::mu_plus = 1;
 Real MarkusParticle::mu_minus = 1;
-Real MarkusParticle::kapa = 0;//40.0;
+Real MarkusParticle::kapa = 40;//40.0;
 Real MarkusParticle::D_phi = 1;
 Real MarkusParticle::kisi_r = 0.1;
 Real MarkusParticle::kisi_a = 0.2;

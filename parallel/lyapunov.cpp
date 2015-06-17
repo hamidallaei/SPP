@@ -3,7 +3,7 @@
 #include "../shared/particle.h"
 #include "../shared/cell.h"
 #include "../shared/vector-set.h"
-#include "box.h"
+#include "lyapunovbox.h"
 
 inline void timing_information(Node* node, clock_t start_time, int i_step, int total_step)
 {
@@ -41,149 +41,6 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period)
 	return(t);
 }
 
-void Evolution(Box& box, VectorSet& us, int tau)
-{
-	VectorSet vs0(us);
-	VectorSet vs(us.direction_num, box.N);
-	
-	static State_Hyper_Vector gamma(box.N);
-	static State_Hyper_Vector gamma_prime(box.N);
-	static State_Hyper_Vector gamma_0(box.N);
-
-	box.Save(gamma_0);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	box.Multi_Step(tau, 20);
-
-	box.Save(gamma);
-
-	for (int i = 0; i < us.direction_num; i++)
-	{
-		box.Load(gamma_0);
-		MPI_Barrier(MPI_COMM_WORLD);
-		box.Add_Deviation(vs0.v[i]);
-		box.Multi_Step(tau, 20);
-		box.Save(gamma_prime);
-		vs.v[i] = (gamma_prime - gamma);
-	}
-
-	vs.Renormalize(us);
-	for (int i = 0; i < us.direction_num; i++)
-	{
-		us.v[i].growth = 0;
-//		for (int j = 0; j < number_of_directions; j++)
-//			us.v[i].growth += (vs.v[j] * us.v[i]) / (vs0.v[j] * us.v[i]);
-		us.v[i].growth = (vs.v[i] * us.v[i]) / (vs0.v[i] * us.v[i]);
-//		us.v[i].growth = vs.v[i].Magnitude() / vs0.v[i].Magnitude();
-	}
-
-	us.Scale();
-	
-	box.Load(gamma);
-}
-
-void Init_Deviations(Box& box, VectorSet& us, int tau, int iteration)
-{
-	us.Rand();
-	MPI_Barrier(MPI_COMM_WORLD);
-	
-	for (int i = 0; i < iteration; i++)
-		Evolution(box, us, tau);
-
-	if (box.thisnode->node_id == 0)
-	for (int i = 0; i < us.direction_num; i++)
-		cout << us.v[i].particle[0].r / us.amplitude << "\t" << us.v[i].particle[0].theta / us.amplitude << endl;
-}
-
-// void Evolution_Tracking(Box& box, VectorSet& us, int tau, int interval, ofstream& outfile)
-// {
-// 	VectorSet vs0(us);
-// 	VectorSet vs(us.N, N);
-// 
-// 	static State_Hyper_Vector gamma(N);
-// 	static State_Hyper_Vector gamma_prime(N);
-// 	static State_Hyper_Vector gamma_0(N);
-// 
-// 	for (int t = interval; t < tau; t += interval)
-// 	{
-// 		box->Save(gamma_0);
-// 		MPI_Barrier(MPI_COMM_WORLD);
-// 
-// 		Multi_Step(interval, 20);
-// 
-// 		box->Save(gamma);
-// 
-// 		
-// 		for (int i = 0; i < number_of_directions; i++)
-// 		{
-// 			box->Load(gamma_0);
-// 			MPI_Barrier(MPI_COMM_WORLD);
-// 			box->Add_Deviation(vs0.v[i]);
-// 			Multi_Step(interval, 20);
-// 			box->Save(gamma_prime);
-// 			vs.v[i] = (gamma_prime - gamma);
-// 		}
-// 
-// 		vs.Renormalize(us);
-// 		vs0 = us;
-// 		for (int i = 0; i < number_of_directions; i++)
-// 		{
-// 			us.v[i].growth = 0;
-// 			us.v[i].growth = (vs.v[i] * us.v[i]) / (vs0.v[i] * us.v[i]);
-// 		}
-// 	}
-// 
-// 	box->Load(gamma);
-// }
-
-inline Real Lyapunov_Exponent(Box& box, int spectrum_levels, Real interval, Real duration, ofstream& outfile)
-{
-	clock_t start_time, end_time;
-	start_time = clock();
-
-	VectorSet::amplitude = 1e-4;
-
-	#ifdef TRACK_PARTICLE
-	if (!flag)
-		flag = true;
-	#endif
-
-	outfile << 0;
-	for (int i = 0; i < spectrum_levels; i++)
-		outfile << "\t" << 1;
-	outfile << endl;
-
-	VectorSet us(spectrum_levels, box.N);
-
-	Init_Deviations(box, us, round(1.0/dt), 1000);
-	MPI_Barrier(MPI_COMM_WORLD);
-	
-	for (Real t = interval; t < duration; t+=interval)
-	{
-		if (box.thisnode->node_id == 0)
-			cout << "tau is: " << t << endl;
-		int i = (int) round(t/dt);
-		Evolution(box, us, i);
-
-		outfile << i*dt << "\t";
-		for (int j = 0; j < spectrum_levels; j++)
-			outfile << us.v[j].growth << "\t";
-		outfile << endl;
-//		timing_information(box.thisnode,start_time,i,total_step);
-		MPI_Barrier(MPI_COMM_WORLD);
-	}
-
-	if (box.thisnode->node_id == 0)
-		cout << "Finished" << endl;
-
-	outfile.close();
-
-	end_time = clock();
-
-	Real t = (Real) (end_time - start_time) / CLOCKS_PER_SEC;
-	return(t);
-}
-
 void Run(int argc, char *argv[], Node* thisnode)
 {
 	Real input_rho = atof(argv[1]);
@@ -193,7 +50,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 
 	Real t_eq,t_sim;
 
-	Box box;
+	LyapunovBox box;
 	box.Init(thisnode, input_rho);
 
 	MarkusParticle::mu_plus = input_mu_plus;
@@ -204,7 +61,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 	box.info.str("");
 	box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
-	ofstream out_file,traj_file;
+	ofstream traj_file;
 	if (thisnode->node_id == 0)
 	{
 		stringstream address;
@@ -213,7 +70,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 		traj_file.open(address.str().c_str());
 		address.str("");
 		address << "deviation-" << box.info.str() << ".dat";
-		out_file.open(address.str().c_str());
+		box.outfile.open(address.str().c_str());
 	}
 
 	if (thisnode->node_id == 0)
@@ -227,14 +84,14 @@ void Run(int argc, char *argv[], Node* thisnode)
 		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
- 	t_sim = Lyapunov_Exponent(box, 3, 1,10, out_file);
+ 	t_sim = box.Lyapunov_Exponent(100, 100, 0.1, 2, 3);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	traj_file << &box;
 	if (thisnode->node_id == 0)
 	{
 		cout << " Done in " << floor(t_sim / 60.0) << " minutes and " << t_sim - 60*floor(t_sim / 60.0) << " s" << endl;
-		out_file.close();
+		box.outfile.close();
 		traj_file.close();
 	}
 
@@ -245,7 +102,7 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 {
 	Real t_eq,t_sim;
 
-	Box box;
+	LyapunovBox box;
 	if (!box.Init(thisnode, argv[1]))
 		return false;
 
@@ -259,21 +116,14 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 		stringstream address;
 		address.str("");
 		address << "deviation-" << box.info.str() << ".dat";
-		out_file.open(address.str().c_str());
+		box.outfile.open(address.str().c_str());
 	}
 
 	if (thisnode->node_id == 0)
 		cout << " Box information is: " << box.info.str() << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	t_eq = equilibrium(&box, equilibrium_step, saving_period);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	if (thisnode->node_id == 0)
-		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
-
-	MPI_Barrier(MPI_COMM_WORLD);
-	t_sim = Lyapunov_Exponent(box, 10, 0.01,10, out_file);
+ 	t_sim = box.Lyapunov_Exponent(1, 10, 0.1, 10, 3);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	if (thisnode->node_id == 0)

@@ -7,19 +7,20 @@
 
 class VectorSet{
 public:
-	int direction_num, particle_num;
+	static int direction_num, particle_num;
 	static Real amplitude;
 	vector<State_Hyper_Vector> v;
 
-	VectorSet(int vector_number, int particle_per_vector);
+	VectorSet();
+	VectorSet(const int vector_number, const int particle_per_vector);
 	VectorSet(VectorSet& vs);
 	~VectorSet();
 
+	void Init();
 	void Rand();
 	void Renormalize();
 	void Renormalize(VectorSet& us);
 	void Unit_Vector(VectorSet& us);
-	void Init();
 	void Scale(); // Scale all vectors by amplitude
 	
 	VectorSet& operator= ( const VectorSet& vs);
@@ -27,27 +28,9 @@ public:
 	const VectorSet operator* ( const Real& factor);
 };
 
-VectorSet::VectorSet(int vector_number, int particle_per_vector) : direction_num(vector_number), particle_num(particle_per_vector)
+VectorSet::VectorSet()
 {
-	// Now the seed is a pice of trash! It will be removed in future
-	int* seed;
-	seed = new int[direction_num];
-	bool b = false;
-	while (!b)
-	{
-		b = true;
-		for (int i = 0; i < direction_num; i++)
-			seed[i] = i + time(NULL);
-		for (int i = 0; i < direction_num; i++)
-			for (int j = i+1; j < direction_num; j++)
-				b = b && (seed[i] != seed[j]);
-	}
-	for (int i = 0; i < direction_num; i++)
-	{
-		State_Hyper_Vector temp(particle_num, seed[i]);
-		v.push_back(temp);
-	}
-	delete [] seed;
+	Init();
 }
 
 VectorSet::VectorSet(VectorSet& vs)
@@ -62,6 +45,16 @@ VectorSet::VectorSet(VectorSet& vs)
 VectorSet::~VectorSet()
 {
 	v.clear();
+}
+
+void VectorSet::Init()
+{
+	v.clear();
+	for (int i = 0; i < direction_num; i++)
+	{
+		State_Hyper_Vector temp(particle_num);
+		v.push_back(temp);
+	}
 }
 
 VectorSet& VectorSet::operator= ( const VectorSet& vs)
@@ -130,7 +123,67 @@ void VectorSet::Renormalize(VectorSet& us)
 	}
 }
 
+int VectorSet::direction_num = 0;
+int VectorSet::particle_num = 0;
 Real VectorSet::amplitude = 1e-7;
 
-#endif
+class GrowthRatio{
+public:
+	static int direction_num;
+	int num;
+	vector<Real> r;
+	vector<Real> r2;
 
+	GrowthRatio();
+	GrowthRatio(const GrowthRatio& gr);
+
+	~GrowthRatio();
+
+	void Init();
+	
+
+	
+};
+
+GrowthRatio::GrowthRatio()
+{
+	num = 0;
+	for (int i = 0; i < direction_num; i++)
+	{
+		r.push_back(0);
+		r2.push_back(0);
+	}
+}
+
+GrowthRatio::GrowthRatio(const GrowthRatio& gr)
+{
+	num = gr.num;
+	for (int i = 0; i < direction_num; i++)
+	{
+		r.push_back(gr.r[i]);
+		r2.push_back(gr.r2[i]);
+	}
+}
+
+GrowthRatio::~GrowthRatio()
+{
+	r.clear();
+	r2.clear();
+}
+
+void GrowthRatio::Init()
+{
+	r.clear();
+	r2.clear();
+	num = 0;
+	for (int i = 0; i < direction_num; i++)
+	{
+		r.push_back(0);
+		r2.push_back(0);
+	}
+}
+
+
+int GrowthRatio::direction_num = 0;
+
+#endif
