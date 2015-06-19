@@ -18,12 +18,12 @@ public:
 	ofstream outfile;
 	
 	void Init_Deviation(int direction_num);
-	void Init_Time(const int, const int);
+	void Init_Time(const Real, const Real);
 
 	void Add_Deviation(const State_Hyper_Vector&); // Add argument state vector as a deviation to the state of the box
 	void Evolution();
 	void Evolution_Reorthonormalize(bool save);
-	Real Lyapunov_Exponent(const int, const int, const int, const int, const int); // Finding the largest lyapunov exponent
+	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const Real); // Finding the largest lyapunov exponent
 };
 
 
@@ -32,7 +32,7 @@ void LyapunovBox::Init_Deviation(int direction_num)
 {
 	us.direction_num = direction_num;
 	us.particle_num = N;
-	us.amplitude = 1e-6;
+	us.amplitude = 1e-7;
 	us.Init();
 	us.Rand();
 	vs.Init();
@@ -66,12 +66,12 @@ void LyapunovBox::Add_Deviation(const State_Hyper_Vector& dsv)
 }
 
 
-void LyapunovBox::Init_Time(const int interval, const int durution)
+void LyapunovBox::Init_Time(const Real interval, const Real durution)
 {
 	t.clear();
 	tau.clear();
 	ratio.clear();
-	gamma.clear;
+	gamma.clear();
 	for (Real i = interval; i < durution; i+=interval)
 	{
 		t.push_back((int) round(i/dt));
@@ -137,9 +137,13 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 	gamma.clear();
 	Save(gamma_0);
 
-	for (int i = 0; i < tau.size(); i++)
+	gamma.push_back(gamma_0);
+
+	for (int j = 0; j < tau.size(); j++)
 	{
-		Multi_Step(tau[i], 20);
+		if (thisnode->node_id == 0)
+				cout << "Evolving unpurturbed system for " << dt*t[j] << endl;
+		Multi_Step(tau[j], 20);
 		Save(temp_gamma);
 		gamma.push_back(temp_gamma);
 	}
@@ -155,20 +159,18 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 	for (int j = 0; j < tau.size(); j++)
 	{
 		if (thisnode->node_id == 0)
-			cout << "System is in time " << t[j] << endl;
+			cout << "System is in time " << dt*t[j] << endl;
 		for (int i = 0; i < us.direction_num; i++)
 		{
-			if (thisnode->node_id == 0)
-				cout << "Direction number " << i << endl;
 			Load(gamma[j]);
 			Add_Deviation(vs.v[i]);
 			Multi_Step(tau[j], 20);
 			Save(temp_gamma_prime);
-			vs.v[i] = (temp_gamma_prime - gamma[j]);
+			vs.v[i] = (temp_gamma_prime - gamma[j+1]);
 		}
-		if (thisnode->node_id == 0)
-			cout << "Renormalizing" << endl;
+
 		vs.Renormalize(us);
+
 		for (int i = 0; i < us.direction_num; i++)
 		{
 			vs.v[i] = us.v[i]*(vs.v[i] * us.v[i]);
@@ -189,7 +191,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 }
 
 // Finding the largest lyapunov exponent
-Real LyapunovBox::Lyapunov_Exponent(const int eq_interval, const int eq_duration, const int interval, const int duration, const int direction_num)
+Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const Real direction_num)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -204,6 +206,8 @@ Real LyapunovBox::Lyapunov_Exponent(const int eq_interval, const int eq_duration
 	start_time = end_time;
 	
 	Init_Time(interval, duration);
+	if (thisnode->node_id == 0)
+		cout << "Initialized time set for lyapunov computation " << endl;
 	Evolution_Reorthonormalize(true);
 
 	end_time = clock();

@@ -84,7 +84,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
- 	t_sim = box.Lyapunov_Exponent(1, 100, 0.1, 2, 3);
+ 	t_sim = box.Lyapunov_Exponent(0.01, 100, 0.01, 5, 6);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	traj_file << &box;
