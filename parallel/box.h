@@ -112,6 +112,7 @@ bool Box::Init(Node* input_node, const string input_name)
 	track_p = &particle[track];
 	#endif
 
+	Real input_kapa;
 	Real input_mu_plus;
 	Real input_mu_minus;
 	Real input_Dphi;
@@ -126,6 +127,7 @@ bool Box::Init(Node* input_node, const string input_name)
 
 	boost::replace_all(name, "-r-v.bin", "");
 	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-k=", "");
 	boost::replace_all(name, "-mu+=", "\t");
 	boost::replace_all(name, "-mu-=", "\t");
 	boost::replace_all(name, "-Dphi=", "\t");
@@ -133,6 +135,7 @@ bool Box::Init(Node* input_node, const string input_name)
 
 	stringstream ss_name(name);
 	ss_name >> density;
+	ss_name >> input_kapa;
 	ss_name >> input_mu_plus;
 	ss_name >> input_mu_minus;
 	ss_name >> input_Dphi;
@@ -143,6 +146,7 @@ bool Box::Init(Node* input_node, const string input_name)
 		return false;
 	}
 
+	Particle::kapa = input_kapa;
 	Particle::mu_plus = input_mu_plus;
 	Particle::mu_minus = input_mu_minus;
 	Particle::D_phi = input_Dphi;

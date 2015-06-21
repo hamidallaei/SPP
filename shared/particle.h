@@ -320,7 +320,7 @@ Real MarkusParticle::mu_minus = 1;
 Real MarkusParticle::kapa = 40;//40.0;
 Real MarkusParticle::D_phi = 1;
 Real MarkusParticle::kisi_r = 0.1;
-Real MarkusParticle::kisi_a = 0.2;
+Real MarkusParticle::kisi_a = 1;//0.2;
 Real MarkusParticle::kisi = 1;
 
 class RepulsiveParticle: public BasicDynamicParticle {

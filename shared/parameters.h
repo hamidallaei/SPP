@@ -42,7 +42,7 @@ const int max_N = 80000;
 
 // Box
 const int Lx_int = 3;
-const int Ly_int = 3;
+const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -71,7 +71,7 @@ Real dt = 0.005;
 Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 10;
-const long int equilibrium_step = 10000;
+const long int equilibrium_step = 100000;
 const long int total_step = 200000;
 
 // Interactions

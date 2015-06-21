@@ -44,22 +44,24 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period)
 void Run(int argc, char *argv[], Node* thisnode)
 {
 	Real input_rho = atof(argv[1]);
-	Real input_mu_plus = atof(argv[2]);
-	Real input_mu_minus = atof(argv[3]);
-	Real input_D = atof(argv[4]);
+	Real input_kapa = atof(argv[2]);
+	Real input_mu_plus = atof(argv[3]);
+	Real input_mu_minus = atof(argv[4]);
+	Real input_D = atof(argv[5]);
 
 	Real t_eq,t_sim;
 
 	LyapunovBox box;
 	box.Init(thisnode, input_rho);
 
+	MarkusParticle::kapa = input_kapa;
 	MarkusParticle::mu_plus = input_mu_plus;
 	MarkusParticle::mu_minus = input_mu_minus;
 
 	Particle::D_phi = input_D;
 	Particle::noise_amplitude = sqrt(2*input_D) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 	box.info.str("");
-	box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
+	box.info << "rho=" << box.density <<  "-k=" << Particle::kapa << "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
 	ofstream traj_file;
 	if (thisnode->node_id == 0)
@@ -84,7 +86,7 @@ void Run(int argc, char *argv[], Node* thisnode)
 		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
- 	t_sim = box.Lyapunov_Exponent(0.01, 100, 0.01, 5, 6);
+	t_sim = box.Lyapunov_Exponent(0.01, 100, 0.01, 20, 6);
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	traj_file << &box;
@@ -108,7 +110,7 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 
 	Particle::noise_amplitude = sqrt(2*Particle::D_phi) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 	box.info.str("");
-	box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
+	box.info << "rho=" << box.density <<  "-k=" << Particle::kapa << "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
 	ofstream out_file;
 	if (thisnode->node_id == 0)

@@ -141,7 +141,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 
 	for (int j = 0; j < tau.size(); j++)
 	{
-		if (thisnode->node_id == 0)
+		if (thisnode->node_id == 0 && (j % 1000 == 0))
 				cout << "Evolving unpurturbed system for " << dt*t[j] << endl;
 		Multi_Step(tau[j], 20);
 		Save(temp_gamma);
@@ -158,7 +158,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 
 	for (int j = 0; j < tau.size(); j++)
 	{
-		if (thisnode->node_id == 0)
+		if (thisnode->node_id == 0 && (j % 1000 == 0))
 			cout << "System is in time " << dt*t[j] << endl;
 		for (int i = 0; i < us.direction_num; i++)
 		{
