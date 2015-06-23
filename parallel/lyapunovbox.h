@@ -15,7 +15,7 @@ public:
 	vector<GrowthRatio> ratio;
 	vector<State_Hyper_Vector> gamma;
 	
-	ofstream outfile;
+	ofstream outfile, trajfile;
 	
 	void Init_Deviation(int direction_num);
 	void Init_Time(const Real, const Real);
@@ -23,7 +23,8 @@ public:
 	void Add_Deviation(const State_Hyper_Vector&); // Add argument state vector as a deviation to the state of the box
 	void Evolution();
 	void Evolution_Reorthonormalize(bool save);
-	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const Real); // Finding the largest lyapunov exponent
+	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
+	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
 };
 
 
@@ -146,6 +147,8 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 		Multi_Step(tau[j], 20);
 		Save(temp_gamma);
 		gamma.push_back(temp_gamma);
+		if (save && (j % 100 == 0))
+			trajfile << this;
 	}
 
 	if (save)
@@ -191,7 +194,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 }
 
 // Finding the largest lyapunov exponent
-Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const Real direction_num)
+Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const int direction_num)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -205,6 +208,40 @@ Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval, const Real eq_durati
 		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
 	start_time = end_time;
 	
+	Init_Time(interval, duration);
+	if (thisnode->node_id == 0)
+		cout << "Initialized time set for lyapunov computation " << endl;
+	Evolution_Reorthonormalize(true);
+
+	end_time = clock();
+	Real running_time = (end_time - start_time) / CLOCKS_PER_SEC;
+	if (thisnode->node_id == 0)
+		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
+	return (running_time);
+}
+
+Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval0, const Real eq_duration0, const Real eq_interval1, const Real eq_duration1, const Real interval, const Real duration, const int direction_num)
+{
+	clock_t start_time, end_time;
+	start_time = clock();
+
+	Init_Deviation(direction_num);
+	Init_Time(eq_interval0, eq_duration0);
+	Evolution_Reorthonormalize(false);
+
+	end_time = clock();
+	if (thisnode->node_id == 0)
+		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
+	start_time = end_time;
+
+	Init_Time(eq_interval1, eq_duration1);
+	Evolution_Reorthonormalize(false);
+
+	end_time = clock();
+	if (thisnode->node_id == 0)
+		cout << "Finded unit orthonormal vectors more precise in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
+	start_time = end_time;	
+
 	Init_Time(interval, duration);
 	if (thisnode->node_id == 0)
 		cout << "Initialized time set for lyapunov computation " << endl;

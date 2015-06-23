@@ -63,13 +63,12 @@ void Run(int argc, char *argv[], Node* thisnode)
 	box.info.str("");
 	box.info << "rho=" << box.density <<  "-k=" << Particle::kapa << "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 
-	ofstream traj_file;
 	if (thisnode->node_id == 0)
 	{
 		stringstream address;
 		address.str("");
 		address << box.info.str() << "-r-v.bin";
-		traj_file.open(address.str().c_str());
+		box.trajfile.open(address.str().c_str());
 		address.str("");
 		address << "deviation-" << box.info.str() << ".dat";
 		box.outfile.open(address.str().c_str());
@@ -86,15 +85,14 @@ void Run(int argc, char *argv[], Node* thisnode)
 		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	t_sim = box.Lyapunov_Exponent(0.01, 100, 0.01, 20, 6);
+	t_sim = box.Lyapunov_Exponent(10,100, 0.1, 100, 0.01, 20, 5);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	traj_file << &box;
 	if (thisnode->node_id == 0)
 	{
 		cout << " Done in " << floor(t_sim / 60.0) << " minutes and " << t_sim - 60*floor(t_sim / 60.0) << " s" << endl;
 		box.outfile.close();
-		traj_file.close();
+		box.trajfile.close();
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
