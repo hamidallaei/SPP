@@ -9,7 +9,7 @@
 // This tracks a specific particle. The id of the tracking particle is given below.
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (if we change order of a sum, the result will change because of the truncation error)
-#define COMPARE
+//#define COMPARE
 
 #include <iostream>
 #include <iomanip>
@@ -60,8 +60,8 @@ const long int equilibrium_step = 100;
 const long int total_step = 100;
 
 // Cell division
-const int max_divisor_x = 20*Lx_int/12;//Lx2*(1 - 2*cell_update_period*dt);
-const int max_divisor_y = 20*Ly_int/12;//Ly2*(1 - 2*cell_update_period*dt);
+const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
+const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;
 const int divisor_y = max_divisor_y;
 
@@ -92,7 +92,7 @@ bool flag = false;
 
 #ifdef COMPARE
 //double digits = 100000000000000000;
-double digits = 10000000000000;
+double digits =   100000000000000000;
 #endif
 
 

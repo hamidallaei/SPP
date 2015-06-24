@@ -29,6 +29,11 @@ public:
 
 Cell::Cell()
 {
+	if (((Lx2 / divisor_x) < Particle::rv) || ((Ly2 / divisor_y) < Particle::rv))
+	{
+		cout << "Error, cells are too small that befor a cell update the run particles neighbors change. You have to decrease number of cells (divisor_x or divisor_y)" << endl;
+		exit(0);
+	}
 }
 
 void Cell::Init(Real x, Real y)
