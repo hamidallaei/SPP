@@ -437,7 +437,7 @@ Real RepulsiveParticle::kesi = .5;
 Real ContinuousParticle::gw = 20;
 
 Real BasicDynamicParticle::noise_amplitude = .1;
-Real BasicDynamicParticle::rv = 1 + (dt*21);
+Real BasicDynamicParticle::rv = 1 + (dt*(cell_update_period-10));
 Real BasicDynamicParticle::speed = 1;
 
 

@@ -6,33 +6,45 @@
 #include "../shared/particle.h"
 #include "../shared/cell.h"
 #include "../shared/wall.h"
+#include "../shared/set-up.h"
+#include "../shared/state-hyper-vector.h"
 #include "../shared/geometry.h"
 
+#include <boost/algorithm/string.hpp>
 
 class Box{
 public:
-	int N, Wall_num; // N is the number of particles and wallnum is total number of walls in the system.
+	int N; // N is the number of particles and wallnum is total number of walls in the system.
 	Particle particle[max_N]; // Array of particles that we are going to simulate.
 	Geometry geometry; // the entire geometry that the particle interact with. 
-	Wall wall[50]; // Array of walls in our system.
 	Cell cell[divisor_x][divisor_y];
 
 	Real density, volume_fraction;
-	stringstream info;
+	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
 	Box();
+
+	void Init_Topology(); // Initialize the wall positions and numbers.
+	void Init(Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
+	bool Init(const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
+
+	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
+	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
+
+	void Update_Neighbor_List(); // This will update verlet neighore list of each particle
 	void Update_Cells();
-	void Interact();
-	void Move();
-	void One_Step();
-	void Multi_Step(int steps);
-	void Translate(C2DVector d);
+	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
+	void Move(); // Move all particles of this node.
+	void One_Step(); // One full step, composed of interaction computation and move.
+	void Multi_Step(int steps); // Several steps befor a cell upgrade.
+	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
+	void Translate(C2DVector d); // Translate position of all particles with vector d
 	void Center();
 
 	void Make_Traj(Real scale, std::ofstream& data_file);
 
-	friend std::ostream& operator<<(std::ostream& os, Box* box);
-	friend std::istream& operator>>(std::istream& is, Box* box);
+	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
+	friend std::istream& operator>>(std::istream& is, Box* box); // Input
 };
 
 Box::Box()
@@ -50,13 +62,120 @@ Box::Box()
 			cell[i][j].Init((Real) Lx*(2*i-divisor_x + 0.5)/divisor_x, (Real) Ly*(2*j-divisor_y + 0.5)/divisor_y);
 }
 
+// Initialize the wall positions and numbers.
+void Box::Init_Topology()
+{
+	#ifndef PERIODIC_BOUNDARY_CONDITION
+		geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
+		geometry.Add_Wall(-Lx, Ly, Lx, Ly);
+		geometry.Add_Wall(Lx, Ly, Lx, -Ly);
+		geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
+	#endif
+}
+
+// Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
+void Box::Init(Real input_density)
+{
+	#ifdef TRACK_PARTICLE
+		track_p = &particle[track];
+	#endif
+
+	density = input_density;
+	N = (int) round(Lx2*Ly2*input_density);
+
+	Init_Topology(); // Adding walls
+
+	cout << "number_of_particles = " << N << endl; // Printing number of particles.
+// Positioning the particles
+//	Polar_Formation(particle,N);
+//	Triangle_Lattice_Formation(particle, N, 1);
+	Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+//	Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
+//	Single_Vortex_Formation(particle, N);
+//	Four_Vortex_Formation(particle, N);
+
+	Update_Cells();
+
+// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+	info.str("");
+}
+
+
+// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. Unfortunately this is only for Markus partiles
+bool Box::Init(const string input_name)
+{
+	#ifdef TRACK_PARTICLE
+		track_p = &particle[track];
+	#endif
+
+	Real input_kapa;
+	Real input_mu_plus;
+	Real input_mu_minus;
+	Real input_Dphi;
+	Real input_L;
+
+	string name = input_name;
+	stringstream address(name);
+	ifstream is;
+	is.open(address.str().c_str());
+	if (!is.is_open())
+		return false;
+
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-k=", "");
+	boost::replace_all(name, "-mu+=", "\t");
+	boost::replace_all(name, "-mu-=", "\t");
+	boost::replace_all(name, "-Dphi=", "\t");
+	boost::replace_all(name, "-L=", "\t");
+
+	stringstream ss_name(name);
+	ss_name >> density;
+	ss_name >> input_kapa;
+	ss_name >> input_mu_plus;
+	ss_name >> input_mu_minus;
+	ss_name >> input_Dphi;
+	ss_name >> input_L;
+	if (input_L != Lx_int)
+	{
+		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
+
+	Particle::kapa = input_kapa;
+	Particle::mu_plus = input_mu_plus;
+	Particle::mu_minus = input_mu_minus;
+	Particle::D_phi = input_Dphi;
+
+	is.read((char*) &N, sizeof(int) / sizeof(char));
+	if (N < 0 || N > 1000000)
+		return (false);
+
+	for (int i = 0; i < N; i++)
+	{
+		is >> particle[i].r;
+		is >> particle[i].v;
+	}
+
+	is.close();
+
+	Init_Topology(); // Adding walls
+
+		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+
+	Update_Cells();
+
+// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+	info.str("");
+	return (true);
+}
+
 void Box::Update_Cells()
 {
 	for (int x = 0; x < divisor_x; x++)
 		for (int y = 0; y < divisor_y; y++)
 			cell[x][y].Delete();
 
-	#pragma omp parallel for
 	for (int i = 0; i < N; i++)
 	{
 		int x,y;
@@ -74,70 +193,165 @@ void Box::Update_Cells()
 
 		cell[x][y].Add(i);
 	}
+
+	#ifdef verlet_list
+		Update_Neighbor_List();
+	#endif
 }
 
-
-void Box::Interact()
+// This function will update verlet neighore list of particles
+void Box::Update_Neighbor_List()
 {
-	#ifdef PERIODIC_BOUNDARY_CONDITION
+// Each cell must interact with itself and 4 of its 8 neihbors that are right cell, up cell, righ up and right down. Because each intertion compute the torque to both particles we need to use 4 of the 8 directions.
 	for (int x = 0; x < divisor_x; x++)
 		for (int y = 0; y < divisor_y; y++)
 		{
-			cell[x][y].Self_Interact();
-			cell[x][y].Interact(&cell[(x+1)%divisor_x][y]);
-			cell[x][y].Interact(&cell[x][(y+1)%divisor_x]);
-			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y+1)%divisor_y]);
-			cell[x][y].Interact(&cell[(x+1)%divisor_x][(y-1+divisor_y)%divisor_y]);
+			cell[x][y].Clear_Neighbor_List();
+			// Self interaction
+			cell[x][y].Neighbor_List();
 		}
-	#else
-	for (int x = 0; x < divisor_x-1; x++)
-		for (int y = 1; y < divisor_y-1; y++)
+
+#ifdef PERIODIC_BOUNDARY_CONDITION
+// right, up and up right cells:
+// The righmost cells and top cells must be excluded to avoid nieghbor node interactions.
+	for (int x = 0; x < divisor_x; x++)
+		for (int y = 0; y < divisor_y; y++)
 		{
-			cell[x][y].Self_Interact();
-			cell[x][y].Interact(&cell[(x+1)%divisor_y][y]);
-			cell[x][y].Interact(&cell[x][(y+1)%divisor_y]);
-			cell[x][y].Interact(&cell[(x+1)%divisor_y][(y+1)%divisor_y]);
-			cell[x][y].Interact(&cell[(x+1)%divisor_y][(y-1+divisor_y)%divisor_y]);
+			cell[x][y].Neighbor_List(&cell[(x+1)%divisor_x][y]);
+			cell[x][y].Neighbor_List(&cell[x][(y+1)%divisor_y]);
+			cell[x][y].Neighbor_List(&cell[(x+1)%divisor_x][(y+1)%divisor_y]);
+			cell[x][y].Neighbor_List(&cell[(x+1)%divisor_x][(y-1+divisor_y)%divisor_y]);
 		}
-	for (int y = 1; y < divisor_y-1; y++)
-	{
-		cell[divisor_x-1][y].Self_Interact();
-		cell[divisor_x-1][y].Interact(&cell[divisor_x-1][y+1]);
-	}
+#else
+// right, up and up right cells:
+// The righmost cells and top cells must be excluded to avoid nieghbor node interactions.
 	for (int x = 0; x < divisor_x-1; x++)
-	{
-		cell[x][0].Self_Interact();
-		cell[x][0].Interact(&cell[x+1][0]);
-		cell[x][0].Interact(&cell[x][1]);
-		cell[x][0].Interact(&cell[x+1][1]);
+		for (int y = 0; y < divisor_y-1; y++)
+		{
+			cell[x][y].Neighbor_List(&cell[x+1][y]);
+			cell[x][y].Neighbor_List(&cell[x][y+1]);
+			cell[x][y].Neighbor_List(&cell[x+1][y+1]);
+		}
+	for (int x = 0; x < (divisor_x-1); x++)
+		cell[x][divisor_y-1].Neighbor_List(&cell[x+1][divisor_y-1]);
+	for (int y = 0; y < (divisor_y-1); y++)
+		cell[divisor_x-1][y].Neighbor_List(&cell[divisor_x-1][y+1]);
+	// right down cell:
+// The righmost cells and buttom cells must be excluded to avoid nieghbor node interactions.
+	for (int x = 0; x < (divisor_x-1); x++)
+		for (int y = 1; y < divisor_y; y++)
+			cell[x][y].Neighbor_List(&cell[x+1][y-1]);
+#endif
+}
 
-		cell[x][divisor_x-1].Self_Interact();
-		cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-1]);
-		cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-2]);
+// Loading a state to the box.
+void Box::Load(const State_Hyper_Vector& sv)
+{
+	if (N != sv.N)
+	{
+		cout << "Error: Number of particles in state vectors differ from box" << endl;
+		exit(0);
+	}
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].r = sv.particle[i].r;
+		particle[i].theta = sv.particle[i].theta;
+		particle[i].v.x = cos(particle[i].theta);
+		particle[i].v.y = sin(particle[i].theta);
+	}
+	sv.Set_C2DVector_Rand_Generator();
+
+	Update_Cells();
+}
+
+// Saving state of the box.
+void Box::Save(State_Hyper_Vector& sv) const
+{
+	if (N != sv.N)
+	{
+		cout << "Error: Number of particles in state vectors differ from box" << endl;
+		exit(0);
 	}
 
-	cell[divisor_x-1][divisor_y-1].Self_Interact();
-	cell[divisor_x-1][0].Self_Interact();
-	cell[divisor_x-1][0].Interact(&cell[divisor_y-1][1]);
+	for (int i = 0; i < N; i++)
+	{
+		sv.particle[i].r = particle[i].r;
+		sv.particle[i].theta = particle[i].theta;
+	}
+	sv.Get_C2DVector_Rand_Generator();
+// We need to make sure that indexing of particles are the same to exactly recompute the same values. Therefor at a saving we update cells and neighore list therefore if we load the same sv and update cells and neighore list we will come to the same indexing
+}
+
+// Here the intractio of particles are computed that is the applied tourque to each particle.
+void Box::Interact()
+{
+	#ifdef verlet_list
+		for (int x = 0; x < divisor_x; x++)
+			for (int y = 0; y < divisor_y; y++)
+				cell[x][y].Interact();
+	#else
+		#ifdef PERIODIC_BOUNDARY_CONDITION
+			for (int x = 0; x < divisor_x; x++)
+				for (int y = 0; y < divisor_y; y++)
+				{
+					cell[x][y].Self_Interact();
+					cell[x][y].Interact(&cell[(x+1)%divisor_x][y]);
+					cell[x][y].Interact(&cell[x][(y+1)%divisor_x]);
+					cell[x][y].Interact(&cell[(x+1)%divisor_x][(y+1)%divisor_y]);
+					cell[x][y].Interact(&cell[(x+1)%divisor_x][(y-1+divisor_y)%divisor_y]);
+				}
+		#else
+			for (int x = 0; x < divisor_x-1; x++)
+				for (int y = 1; y < divisor_y-1; y++)
+				{
+					cell[x][y].Self_Interact();
+					cell[x][y].Interact(&cell[(x+1)%divisor_y][y]);
+					cell[x][y].Interact(&cell[x][(y+1)%divisor_y]);
+					cell[x][y].Interact(&cell[(x+1)%divisor_y][(y+1)%divisor_y]);
+					cell[x][y].Interact(&cell[(x+1)%divisor_y][(y-1+divisor_y)%divisor_y]);
+				}
+			for (int y = 1; y < divisor_y-1; y++)
+			{
+				cell[divisor_x-1][y].Self_Interact();
+				cell[divisor_x-1][y].Interact(&cell[divisor_x-1][y+1]);
+			}
+			for (int x = 0; x < divisor_x-1; x++)
+			{
+				cell[x][0].Self_Interact();
+				cell[x][0].Interact(&cell[x+1][0]);
+				cell[x][0].Interact(&cell[x][1]);
+				cell[x][0].Interact(&cell[x+1][1]);
+
+				cell[x][divisor_x-1].Self_Interact();
+				cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-1]);
+				cell[x][divisor_x-1].Interact(&cell[x+1][divisor_y-2]);
+			}
+
+			cell[divisor_x-1][divisor_y-1].Self_Interact();
+			cell[divisor_x-1][0].Self_Interact();
+			cell[divisor_x-1][0].Interact(&cell[divisor_y-1][1]);
+		#endif
 	#endif
 
 	for(int i = 0 ; i < N; i++)
 		geometry.Interact(&particle[i]);
 }
 
-
+// Move all particles of this node.
 void Box::Move()
 {
 	for (int i = 0; i < N; i++)
 		particle[i].Move();
 }
 
+// One full step, composed of interaction computation and move.
 void Box::One_Step()
 {
 	Interact();
 	Move();
 }
 
+// Several steps befor a cell upgrade.
 void Box::Multi_Step(int steps)
 {
 	for (int i = 0; i < steps; i++)
@@ -148,6 +362,15 @@ void Box::Multi_Step(int steps)
 	Update_Cells();
 }
 
+// Several steps with a cell upgrade call after each interval.
+void Box::Multi_Step(int steps, int interval)
+{
+	for (int i = 0; i < steps/interval; i++)
+		Multi_Step(interval);
+	Multi_Step(steps % interval);
+}
+
+// Translate position of all particles with vector d
 void Box::Translate(C2DVector d)
 {
 	for (int i = 0; i < N; i++)
@@ -177,6 +400,7 @@ void Box::Make_Traj(Real scale, ofstream& data_file)
 		data_file << "H	" << particle[i].r * scale << "\t" << 0.0 << endl;
 }
 
+// Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.
 std::ostream& operator<<(std::ostream& os, Box* box)
 {
 	// binary output
@@ -202,6 +426,7 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 //	}
 }
 
+// Reading the particle information (position and velocities) from a standard input stream (probably a file).
 std::istream& operator>>(std::istream& is, Box* box)
 {
 	// binary input

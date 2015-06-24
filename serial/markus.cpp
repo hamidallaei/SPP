@@ -52,17 +52,17 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 }
 
 
-void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude)
+void Init(Box* box, Real input_density, Real input_mu_plus, Real input_mu_minus, Real input_Dphi)
 {
 	box->density = input_density;
 	box->N = (int) round(Lx2*Ly2*box->density);
 	cout << "number_of_particles = " << box->N << endl;
 
-	Particle::noise_amplitude = noise_amplitude / sqrt(dt);
-	ContinuousParticle::g = g;
-	ContinuousParticle::alpha = alpha;
+	Particle::mu_plus = input_mu_plus;
+	Particle::mu_minus = input_mu_minus;
+	Particle::D_phi = input_Dphi;
+	Particle::noise_amplitude = sqrt(2*Particle::D_phi) / sqrt(dt);
 
-	cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
 //	Polar_Formation(box->particle,box->N);
 //	Triangle_Lattice_Formation(box->particle, box->N, 1);
@@ -81,7 +81,7 @@ void Init(Box* box, Real input_density, Real g, Real alpha, Real noise_amplitude
 	box->Update_Cells();
 
 	box->info.str("");
-	box->info << "rho=" << box->density <<  "-g=" << ContinuousParticle::g << "-alpha=" << ContinuousParticle::alpha << "-noise=" << noise_amplitude;
+	box->info << "rho=" << box->density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
 }
 
 int main(int argc, char *argv[])
