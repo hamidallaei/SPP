@@ -51,6 +51,17 @@ inline void data_gathering(Box* box, int total_step, int saving_period, ofstream
 	cout << "Finished" << endl;
 }
 
+// Initialize the wall positions and numbers.
+void Init_Topology(Box& box)
+{
+	box.geometry.Reset();
+	#ifndef PERIODIC_BOUNDARY_CONDITION
+		box.geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
+		box.geometry.Add_Wall(-Lx, Ly, Lx, Ly);
+		box.geometry.Add_Wall(Lx, Ly, Lx, -Ly);
+		box.geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
+	#endif
+}
 
 void Init(Box* box, Real input_density, Real input_mu_plus, Real input_mu_minus, Real input_Dphi)
 {
@@ -82,6 +93,75 @@ void Init(Box* box, Real input_density, Real input_mu_plus, Real input_mu_minus,
 
 	box->info.str("");
 	box->info << "rho=" << box->density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
+}
+
+// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. Unfortunately this is only for Markus partiles
+bool Init(Box& box, const string input_name)
+{
+	#ifdef TRACK_PARTICLE
+		track_p = &particle[track];
+	#endif
+
+	Real input_kapa;
+	Real input_mu_plus;
+	Real input_mu_minus;
+	Real input_Dphi;
+	Real input_L;
+
+	string name = input_name;
+	stringstream address(name);
+	ifstream is;
+	is.open(address.str().c_str());
+	if (!is.is_open())
+		return false;
+
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-k=", "");
+	boost::replace_all(name, "-mu+=", "\t");
+	boost::replace_all(name, "-mu-=", "\t");
+	boost::replace_all(name, "-Dphi=", "\t");
+	boost::replace_all(name, "-L=", "\t");
+
+	stringstream ss_name(name);
+	ss_name >> box.density;
+	ss_name >> input_kapa;
+	ss_name >> input_mu_plus;
+	ss_name >> input_mu_minus;
+	ss_name >> input_Dphi;
+	ss_name >> input_L;
+	if (input_L != Lx_int)
+	{
+		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
+
+	Particle::kapa = input_kapa;
+	Particle::mu_plus = input_mu_plus;
+	Particle::mu_minus = input_mu_minus;
+	Particle::D_phi = input_Dphi;
+
+	is.read((char*) &box.N, sizeof(int) / sizeof(char));
+	if (box.N < 0 || box.N > 1000000)
+		return (false);
+
+	for (int i = 0; i < box.N; i++)
+	{
+		is >> box.particle[i].r;
+		is >> box.particle[i].v;
+	}
+
+	is.close();
+
+	Init_Topology(box); // Adding walls
+
+	cout << "number_of_particles = " << box.N << endl; // Printing number of particles.
+
+	box.Update_Cells();
+
+	box.info.str("");
+	box.info << "rho=" << box.density <<  "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
+	return (true);
 }
 
 int main(int argc, char *argv[])

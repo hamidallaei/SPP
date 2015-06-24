@@ -19,14 +19,10 @@ public:
 	Geometry geometry; // the entire geometry that the particle interact with. 
 	Cell cell[divisor_x][divisor_y];
 
-	Real density, volume_fraction;
+	Real density;
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
 	Box();
-
-	void Init_Topology(); // Initialize the wall positions and numbers.
-	void Init(Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-	bool Init(const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
 	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
@@ -60,114 +56,6 @@ Box::Box()
 	for (int i = 0; i < divisor_x; i++)
 		for (int j = 0; j < divisor_y; j++)
 			cell[i][j].Init((Real) Lx*(2*i-divisor_x + 0.5)/divisor_x, (Real) Ly*(2*j-divisor_y + 0.5)/divisor_y);
-}
-
-// Initialize the wall positions and numbers.
-void Box::Init_Topology()
-{
-	#ifndef PERIODIC_BOUNDARY_CONDITION
-		geometry.Add_Wall(-Lx, -Ly, -Lx, Ly);
-		geometry.Add_Wall(-Lx, Ly, Lx, Ly);
-		geometry.Add_Wall(Lx, Ly, Lx, -Ly);
-		geometry.Add_Wall(Lx, -Ly, -Lx, -Ly);
-	#endif
-}
-
-// Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-void Box::Init(Real input_density)
-{
-	#ifdef TRACK_PARTICLE
-		track_p = &particle[track];
-	#endif
-
-	density = input_density;
-	N = (int) round(Lx2*Ly2*input_density);
-
-	Init_Topology(); // Adding walls
-
-	cout << "number_of_particles = " << N << endl; // Printing number of particles.
-// Positioning the particles
-//	Polar_Formation(particle,N);
-//	Triangle_Lattice_Formation(particle, N, 1);
-	Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
-//	Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
-//	Single_Vortex_Formation(particle, N);
-//	Four_Vortex_Formation(particle, N);
-
-	Update_Cells();
-
-// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-	info.str("");
-}
-
-
-// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. Unfortunately this is only for Markus partiles
-bool Box::Init(const string input_name)
-{
-	#ifdef TRACK_PARTICLE
-		track_p = &particle[track];
-	#endif
-
-	Real input_kapa;
-	Real input_mu_plus;
-	Real input_mu_minus;
-	Real input_Dphi;
-	Real input_L;
-
-	string name = input_name;
-	stringstream address(name);
-	ifstream is;
-	is.open(address.str().c_str());
-	if (!is.is_open())
-		return false;
-
-	boost::replace_all(name, "-r-v.bin", "");
-	boost::replace_all(name, "rho=", "");
-	boost::replace_all(name, "-k=", "");
-	boost::replace_all(name, "-mu+=", "\t");
-	boost::replace_all(name, "-mu-=", "\t");
-	boost::replace_all(name, "-Dphi=", "\t");
-	boost::replace_all(name, "-L=", "\t");
-
-	stringstream ss_name(name);
-	ss_name >> density;
-	ss_name >> input_kapa;
-	ss_name >> input_mu_plus;
-	ss_name >> input_mu_minus;
-	ss_name >> input_Dphi;
-	ss_name >> input_L;
-	if (input_L != Lx_int)
-	{
-		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
-		return false;
-	}
-
-	Particle::kapa = input_kapa;
-	Particle::mu_plus = input_mu_plus;
-	Particle::mu_minus = input_mu_minus;
-	Particle::D_phi = input_Dphi;
-
-	is.read((char*) &N, sizeof(int) / sizeof(char));
-	if (N < 0 || N > 1000000)
-		return (false);
-
-	for (int i = 0; i < N; i++)
-	{
-		is >> particle[i].r;
-		is >> particle[i].v;
-	}
-
-	is.close();
-
-	Init_Topology(); // Adding walls
-
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-
-	Update_Cells();
-
-// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-	info.str("");
-	return (true);
 }
 
 void Box::Update_Cells()

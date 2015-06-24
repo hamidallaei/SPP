@@ -24,6 +24,7 @@ public:
 	Node* thisnode; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
 
 	Box();
+	// I believe that it is better to move these init functions to main files
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
 	bool Init(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
