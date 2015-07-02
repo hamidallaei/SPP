@@ -56,7 +56,7 @@ Real dt = 0.005;
 Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 10;
-const long int equilibrium_step = 100;
+const long int equilibrium_step = 100000;
 const long int total_step = 100;
 
 // Cell division

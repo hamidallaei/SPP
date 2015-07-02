@@ -4,12 +4,13 @@
 #include "c2dvector.h"
 
 class State_Hyper_Vector{
-	gsl_rng* gsl_r;
 	void Init_Random_Generator(int);
 public:
 	int N;
 	Real growth;
 	BasicParticle0* particle;
+	gsl_rng* gsl_r;
+
 	
 	State_Hyper_Vector(int, int);
 	State_Hyper_Vector(const State_Hyper_Vector&);
@@ -28,12 +29,15 @@ public:
 	void Set_C2DVector_Rand_Generator() const;
 	void Get_C2DVector_Rand_Generator();
 
+	void Null();
 	void Rand(const Real position_amplitude, const Real angle_amplitude);
 	Real Square() const;
 	Real Magnitude() const;
 	void Periodic_Transform();
 	void Unit();
 	int Max_Index() const;
+
+	friend std::ostream& operator<<(std::ostream& os, const State_Hyper_Vector& shv); // Save
 };
 
 void State_Hyper_Vector::Init_Random_Generator(int seed)
@@ -172,6 +176,16 @@ void State_Hyper_Vector::Get_C2DVector_Rand_Generator()
 	gsl_rng_memcpy (gsl_r, C2DVector::gsl_r);
 }
 
+void State_Hyper_Vector::Null()
+{
+	for (int i = 0; i < N; i++)
+	{
+		particle[i].r.x = 0;
+		particle[i].r.y = 0;
+		particle[i].theta = 0;
+	}
+}
+
 void State_Hyper_Vector::Rand(const Real position_amplitude, const Real angle_amplitude)
 {
 	for (int i = 0; i < N; i++)
@@ -231,6 +245,16 @@ int State_Hyper_Vector::Max_Index() const
 		}
 	}
 	return (index);
+}
+
+std::ostream& operator<<(std::ostream& os, const State_Hyper_Vector& shv) // Save
+{
+	for (int i = 0; i < shv.N; i++)
+	{
+		os << "particle " << i << "\t:";
+		os << shv.particle[i].r << "\t" << shv.particle[i].theta << endl;
+	}
+	return (os);
 }
 
 #endif

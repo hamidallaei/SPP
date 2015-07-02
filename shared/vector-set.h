@@ -17,6 +17,7 @@ public:
 	~VectorSet();
 
 	void Init();
+	void Null();
 	void Rand();
 	void Renormalize();
 	void Renormalize(VectorSet& us);
@@ -26,6 +27,8 @@ public:
 	VectorSet& operator= ( const VectorSet& vs);
 	VectorSet& operator*= ( const Real& factor);
 	const VectorSet operator* ( const Real& factor);
+
+	friend std::ostream& operator<<(std::ostream& os, const VectorSet& vs); // Save
 };
 
 VectorSet::VectorSet()
@@ -92,21 +95,21 @@ void VectorSet::Scale()
 void VectorSet::Rand()
 {
 	State_Hyper_Vector temp(particle_num, time(NULL));
-	for (int i = 0; i < v.size(); i++)
+	v[0].Null();
+	for (int i = 1; i < v.size(); i++)
 	{
 		temp.Rand(0.001, 0.001);
 		v[i] = temp;
 	}
 	Renormalize();
-	Scale();
 }
 
 void VectorSet::Renormalize()
 {
 	State_Hyper_Vector temp(particle_num);
-	for (int i = 0; i < v.size(); i++)
+	for (int i = 1; i < v.size(); i++)
 	{
-		for (int j = 0; j < i; j++)
+		for (int j = 1; j < i; j++)
 			v[i] -= v[j]*(v[i]*v[j]);
 		v[i].Unit();
 	}
@@ -114,10 +117,10 @@ void VectorSet::Renormalize()
 
 void VectorSet::Renormalize(VectorSet& us)
 {
-	for (int i = 0; i < v.size(); i++)
+	for (int i = 1; i < v.size(); i++)
 	{
 		us.v[i] = v[i];
-		for (int j = 0; j < i; j++)
+		for (int j = 1; j < i; j++)
  			us.v[i] -= us.v[j]*(us.v[j]*us.v[i]);
 		us.v[i] = us.v[i] / us.v[i].Magnitude();
 	}
@@ -183,6 +186,30 @@ void GrowthRatio::Init()
 	}
 }
 
+std::ostream& operator<<(std::ostream& os, const VectorSet& vs) // Save
+{
+	os << "np";
+	for (int i = 1; i < vs.direction_num; i++)
+		os << "\t" << i;
+	os << endl;
+	long int digits = 10000000000000000;
+	for (int k = 0; k < vs.v[0].N; k++)
+	{
+		os << "p " << k;
+		for (int i = 1; i < vs.direction_num; i++)
+			os << "\t" << setprecision(10) << round(digits*vs.v[i].particle[k].r.x)/digits;
+		os << endl;
+		os << "p " << k;
+		for (int i = 1; i < vs.direction_num; i++)
+			os << "\t" << setprecision(10) << round(digits*vs.v[i].particle[k].r.y)/digits;
+		os << endl;
+		os << "p " << k;
+		for (int i = 1; i < vs.direction_num; i++)
+			os << "\t" << setprecision(10) << round(digits*vs.v[i].particle[k].theta)/digits;
+		os << endl;
+	}
+	return (os);
+}
 
 int GrowthRatio::direction_num = 0;
 
