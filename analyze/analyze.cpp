@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 //			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
 //			cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
 //			angular_momentum_data.Reset();
-			cout << name << "\t" << Local_Cohesion(sceneset, 10) << endl;
+//			cout << name << "\t" << Local_Cohesion(sceneset, 10) << endl;
 
 //			cout << "# " << name << endl;
 //			Time_AutoCorrelation(sceneset, 10);
@@ -59,7 +59,8 @@ int main(int argc, char** argv)
 //			Radial_Density(sceneset, 200);
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
-//			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01);
+//			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01); // Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
+			Mean_Squared_Displacement_Growth(sceneset, sceneset->scene.size(), 400);// void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
 //			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);

@@ -310,6 +310,27 @@ void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points,
 	delete [] md2;
 }
 
+// Find diffusion 
+void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
+{
+	Real* md2 = new Real[number_of_points];
+	int tau[number_of_points];
+	int N = s->scene[0].number_of_particles;
+	for (int i = 0; i < number_of_points; i++)
+	{
+		md2[i] = 0;
+		tau[i] = i*frames / (number_of_points);
+		for (int j = 0; j < N; j++)
+			md2[i] += (s->scene[tau[i]].particle[j].r - s->scene[0].particle[j].r).Square();
+		md2[i] /= N;
+	}
+	for (int i = 1; i < number_of_points; i++)
+		cout << tau[i] << "\t" << md2[i] << endl;
+
+	delete [] md2;
+}
+
+
 // Find distance growth in time (Lyapanov)
 bool Lyapunov_Exponent(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_min, Real r_max)
 {
