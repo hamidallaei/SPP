@@ -26,8 +26,10 @@ int main(int argc, char** argv)
 //			sceneset->Save_Theta_Deviation(120, 0, sceneset->scene.size(), "theta-stat.dat");
 //			sceneset->Plot_Fields(21, 40, name);
 //			sceneset->Plot_Averaged_Fields(128, name);
+//			sceneset->Plot_Averaged_Fields(64, name);
+//			sceneset->Plot_Averaged_Fields(25, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 40, name);
-//			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
+			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
 
@@ -60,7 +62,7 @@ int main(int argc, char** argv)
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 //			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01); // Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
-			Mean_Squared_Displacement_Growth(sceneset, sceneset->scene.size(), 400);// void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
+//			Mean_Squared_Displacement_Growth(sceneset, sceneset->scene.size(), 400);// void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
 //			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);

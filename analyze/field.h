@@ -203,65 +203,66 @@ void Field::Draw(string info)
 		{
 //			pts.push_back(boost::make_tuple(cell[x][y].r.x,cell[x][y].r.y,cell[x][y].v.x,cell[x][y].v.y,cell[x][y].density,cell[x][y].cohesion,cell[x][y].curl,cell[x][y].omega));
 //			pts.push_back(boost::make_tuple(cell[x][y].r.x,cell[x][y].r.y,cell[x][y].v.x,cell[x][y].v.y));
-			temp_file << std::fixed << std::setprecision(8) << cell[x][y].r << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
+			temp_file << std::fixed << std::setprecision(8) << cell[x][y].r / (2*L) << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
 		}
 			temp_file << endl;
 	}
 
-	gp << "L=" << L << "\n";
+	gp << "L=" << 0.5 << "\n";
 
 	gp << "set term postscript eps enhanced color\n";
 	gp << "reset\n";
 	gp << "l=2\n";
 
 
-//	gp << "#set size square\n";
-	gp << "set size 0.84,1.02\n";
+	gp << "set size square\n";
 
-	gp << "set lmargin at screen 0.08\n";
-	gp << "set rmargin at screen 0.71\n";
-	gp << "set bmargin at screen 0.09\n";
-	gp << "set tmargin at screen 0.99\n";
-
-	gp << "set term postscript eps enhanced color font \"Times-Roman,25\"\n";
+	gp << "set term postscript eps enhanced color font \"Times-Roman,30\"\n";
 
 //	gp << "set contour base\n";
 //	gp << "set cntrparam level incremental 0.4, 0.5\n";
 
 	gp << "set output \"figures/" << info << "-density.eps\"\n";
 	gp << "set pm3d map\n";
-//	gp << "set palette model XYZ rgbformulae 3,5,15\n";
 	gp << "set palette rgb 21,22,23\n";
-//	gp << "set palette defined (0 \"white\", 20 \"violet\")\n";
+	gp << "set cbrange [0:3]\n";
+	gp << "set colorbox vertical size 0.1,0.4\n";
+	gp << "set colorbox vertical user origin 0.72,0.28 size 0.035,0.5\n";
+	gp << "set cbtics offset -1,0\n";
+	gp << "set cblabel \"{/Symbol r}\" offset -6.5,3.5\n";
+//	gp << "unset colorbox\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "splot \"data.dat\" using 1:2:5\n";
+	gp << "set xlabel \"x/L\" offset 0,1.2\n";
+//	gp << "set ylabel \"y/L\" offset 3,0\n";
+	gp << "set xtics offset 0,0.7\n";
+	gp << "set ytics format \" \" \n";
+	gp << "set ytics offset 0.7,0\n";
+	gp << "splot \"data.dat\" using 1:2:5 notitle\n";
 //	gp.send1d(pts);
+
+
+
 
 	gp << "set output \"figures/" << info << "-cohesion.eps\"\n";
 	gp << "set pm3d map\n";
-	gp << "set xrange [-L:L]\n";
-	gp << "set yrange [-L:L]\n";
-	gp << "splot \"data.dat\" using 1:2:6\n";
+	gp << "set cbrange [0:1]\n";
+	gp << "set cblabel \"{/Symbol F}\" offset -6.2,3.5\n";
+	gp << "splot \"data.dat\" using 1:2:6 notitle\n";
 //	gp.send1d(pts);
 
-//	gp << "set output \"figures/" << info << "-curl.eps\"\n";
-//	gp << "set pm3d map\n";
-//	gp << "set palette defined (-1 \"yellow\", 0 \"white\", 1 \"red\")\n";
-//	gp << "splot \"data.dat\" using 1:2:7\n";
-//	gp.send1d(pts);
-
-//	gp << "set size 0.73,1.0\n";
-//	gp << "set lmargin at screen 0.07\n";
-//	gp << "set rmargin at screen 0.70\n";
-//	gp << "set bmargin at screen 0.07\n";
-//	gp << "set tmargin at screen 0.97\n";
-
+	gp << "set term postscript eps enhanced color font \"Times-Roman,35\"\n";
 	gp << "set palette rgb 0,3,21\n";
-	gp << "l=2\n";
+	gp << "l=0.05\n";
 	gp << "set output \"figures/"<< info << "-velocity-vector.eps\"\n";
-	gp << "set xrange [-L:L]\n";
-	gp << "set yrange [-L:L]\n";
+	gp << "set xtics offset 0,0.4\n";
+	gp << "set xlabel \"x/L\" offset 0,0.8\n";
+	gp << "set ylabel \"y/L\" offset 4.5,0\n";
+	gp << "unset ylabel\n";
+	gp << "set ytics format \" \" \n";
+	gp << "set colorbox vertical user origin 0.8,0.24 size 0.04,0.63\n";
+	gp << "set cblabel \"v\" offset -6.4,4.2\n";
+//	gp << "unset colorbox\n";
 	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):(($3**2 + $4**2)**0.5) with vectors lc palette notitle\n";
 //	gp.send1d(pts);
 
@@ -289,18 +290,18 @@ void Field::Draw_Section(string info, int y)
 	for (int x = 0; x < grid_dim_x; x++)
 	{
 
-		temp_file << std::fixed << std::setprecision(8) << cell[x][y].r.x << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
+		temp_file << std::fixed << std::setprecision(8) << cell[x][y].r.x / (2*L) << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
 			temp_file << endl;
 	}
 
 	gp << "reset\n";
 
-	gp << "L=" << L << "\n";
+	gp << "L=" << 0.5 << "\n";
 
-	gp << "set term postscript eps enhanced color size 800,800 \n";
+	gp << "set term postscript eps enhanced color \n";
 //	gp << "l=2\n";
 
-//	gp << "#set size square\n";
+	gp << "set size square\n";
 //	gp << "set size 0.85,1.05\n";
 
 //	gp << "set lmargin at screen 0.05\n";
@@ -308,9 +309,9 @@ void Field::Draw_Section(string info, int y)
 //	gp << "set bmargin at screen 0.05\n";
 //	gp << "set tmargin at screen 1.1\n";
 
-	gp << "set term postscript eps enhanced color font \"Times-Roman,25\"\n";
+	gp << "set term postscript eps enhanced color font \"Times-Roman,35\"\n";
 
-	gp << "set style line 1 lc rgb '#FF8000' lt 1 lw 2 pt 7 pi 0 ps 1.5\n";
+	gp << "set style line 1 lc rgb '#FF4500' lt 1 lw 2 pt 7 pi 0 ps 1.5\n";
 	gp << "set style line 2 lc rgb '#008000' lt 1 lw 2 pt 4 pi 0 ps 1.5\n";
 	gp << "set pointintervalbox 3\n";
 
@@ -319,12 +320,16 @@ void Field::Draw_Section(string info, int y)
 	else
 		gp << "set key center top\n";
 
-//	gp << "set log y\n";
-	gp << "set xlabel \"x\"\n";
-	gp << "set ylabel \"{/Symbol r}, {/Symbol f}\"\n";
+	gp << "set log y\n";
+	gp << "set xlabel \"x/L\" offset 0,1 \n";
+	gp << "set xtics offset 0,0.4 \n";
+	gp << "set ytics offset 0.5,0 \n";
+	gp << "set ylabel \"{/Symbol r}, {/Symbol f}\" offset 3,0 \n";
 	gp << "set output \"figures/" << info << "-density-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:4 w lp ls 1 ti \"{/Symbol r}\", \"data.dat\" using 1:5 w lp ls 2 ti \"{/Symbol f}\"\n";
+
+	gp << "unset log y\n";
 //	gp.send1d(pts);
 
 //	gp << "set ylabel \"{/Symbol f}\"\n";
@@ -338,20 +343,20 @@ void Field::Draw_Section(string info, int y)
 //	gp.send1d(pts);
 
 	gp << "unset log \n";
-	gp << "set ylabel \"v\"\n";
+	gp << "set ylabel \"v\" offset 3,0 \n";
 	gp << "set output \"figures/"<< info << "-velocity-section-y=" << std::fixed << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:3 w lp ls 1 ti \"v_y\", \"data.dat\" using 1:2 w lp ls 2 ti \"v_x\" \n";
 //	gp.send1d(pts);
 
-	gp << "set ylabel \"W\"\n";
+	gp << "set ylabel \"W\" offset 3,0 \n";
 	gp << "set output \"figures/"<< info << "-W-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:9 w lp ls 1 ti \"W_y\", \"data.dat\" using 1:8 w lp ls 2 ti \"W_x\" \n";
 //	gp.send1d(pts);
 
 	gp << "set nokey\n";
-	gp << "set ylabel \"{/Symbol w}\"\n";
+	gp << "set ylabel \"{/Symbol w}\" offset 3,0 \n";
 	gp << "set output \"figures/"<< info << "-omega-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:(-$3/$1) w lp ls 1\n";

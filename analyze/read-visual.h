@@ -18,6 +18,7 @@ public:
 	void Init(int);
 	void Reset();
 	void Draw();
+	void Magnify(C2DVector r0, float d0, C2DVector r1, float d1);
 	void Auto_Correlation();
 	void Skip_File(std::istream& is, int n);
 	friend std::istream& operator>>(std::istream& is, Scene& scene);
@@ -55,9 +56,56 @@ void Scene::Reset()
 
 void Scene::Draw()
 {
-	glColor3f(VisualParticle::color.red, VisualParticle::color.green, VisualParticle::color.blue);
 	for (int i = 0; i < number_of_particles; i++)
+	{
 		particle[i].Draw();
+	}
+}
+
+void Scene::Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
+{
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glLineWidth(2);
+	glColor4f(1, 1, 1,1);
+	glBegin(GL_POLYGON);
+	glVertex2f(r1.x-d1, r1.y-d1);
+	glVertex2f(r1.x+d1, r1.y-d1);
+	glVertex2f(r1.x+d1, r1.y+d1);
+	glVertex2f(r1.x-d1, r1.y+d1);
+	glEnd();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glColor4f(0, 0, 0,1);
+	glBegin(GL_POLYGON);
+	glVertex2f(r1.x-d1, r1.y-d1);
+	glVertex2f(r1.x+d1, r1.y-d1);
+	glVertex2f(r1.x+d1, r1.y+d1);
+	glVertex2f(r1.x-d1, r1.y+d1);
+	glEnd();
+	glBegin(GL_POLYGON);
+	glVertex2f(r0.x-d0, r0.y-d0);
+	glVertex2f(r0.x+d0, r0.y-d0);
+	glVertex2f(r0.x+d0, r0.y+d0);
+	glVertex2f(r0.x-d0, r0.y+d0);
+	glEnd();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth(1);
+//	glBegin(GL_LINES);
+//	glVertex2f(r1.x+d1, r1.y-d1);
+//	glVertex2f(r0.x+d0, r0.y-d0);
+//	glEnd();
+
+//	glBegin(GL_LINES);
+//	glVertex2f(r1.x-d1, r1.y+d1);
+//	glVertex2f(r0.x-d0, r0.y+d0);
+//	glEnd();
+
+	for (int i = 0; i < number_of_particles; i++)
+	{
+		RGB color;
+		particle[i].Find_Color(color);
+		glColor4f(color.red, color.green, color.blue,0.5);
+		particle[i].Draw_Magnified(r0,d0,r1,d1);
+	}
 }
 
 void Scene::Skip_File(std::istream& in, int n)
