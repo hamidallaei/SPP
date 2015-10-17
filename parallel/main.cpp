@@ -197,6 +197,114 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
+bool Run_From_File(int argc, char *argv[], Node* thisnode)
+{
+	Box box;
+
+	#ifdef TRACK_PARTICLE
+	track_p = &particle[track];
+	#endif
+
+	Real input_g;
+	Real input_rho;
+	Real input_noise;
+	Real input_L;
+
+	string name = input_name;
+	stringstream address(name);
+	ifstream is;
+	is.open(address.str().c_str());
+	if (!is.is_open())
+		return false;
+
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-g=", "");
+	boost::replace_all(name, "-alpha=", "");
+	boost::replace_all(name, "-noise=", "\t");
+	boost::replace_all(name, "-L=", "\t");
+
+	stringstream ss_name(name);
+	ss_name >> density;
+	ss_name >> input_g;
+	ss_name >> input_alpha;
+	ss_name >> input_noise;
+	ss_name >> input_L;
+	input_L = 60;
+	if (input_L != Lx_int)
+	{
+		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
+
+	Particle::g = input_g;
+	Particle::alpha = input_alpha;
+	Particle::noise_amplitude = input_noise / sqrt(dt);
+
+	thisnode = input_node;
+
+	is.read((char*) &N, sizeof(int) / sizeof(char));
+	if (N < 0 || N > 1000000)
+		return (false);
+
+	for (int i = 0; i < N; i++)
+	{
+		is >> particle[i].r;
+		is >> particle[i].v;
+	}
+
+	is.close();
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	Init_Topology(); // Adding walls
+
+	if (thisnode->node_id == 0)
+	{
+		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
+// Master node will broadcast the particles information
+	thisnode->Root_Bcast();
+// Any node update cells, knowing particles and their cell that they are inside.
+	thisnode->Full_Update_Cells();
+
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
+// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+	box.info.str("");
+	box.info << "rho=" << box.density <<  "-k=" << Particle::kapa << "-mu+=" << Particle::mu_plus << "-mu-=" << Particle::mu_minus << "-Dphi=" << Particle::D_phi << "-L=" << Lx;
+
+	ofstream out_file;
+	if (thisnode->node_id == 0)
+	{
+		stringstream address;
+		address.str("");
+		address << "deviation-" << box.info.str() << ".dat";
+		box.outfile.open(address.str().c_str());
+	}
+
+	if (thisnode->node_id == 0)
+		cout << " Box information is: " << box.info.str() << endl;
+
+	Real t_eq,t_sim;
+	MPI_Barrier(MPI_COMM_WORLD);
+ 	t_sim = box.Lyapunov_Exponent(1, 10, 0.1, 10, 3);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (thisnode->node_id == 0)
+	{
+		cout << " Done in " << floor(t_sim / 60.0) << " minutes and " << t_sim - 60*floor(t_sim / 60.0) << " s" << endl;
+		out_file.close();
+	}
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	return true;
+}
+
 void Init_Nodes(Node& thisnode)
 {
 	#ifdef COMPARE
@@ -227,6 +335,5 @@ int main(int argc, char *argv[])
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
-
 }
 

@@ -106,89 +106,89 @@ void Box::Init(Node* input_node, Real input_density)
 }
 
 
-// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
-bool Box::Init(Node* input_node, const string input_name)
-{
-	#ifdef TRACK_PARTICLE
-	track_p = &particle[track];
-	#endif
+//// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
+//bool Box::Init(Node* input_node, const string input_name)
+//{
+//	#ifdef TRACK_PARTICLE
+//	track_p = &particle[track];
+//	#endif
 
-	Real input_kapa;
-	Real input_mu_plus;
-	Real input_mu_minus;
-	Real input_Dphi;
-	Real input_L;
+//	Real input_kapa;
+//	Real input_mu_plus;
+//	Real input_mu_minus;
+//	Real input_Dphi;
+//	Real input_L;
 
-	string name = input_name;
-	stringstream address(name);
-	ifstream is;
-	is.open(address.str().c_str());
-	if (!is.is_open())
-		return false;
+//	string name = input_name;
+//	stringstream address(name);
+//	ifstream is;
+//	is.open(address.str().c_str());
+//	if (!is.is_open())
+//		return false;
 
-	boost::replace_all(name, "-r-v.bin", "");
-	boost::replace_all(name, "rho=", "");
-	boost::replace_all(name, "-k=", "");
-	boost::replace_all(name, "-mu+=", "\t");
-	boost::replace_all(name, "-mu-=", "\t");
-	boost::replace_all(name, "-Dphi=", "\t");
-	boost::replace_all(name, "-L=", "\t");
+//	boost::replace_all(name, "-r-v.bin", "");
+//	boost::replace_all(name, "rho=", "");
+//	boost::replace_all(name, "-k=", "");
+//	boost::replace_all(name, "-mu+=", "\t");
+//	boost::replace_all(name, "-mu-=", "\t");
+//	boost::replace_all(name, "-Dphi=", "\t");
+//	boost::replace_all(name, "-L=", "\t");
 
-	stringstream ss_name(name);
-	ss_name >> density;
-	ss_name >> input_kapa;
-	ss_name >> input_mu_plus;
-	ss_name >> input_mu_minus;
-	ss_name >> input_Dphi;
-	ss_name >> input_L;
-	if (input_L != Lx_int)
-	{
-		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
-		return false;
-	}
+//	stringstream ss_name(name);
+//	ss_name >> density;
+//	ss_name >> input_kapa;
+//	ss_name >> input_mu_plus;
+//	ss_name >> input_mu_minus;
+//	ss_name >> input_Dphi;
+//	ss_name >> input_L;
+//	if (input_L != Lx_int)
+//	{
+//		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+//		return false;
+//	}
 
-	Particle::kapa = input_kapa;
-	Particle::mu_plus = input_mu_plus;
-	Particle::mu_minus = input_mu_minus;
-	Particle::D_phi = input_Dphi;
+//	Particle::kapa = input_kapa;
+//	Particle::mu_plus = input_mu_plus;
+//	Particle::mu_minus = input_mu_minus;
+//	Particle::D_phi = input_Dphi;
 
-	thisnode = input_node;
+//	thisnode = input_node;
 
-	is.read((char*) &N, sizeof(int) / sizeof(char));
-	if (N < 0 || N > 1000000)
-		return (false);
+//	is.read((char*) &N, sizeof(int) / sizeof(char));
+//	if (N < 0 || N > 1000000)
+//		return (false);
 
-	for (int i = 0; i < N; i++)
-	{
-		is >> particle[i].r;
-		is >> particle[i].v;
-	}
+//	for (int i = 0; i < N; i++)
+//	{
+//		is >> particle[i].r;
+//		is >> particle[i].v;
+//	}
 
-	is.close();
+//	is.close();
 
-	MPI_Barrier(MPI_COMM_WORLD);
+//	MPI_Barrier(MPI_COMM_WORLD);
 
-	Init_Topology(); // Adding walls
+//	Init_Topology(); // Adding walls
 
-	if (thisnode->node_id == 0)
-	{
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
+//	if (thisnode->node_id == 0)
+//	{
+//		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+//	}
+//	MPI_Barrier(MPI_COMM_WORLD);
 
-// Master node will broadcast the particles information
-	thisnode->Root_Bcast();
-// Any node update cells, knowing particles and their cell that they are inside.
-	thisnode->Full_Update_Cells();
+//// Master node will broadcast the particles information
+//	thisnode->Root_Bcast();
+//// Any node update cells, knowing particles and their cell that they are inside.
+//	thisnode->Full_Update_Cells();
 
-	#ifdef verlet_list
-	thisnode->Update_Neighbor_List();
-	#endif
+//	#ifdef verlet_list
+//	thisnode->Update_Neighbor_List();
+//	#endif
 
-// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-	info.str("");
-	return (true);
-}
+//// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+//	info.str("");
+//	return (true);
+//}
 
 
 // Loading a state to the box.

@@ -13,8 +13,8 @@ inline void timing_information(const int node_id, clock_t start_time, int i_step
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
 		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-//		if (i_step % 1000 == 0)
-//			cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+		if (i_step % 1000 == 0)
+			cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
 	}
 }
 
@@ -169,29 +169,57 @@ bool Init_Box_From_File(LyapunovBox& box, const string input_name)
 	return (true);
 }
 
+Real Average_Lyapunov(LyapunovBox& box, const Real& Dphi, int sample_num, Real& M)
+{
+	Real lambda = 0;
+	M = 0;
+	Particle::D_phi = Dphi;
+	for (int i = 0; i < sample_num; i++)
+	{
+		MPI_Barrier(MPI_COMM_WORLD);
+		equilibrium(box, equilibrium_step, saving_period);
+		lambda += box.Recursive_Lyapunov_Exponent(0.01,300, 0.01, 300, 4);
+		M += box.Polarization();
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+	lambda /= sample_num;
+	M /= sample_num;
+	return (lambda);
+}
+
+void Average_Lyapunov_Noise_Change(LyapunovBox& box, const Real Dphi_max, const int points, int sample_num)
+{
+	Real Dphi[points];
+	Real lambda[points];
+	Real M[points];
+	ofstream lambda_file("lambda.dat");
+	for (int i = 0; i < points; i++)
+		Dphi[points - 1 - i] = (i*Dphi_max)/points;
+
+	for (int i = 0; i < points; i++)
+	{
+		Particle::D_phi = Dphi[i];
+		Particle::noise_amplitude = sqrt(2*Particle::D_phi) / sqrt(dt);
+		MPI_Barrier(MPI_COMM_WORLD);
+		lambda[i] = Average_Lyapunov(box, Dphi[i], sample_num, M[i]);
+		MPI_Barrier(MPI_COMM_WORLD);
+		if (box.thisnode == 0)
+			lambda_file << Dphi[i] << "\t" << lambda[i] << "\t" << M[i] << endl;
+	}
+}
+
 void Run(int argc, char *argv[])
 {
 	Real t_sim;
+	int sample_num = 100;
 
 	LyapunovBox box;
 	Init_Box(box, argc, argv);
 
-	MPI_Barrier(MPI_COMM_WORLD);
-//	t_sim = box.Lyapunov_Exponent(0.1,100, 0.01, 200, 0.01, 100, 4);
-	t_sim = box.Recursive_Lyapunov_Exponent(0.1,10000, 0.01, 2000, 4);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	if (box.thisnode == 0)
-	{
-		cout << " Done in " << floor(t_sim / 60.0) << " minutes and " << t_sim - 60*floor(t_sim / 60.0) << " s" << endl;
-		box.outfile.close();
-		box.trajfile.close();
-	}
+	Average_Lyapunov_Noise_Change(box, 0.6, 12, 10);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 }
-
-
 
 bool Run_From_File(int argc, char *argv[])
 {
@@ -243,7 +271,7 @@ int main(int argc, char *argv[])
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
-	Init_Nodes();
+	Init_Nodes(time(NULL));
 
 	if (argc > 2)
 		Run(argc, argv);

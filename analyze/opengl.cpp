@@ -22,6 +22,7 @@ string global_address;
 
 int t = 0;
 bool save = false;
+bool frame_maker = false;
 bool magnify = false;
 float box_dim = 0;
 C2DVector r_lense;
@@ -35,7 +36,7 @@ void Init()
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glShadeModel (GL_FLAT);
 	Init_Circle();
-	float sigma = 1;
+	float sigma = 1.0;
 	VisualParticle::radius = sigma / 2;
 	VisualParticle::tail = 1;
 	VisualParticle::thickness = 1.5;
@@ -71,7 +72,26 @@ void Save_Image(string address)
 		glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
 		glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
 		glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
+		cv::flip(img, img, 0);
 		cv::imwrite(address, img); //this has a bug in current version
+}
+
+void Save_Frame()
+{
+		static int num = 0;
+		stringstream address;
+		if (num < 10)
+			address << "img000" << num << ".png";
+		else
+			if (num < 100)
+				address << "img00" << num << ".png";
+			else
+				if (num < 1000)
+					address << "img0" << num << ".png";
+				else
+					address << "img" << num << ".png";
+		Save_Image(address.str().c_str());
+		num++;
 }
 
 void Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
@@ -151,6 +171,11 @@ void Display()
 		Save_Movie();
 	}
 
+	if (frame_maker && (t < (sceneset->scene.size()-1)))
+	{
+		Save_Frame();
+	}
+
 	glutSwapBuffers();
 }
 
@@ -206,6 +231,12 @@ void KeyboardInput(unsigned char key, int x, int y)
 	{
 		sceneset->Plot_Fields(41, t, sceneset->info);
 		Save_Image(global_address);
+	}
+	if ((key == 72) || (key == 104))
+		frame_maker = !frame_maker;
+	if ((key == 73) || (key == 105))
+	{
+		Save_Frame();
 	}
 	float d_jump = 0.5;
 	if (key == 97)
@@ -286,6 +317,7 @@ int main(int argc, char** argv)
 
 	sceneset = new SceneSet(argv[argc-1]);
 	bool read_state = sceneset->Read();
+	sceneset->L = 60;
 
 	if (read_state)
 	{

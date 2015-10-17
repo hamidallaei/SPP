@@ -142,7 +142,8 @@ void VisualParticle::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float 
 		p *= scale;
 		p += r1;
 
-		glLineWidth(scale*thickness/2);
+		const int thickness_factor = 3; // 2000
+		glLineWidth(scale*thickness / thickness_factor);
 		glEnableClientState (GL_VERTEX_ARRAY);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 

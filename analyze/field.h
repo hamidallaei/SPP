@@ -253,7 +253,7 @@ void Field::Draw(string info)
 
 	gp << "set term postscript eps enhanced color font \"Times-Roman,35\"\n";
 	gp << "set palette rgb 0,3,21\n";
-	gp << "l=0.05\n";
+	gp << "l=0.035\n";
 	gp << "set output \"figures/"<< info << "-velocity-vector.eps\"\n";
 	gp << "set xtics offset 0,0.4\n";
 	gp << "set xlabel \"x/L\" offset 0,0.8\n";
@@ -263,14 +263,15 @@ void Field::Draw(string info)
 	gp << "set colorbox vertical user origin 0.8,0.24 size 0.04,0.63\n";
 	gp << "set cblabel \"v\" offset -6.4,4.2\n";
 //	gp << "unset colorbox\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):(($3**2 + $4**2)**0.5) with vectors lc palette notitle\n";
+	gp << "set style arrow 1 head filled size screen 0.008,25,30 lw 2 lc palette\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($3)):(l*($4)):(($3**2 + $4**2)**0.5) with vectors arrowstyle 1 notitle\n";
 //	gp.send1d(pts);
 
 	gp << "l=1\n";
 	gp << "set output \"figures/"<< info << "-W.eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "set yrange [-L:L]\n";
-	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):(($9**2 + $10**2)**0.5) with vectors lc palette notitle\n";
+	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):(($9**2 + $10**2)**0.5) with vectors arrowstyle 1 notitle\n";
 //	gp.send1d(pts);
 }
 

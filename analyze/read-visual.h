@@ -130,6 +130,8 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	{
 		is >> scene.particle[i].r;
 		is >> scene.particle[i].v;
+		scene.particle[i].r *= -1;
+		scene.particle[i].v *= -1;
 	}
 }
 

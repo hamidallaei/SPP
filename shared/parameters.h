@@ -30,8 +30,8 @@ class RepulsiveParticle;
 typedef double Real;
 //typedef VicsekParticle Particle;
 //typedef ContinuousParticle Particle;
-typedef MarkusParticle Particle;
-//typedef RepulsiveParticle Particle;
+//typedef MarkusParticle Particle;
+typedef RepulsiveParticle Particle;
 
 long int seed = 10;
 
@@ -41,7 +41,7 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 5;
+const int Lx_int = 20;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -56,8 +56,8 @@ Real dt = 0.005;
 Real half_dt = dt/2;
 const int cell_update_period = 20;
 const int saving_period = 10;
-const long int equilibrium_step = 100000;
-const long int total_step = 100;
+const long int equilibrium_step = 30000;
+const long int total_step = 30000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
@@ -77,7 +77,7 @@ const Real sigma_p = .5;		// sigma in Yukawa Potential
 const Real sigma_w = 1.;
 const Real r_f_p = 1.;		// flocking radius with particles
 const Real r_f_w = 1.;		// aligning radius with walls
-const Real r_c_p = .5; 		// repulsive cutoff radius with particles
+const Real r_c_p = 1.; 		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
 
 // Trap

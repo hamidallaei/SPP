@@ -30,11 +30,13 @@ public:
 	void Init_Time(const Real, const Real);
 
 	void Evolution_Reorthonormalize(bool save);
-	void Recursive_Orthonormalize(Real interval, int iteration_num, bool save);
+	Real Recursive_Orthonormalize(Real interval, int iteration_num, bool save);
 
 	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
 	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
 	Real Recursive_Lyapunov_Exponent(const Real, const int, const Real, const int, const int);
+
+	Real Polarization();
 };
 
 LyapunovBox::LyapunovBox() : Box()
@@ -166,7 +168,7 @@ void LyapunovBox::Init_Deviation(int direction_num)
 {
 	us.direction_num = direction_num;
 	us.particle_num = N;
-	us.amplitude = 1e-7;
+	us.amplitude = 1e-10;
 	us.Init();
 	us.Rand();
 // 	for (int i = 1; i < direction_num; i++)
@@ -223,6 +225,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 		}
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	Root_Bcast_Vector_Set(dvs);
 
 	Real tt = 0;
@@ -289,12 +292,15 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, bool save = false)
+Real LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, bool save = false)
 {
+	Real lambda;
 	State_Hyper_Vector gamma0(N);
+
+// Saving the initial state and Making deviations
 	if (thisnode == 0)
 	{
-		Save(vs.v[0]);
+		Save(gamma0);
 		vs.v[0] = gamma0;
 		dvs = us;
 		dvs.Scale();
@@ -307,11 +313,13 @@ void LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, boo
 		}
 	}
 
-	Root_Bcast_Vector_Set(dvs);
+// Broad casting the deviations
+	MPI_Barrier(MPI_COMM_WORLD);
+	Root_Bcast_State_Hyper_Vector(gamma0);
 
 	Real tt = 0;
 
-	int tau = (int) round(interval / dt);
+	int tau = (int) round(interval / dt); // tau is number of steps in the interval (integer)
 	for (int j = 0; j < iteration_num; j++)
 	{
 		tt += dt*tau;
@@ -323,20 +331,23 @@ void LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, boo
 //				cout << us << endl;
 		}
 
-		Root_Bcast_State_Hyper_Vector(vs.v[0]);
+		vs.v[0] = gamma0;
+// Broad casting the deviations
+		MPI_Barrier(MPI_COMM_WORLD);
 		Root_Bcast_Vector_Set(dvs);
 
 		for (int i = 0; i < us.direction_num; i++)
 		{
 			if (i % totalnode == thisnode)
 			{
-				vs.v[i] = vs.v[0] + dvs.v[i];
+				vs.v[i] = gamma0 + dvs.v[i];
 				Load(vs.v[i]);
 				Multi_Step(tau, 20);
 				Save(vs.v[i]);
 			}
 		}
 
+		MPI_Barrier(MPI_COMM_WORLD);
 		Root_Gather_Vector_Set(vs);
 
 		if (thisnode == 0)
@@ -345,8 +356,8 @@ void LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, boo
 			{
 				dvs.v[i] = (vs.v[i] - vs.v[0]);
 			}
+
 			dvs.Renormalize(us);
-			vs.v[0] = gamma0;
 			Real temp_ratio[us.direction_num];
 			for (int i = 1; i < us.direction_num; i++)
 			{
@@ -361,12 +372,16 @@ void LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, boo
 					outfile << "\t" << temp_ratio[i];
 				outfile << endl;
 			}
+			lambda = log(temp_ratio[1]) / (dt*j*tau);
 		}
 	}
+
 	if (thisnode == 0)
-		Load(vs.v[0]);
+		Load(gamma0);
 
 	MPI_Barrier(MPI_COMM_WORLD);
+
+	return (lambda);
 }
 
 // Finding the largest lyapunov exponent
@@ -450,14 +465,29 @@ Real LyapunovBox::Recursive_Lyapunov_Exponent(const Real interval0, const int it
 	}
 	start_time = end_time;
 
-	Recursive_Orthonormalize(interval, iteration, true);
+	Real lambda = Recursive_Orthonormalize(interval, iteration, false);
 
 	end_time = clock();
 	Real running_time = (end_time - start_time) / CLOCKS_PER_SEC;
 	if (thisnode == 0)
 		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
 
-	return (running_time);
+	return (lambda);
+}
+
+Real LyapunovBox::Polarization()
+{
+	Real phi;
+	C2DVector p;
+	p.x = p.y = 0;
+	if (thisnode == 0)
+	{
+		for (int i = 0; i < N; i++)
+			p += particle[i].v;
+		p /= N;
+		phi = sqrt(p.Square());
+	}
+	return (phi);
 }
 
 #endif

@@ -192,7 +192,7 @@ std::ostream& operator<<(std::ostream& os, const VectorSet& vs) // Save
 	for (int i = 1; i < vs.direction_num; i++)
 		os << "\t" << i;
 	os << endl;
-	long int digits = 10000000000000000;
+	long int digits = 10000000;
 	for (int k = 0; k < vs.v[0].N; k++)
 	{
 		os << "p " << k;
