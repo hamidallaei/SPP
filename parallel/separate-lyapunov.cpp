@@ -138,6 +138,7 @@ bool Init_Box_From_File(LyapunovBox& box, const string input_name)
 	Particle::mu_plus = input_mu_plus;
 	Particle::mu_minus = input_mu_minus;
 	Particle::D_phi = input_Dphi;
+	Particle::noise_amplitude = sqrt(2*Particle::D_phi) / sqrt(dt);
 
 	is.read((char*) &box.N, sizeof(int) / sizeof(char));
 	if (box.N < 0 || box.N > 1000000)
@@ -174,6 +175,7 @@ Real Average_Lyapunov(LyapunovBox& box, const Real& Dphi, int sample_num, Real& 
 	Real lambda = 0;
 	M = 0;
 	Particle::D_phi = Dphi;
+	Particle::noise_amplitude = sqrt(2*Particle::D_phi) / sqrt(dt);
 	for (int i = 0; i < sample_num; i++)
 	{
 		MPI_Barrier(MPI_COMM_WORLD);

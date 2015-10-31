@@ -17,7 +17,10 @@ struct Node{
 	Particle* particle; // This is a pointer to the original particle array pointer of the box. We need this pointer in some subroutins
 	vector<Boundary> boundary; // Boundary list
 
-	Cell cell[divisor_x][divisor_y]; // We used cell list in our program. we divide the box to divisor_x by divisor_y cells. each cell has the information about particles id that are inside them.
+// Static allocation (is not good for big simualations):
+//Cell cell[divisor_x][divisor_y]; // We used cell list in our program. we divide the box to divisor_x by divisor_y cells. each cell has the information about particles id that are inside them.
+// Dynamic allocation
+	Cell** cell;
 	
 	Node();
 
@@ -48,6 +51,11 @@ Node::Node()
 // Get the information abount total nodes and thisnode id
 	MPI_Comm_size(MPI_COMM_WORLD, &total_nodes);
 	MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
+
+// Dynamical array allocation for cell:
+	cell = new Cell*[divisor_x];
+	for (int i = 0; i < divisor_x; i++)
+		cell[i] = new Cell[divisor_y];
 
 	for (int i = 0; i < divisor_x; i++)
 		for (int j = 0; j < divisor_y; j++)

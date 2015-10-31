@@ -317,7 +317,8 @@ int main(int argc, char** argv)
 
 	sceneset = new SceneSet(argv[argc-1]);
 	bool read_state = sceneset->Read();
-	sceneset->L = 60;
+
+//	sceneset->L = 60;
 
 	if (read_state)
 	{
@@ -325,7 +326,8 @@ int main(int argc, char** argv)
 
 		string name = argv[argc-1];
 		string::size_type position_of_txt = name.find("-r-v", 0);
-		name.erase(position_of_txt);
+		if (position_of_txt < 20000)
+			name.erase(position_of_txt);
 
 		stringstream address("");
 		address << name << ".mpg";

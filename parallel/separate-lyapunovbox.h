@@ -12,6 +12,7 @@
 class LyapunovBox: public Box{
 public:
 	int thisnode, totalnode;
+	int track_id;
 	VectorSet us,vs,dvs; // The us (unit set) is the unit vector showing direction of the largest lyapunov exponents.
 	vector<Real> t,tau;
 	vector<GrowthRatio> ratio;
@@ -19,6 +20,8 @@ public:
 	ofstream outfile, trajfile;
 
 	LyapunovBox();
+
+	void Track_Particle(vector<Particle>&);
 
 	void Send_State_Hyper_Vector(const State_Hyper_Vector& shv, int dest, int tag);
 	void Recv_State_Hyper_Vector(const State_Hyper_Vector& shv, int source, int tag);
@@ -45,6 +48,10 @@ LyapunovBox::LyapunovBox() : Box()
 	MPI_Comm_size(MPI_COMM_WORLD, &totalnode);
 }
 
+void LyapunovBox::Track_Particle(vector<Particle>& trajectory)
+{
+	trajectory.push_back(particle[track_id]);
+}
 
 void LyapunovBox::Send_State_Hyper_Vector(const State_Hyper_Vector& shv, int dest, int tag)
 {

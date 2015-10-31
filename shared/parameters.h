@@ -30,8 +30,8 @@ class RepulsiveParticle;
 typedef double Real;
 //typedef VicsekParticle Particle;
 //typedef ContinuousParticle Particle;
-//typedef MarkusParticle Particle;
-typedef RepulsiveParticle Particle;
+typedef MarkusParticle Particle;
+//typedef RepulsiveParticle Particle;
 
 long int seed = 10;
 
@@ -52,18 +52,18 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 0.005;
+Real dt = 0.01;
 Real half_dt = dt/2;
-const int cell_update_period = 20;
-const int saving_period = 10;
-const long int equilibrium_step = 30000;
-const long int total_step = 30000;
+const int cell_update_period = 4;
+const int saving_period = 5;
+const long int equilibrium_step = 10000;
+const long int total_step = 20000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;
-const int divisor_y = max_divisor_y;
+const int divisor_y = max_divisor_y ;
 
 // Parallel Use only
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks
