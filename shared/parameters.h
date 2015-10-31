@@ -57,7 +57,7 @@ Real half_dt = dt/2;
 const int cell_update_period = 4;
 const int saving_period = 5;
 const long int equilibrium_step = 10000;
-const long int total_step = 20000;
+const long int total_step = 40000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);

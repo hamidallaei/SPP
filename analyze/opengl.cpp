@@ -305,6 +305,26 @@ void Reshape(int w, int h)
 }
 
 
+void Welcome()
+{
+	cout << "Welcome to visualization program. The following keys and their function help you to better use this program:\n" << endl;
+	cout << "To stop movie: space or p" << endl;
+	cout << "Next frame: right arrow" << endl;
+	cout << "Previous frame: left arrow" << endl;
+	cout << "Next 10 frame: up arrow" << endl;
+	cout << "Previous 10 frame: down arrow" << endl;
+	cout << "Next 100 frame: page up" << endl;
+	cout << "Previous 100 frame: page down" << endl;
+	cout << "To save current snapshot and field values: s or S" << endl;
+	cout << "To activate or diactivate frame saving: h or H" << endl;
+	cout << "To save current frame: i or I" << endl;
+	cout << "To activate or diactivate magnifier: m" << endl;
+	cout << "To make magnifier window bigger: a" << endl;
+	cout << "To make magnifier window smaller: z" << endl;
+	cout << "To make magnified window bigger: A" << endl;
+	cout << "To make magnified window bigger: Z" << endl;
+}
+
 int main(int argc, char** argv)
 {
 	C2DVector::Init_Rand(321);
@@ -314,6 +334,8 @@ int main(int argc, char** argv)
 
 	if (argc > 2)
 		save = true;
+
+	Welcome();	
 
 	sceneset = new SceneSet(argv[argc-1]);
 	bool read_state = sceneset->Read();

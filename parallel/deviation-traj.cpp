@@ -310,8 +310,12 @@ void Run(int argc, char *argv[])
 
 	if (box.thisnode == 0)
 	{
+		stringstream address;
+		address.str("");
+		address << box.info.str() << "-r-v.bin";
+
 		ofstream out_traj;
-		out_traj.open("traj-r-v.bin");
+		out_traj.open(address.str().c_str());
 		Save_Traj(out_traj,trajectory,sample_num);
 		out_traj.close();
 	}
