@@ -74,6 +74,12 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 
 void Change_Noise(int argc, char *argv[], Node* thisnode)
 {
+	if (argc < 4)
+	{
+		if (box.thisnode == 0)
+			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
+		exit(0);
+	}
 	Real input_rho = atof(argv[1]);
 	Real input_g = atof(argv[2]);
 	Real input_alpha = atof(argv[3]);
@@ -131,6 +137,12 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 
 void Change_Alpha(int argc, char *argv[], Node* thisnode)
 {
+	if (argc < 4)
+	{
+		if (box.thisnode == 0)
+			cout << "arguments are: \n" << "density,\tg,\tepsilon" << endl;
+		exit(0);
+	}
 	Real input_rho = atof(argv[1]);
 	Real input_g = atof(argv[2]);
 	Real input_noise = atof(argv[3]);

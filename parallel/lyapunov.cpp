@@ -43,6 +43,12 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period)
 
 void Run(int argc, char *argv[], Node* thisnode)
 {
+	if (argc < 6)
+	{
+		if (box.thisnode == 0)
+			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
+		exit(0);
+	}
 	Real input_rho = atof(argv[1]);
 	Real input_kapa = atof(argv[2]);
 	Real input_mu_plus = atof(argv[3]);

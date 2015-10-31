@@ -72,6 +72,12 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 
 void Change_Noise(int argc, char *argv[], Node* thisnode)
 {
+	if (argc < 5)
+	{
+		if (box.thisnode == 0)
+			cout << "arguments are: \n" << "density,\tmu+,\tmu-,Dphi" << endl;
+		exit(0);
+	}
 	Real input_rho = atof(argv[1]);
 	Real input_mu_plus = atof(argv[2]);
 	Real input_mu_minus = atof(argv[3]);
