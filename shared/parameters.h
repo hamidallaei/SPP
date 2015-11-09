@@ -29,8 +29,8 @@ class RepulsiveParticle;
 
 typedef double Real;
 //typedef VicsekParticle Particle;
-//typedef ContinuousParticle Particle;
-typedef MarkusParticle Particle;
+typedef ContinuousParticle Particle;
+//typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
 long int seed = 10;
@@ -41,7 +41,7 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 20;
+const int Lx_int = 5;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;

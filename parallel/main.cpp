@@ -28,7 +28,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-//		timing_information(box->thisnode,start_time,i,equilibrium_step);
+		timing_information(box->thisnode,start_time,i,equilibrium_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -58,7 +58,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-//		timing_information(box->thisnode,start_time,i,total_step);
+		timing_information(box->thisnode,start_time,i,total_step);
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
 	}
@@ -72,11 +72,75 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	return(t);
 }
 
-void Change_Noise(int argc, char *argv[], Node* thisnode)
+
+bool Init_Box(Box& box, int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
+			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
+		exit(0);
+	}
+
+
+	Real input_rho = atof(argv[1]);
+	Real input_g = atof(argv[2]);
+	Real input_alpha = atof(argv[3]);
+	Real input_noise = atof(argv[4]);
+
+	Particle::noise_amplitude = input_noise;
+	Particle::g = input_g;
+	Particle::alpha = input_alpha;
+
+	box.Init(box.thisnode, input_rho);
+
+	Real t_eq,t_sim;
+
+	box.N = (int) round(Lx2*Ly2*box.density);
+
+	if (box.thisnode == 0)
+	{
+// Positioning the particles
+		Polar_Formation(box.particle,box.N);
+//		Triangle_Lattice_Formation(box.particle, box.N, 1);
+//		Random_Formation(box.particle, box.N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+//		Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
+//		Single_Vortex_Formation(box.particle, box.N);
+		//	Four_Vortex_Formation(box.particle, box.N);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+	box.info.str("");
+	box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << Particle::noise_amplitude << "-L=" << Lx;
+
+	ofstream out_file;
+	if (box.thisnode == 0)
+	{
+		cout << "Number of particles is: " << box.N << endl;
+		stringstream address;
+		address.str("");
+		address << box.info.str() << "-r-v.bin";
+		out_file.open(address.str().c_str());
+	}
+
+	if (box.thisnode == 0)
+		cout << " Box information is: " << box.info.str() << endl;
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (box.thisnode == 0)
+		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
+}
+
+
+void Change_Noise(Box& box, int argc, char *argv[])
+{
+	if (argc < 4)
+	{
+		if (box.thisnode->node_id == 0)
 			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
 		exit(0);
 	}
@@ -94,8 +158,7 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
 
-	Box box;
-	box.Init(thisnode, input_rho);
+	box.Init(box.thisnode, input_rho);
 
 	ofstream out_file;
 
@@ -105,7 +168,7 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 		{
 			stringstream address;
 			address.str("");
@@ -113,20 +176,20 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 			out_file.open(address.str().c_str());
 		}
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 			cout << " Box information is: " << box.info.str() << endl;
 
 		MPI_Barrier(MPI_COMM_WORLD);
 		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
 
 		t_sim = data_gathering(&box, total_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 		{
 			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
 			out_file.close();
@@ -135,11 +198,11 @@ void Change_Noise(int argc, char *argv[], Node* thisnode)
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void Change_Alpha(int argc, char *argv[], Node* thisnode)
+void Change_Alpha(Box& box, int argc, char *argv[])
 {
 	if (argc < 4)
 	{
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 			cout << "arguments are: \n" << "density,\tg,\tepsilon" << endl;
 		exit(0);
 	}
@@ -157,8 +220,7 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 	Particle::g = input_g;
 	Particle::alpha = 0;
 
-	Box box;
-	box.Init(thisnode, input_rho);
+	box.Init(box.thisnode, input_rho);
 
 	ofstream out_file;
 
@@ -168,7 +230,7 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << input_noise << "-cooling";
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 		{
 			stringstream address;
 			address.str("");
@@ -176,7 +238,7 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 			out_file.open(address.str().c_str());
 		}
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 		{
 			cout << " Box information is: " << box.info.str() << endl;
 			Triangle_Lattice_Formation(box.particle, box.N, 1);
@@ -185,22 +247,22 @@ void Change_Alpha(int argc, char *argv[], Node* thisnode)
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		// Master node will broadcast the particles information
-		thisnode->Root_Bcast();
+		box.thisnode->Root_Bcast();
 		// Any node update cells, knowing particles and their cell that they are inside.
-		thisnode->Full_Update_Cells();
+		box.thisnode->Full_Update_Cells();
 
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
 
 		t_sim = data_gathering(&box, total_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (thisnode->node_id == 0)
+		if (box.thisnode->node_id == 0)
 		{
 			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
 			out_file.close();
@@ -233,10 +295,13 @@ int main(int argc, char *argv[])
 
 	Node thisnode;
 	Init_Nodes(thisnode);
-	Box box;
 
-	Change_Noise(argc, argv, &thisnode);
-//	Change_Alpha(argc, argv, &thisnode);
+	Box box;
+	box.thisnode = &thisnode;
+
+//	Init_Box(box, argc, argv);
+	Change_Noise(box, argc, argv);
+//	Change_Alpha(box, argc, argv);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
