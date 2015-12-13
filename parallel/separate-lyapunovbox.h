@@ -7,6 +7,7 @@
 #include "../shared/cell.h"
 #include "../shared/vector-set.h"
 #include "../serial/box.h"
+#include "node.h"
 #include "mpi.h"
 
 class LyapunovBox: public Box{
@@ -18,6 +19,8 @@ public:
 	vector<GrowthRatio> ratio;
 
 	ofstream outfile, trajfile;
+
+	Node* node_head; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
 
 	LyapunovBox();
 
@@ -34,10 +37,12 @@ public:
 
 	void Evolution_Reorthonormalize(bool save);
 	Real Recursive_Orthonormalize(Real interval, int iteration_num, bool save);
+	Real Find_Growth(bool save);
 
 	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
 	Real Lyapunov_Exponent(const Real, const Real, const Real, const Real, const Real, const Real, const int); // Finding the largest lyapunov exponent
 	Real Recursive_Lyapunov_Exponent(const Real, const int, const Real, const int, const int);
+	Real Simple_Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const int direction_num);
 
 	Real Polarization();
 };
@@ -245,7 +250,7 @@ void LyapunovBox::Evolution_Reorthonormalize(bool save = false)
 			tt = 0;
 			cout << "System is in time " << dt*t[j] << endl;
 //			if (save)
-				cout << us << endl;
+//				cout << us << endl;
 		}
 
 		Root_Bcast_State_Hyper_Vector(vs.v[0]);
@@ -391,6 +396,90 @@ Real LyapunovBox::Recursive_Orthonormalize(Real interval, int iteration_num, boo
 	return (lambda);
 }
 
+// Finding growth without orthonormalization
+Real LyapunovBox::Find_Growth(bool save = false)
+{
+	Real lambda;
+	State_Hyper_Vector gamma0(N);
+
+// Saving the initial state and Making deviations
+	if (thisnode == 0)
+	{
+		Save(gamma0);
+		vs.v[0] = gamma0;
+		dvs = us;
+		dvs.Scale();
+		if (save)
+		{
+			outfile << 0;
+			for (int i = 0; i < us.direction_num; i++)
+				outfile << "\t" << 1;
+			outfile << endl;
+		}
+	}
+
+// Broad casting the deviations
+	MPI_Barrier(MPI_COMM_WORLD);
+	Root_Bcast_State_Hyper_Vector(gamma0);
+	Root_Bcast_Vector_Set(dvs);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	Real tt = 0;
+	vs.v[0] = gamma0;
+
+	for (int i = 0; i < us.direction_num; i++)
+	{
+		if (i % totalnode == thisnode)
+			vs.v[i] = gamma0 + dvs.v[i];
+	}
+
+// Going over directions
+	for (int j = 0; j < tau.size(); j++)
+	{
+		tt += tau[j]*dt;
+
+		for (int i = 0; i < us.direction_num; i++)
+		{
+			if (i % totalnode == thisnode)
+			{
+				Load(vs.v[i]);
+				Multi_Step(tau[j], 20);
+				Save(vs.v[i]);
+			}
+		}
+
+		MPI_Barrier(MPI_COMM_WORLD);
+		Root_Gather_Vector_Set(vs);
+
+		if (thisnode == 0)
+		{
+			for (int i = 1; i < us.direction_num; i++)
+				dvs.v[i] = (vs.v[i] - vs.v[0]);
+
+			Real temp_ratio[us.direction_num];
+			for (int i = 1; i < us.direction_num; i++)
+			{
+				temp_ratio[i] = (dvs.v[i].Magnitude()) / (us.amplitude);
+			}
+			if (save)
+			{
+				outfile << tt;
+				for (int i = 1; i < us.direction_num; i++)
+					outfile << "\t" << temp_ratio[i];
+				outfile << endl;
+			}
+			lambda = log(temp_ratio[1]) / (tau[j]);
+
+			gamma0 = vs.v[0];
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+		Root_Bcast_State_Hyper_Vector(gamma0);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	return (lambda);
+}
+
 // Finding the largest lyapunov exponent
 Real LyapunovBox::Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const int direction_num)
 {
@@ -480,6 +569,34 @@ Real LyapunovBox::Recursive_Lyapunov_Exponent(const Real interval0, const int it
 		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
 
 	return (lambda);
+}
+
+
+// Lyapunov exponent without rotation of deviations. This procedure must have a diffusion limit for large time
+Real LyapunovBox::Simple_Lyapunov_Exponent(const Real eq_interval, const Real eq_duration, const Real interval, const Real duration, const int direction_num)
+{
+	clock_t start_time, end_time;
+	start_time = clock();
+	
+	Init_Deviation(direction_num);
+	Init_Time(eq_interval, eq_duration);
+	Evolution_Reorthonormalize(false);
+
+	end_time = clock();
+	if (thisnode == 0)
+		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
+	start_time = end_time;
+	
+	Init_Time(interval, duration);
+	if (thisnode == 0)
+		cout << "Initialized time set for lyapunov computation " << endl;
+	Find_Growth(true);
+
+	end_time = clock();
+	Real running_time = (end_time - start_time) / CLOCKS_PER_SEC;
+	if (thisnode == 0)
+		cout << "Finded unit orthonormal vectors in: " << (end_time - start_time) / CLOCKS_PER_SEC << " s" << endl;
+	return (running_time);
 }
 
 Real LyapunovBox::Polarization()

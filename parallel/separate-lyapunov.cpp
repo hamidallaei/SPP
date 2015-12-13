@@ -186,7 +186,8 @@ Real Average_Lyapunov(LyapunovBox& box, const Real& Dphi, int sample_num, Real& 
 	{
 		MPI_Barrier(MPI_COMM_WORLD);
 		equilibrium(box, equilibrium_step, saving_period);
-		lambda += box.Recursive_Lyapunov_Exponent(0.01,300, 0.01, 300, 4);
+//		lambda += box.Recursive_Lyapunov_Exponent(0.01,300, 0.01, 300, 4);
+		lambda += box.Simple_Lyapunov_Exponent(0.01,100, 0.1, 100, 3);
 		M += box.Polarization();
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
@@ -216,24 +217,24 @@ void Average_Lyapunov_Noise_Change(LyapunovBox& box, const Real Dphi_max, const 
 	}
 }
 
-void Run(int argc, char *argv[])
+void Run(LyapunovBox& box, int argc, char *argv[])
 {
 	Real t_sim;
 	int sample_num = 100;
 
-	LyapunovBox box;
 	Init_Box(box, argc, argv);
+	Real M;
 
-	Average_Lyapunov_Noise_Change(box, 0.6, 12, 10);
+	Average_Lyapunov(box, Particle::D_phi, 1, M);
+//	Average_Lyapunov_Noise_Change(box, 0.6, 12, 10);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-bool Run_From_File(int argc, char *argv[])
+bool Run_From_File(LyapunovBox& box, int argc, char *argv[])
 {
 	Real t_eq,t_sim;
 
-	LyapunovBox box;
 	if (!Init_Box_From_File(box,argv[1]))
 		return false;
 
@@ -273,18 +274,39 @@ void Init_Nodes(int input_seed = seed)
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
+void Init_Nodes(Node& thisnode)
+{
+	#ifdef COMPARE
+		thisnode.seed = seed;
+	#else
+		thisnode.seed = time(NULL) + thisnode.node_id*112488;
+		while (!thisnode.Chek_Seeds())
+		{
+			thisnode.seed = time(NULL) + thisnode.node_id*112488;
+			MPI_Barrier(MPI_COMM_WORLD);
+		}
+	#endif
+	C2DVector::Init_Rand(thisnode.seed);
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
 int main(int argc, char *argv[])
 {
-	int this_node_id, total_nodes;
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
-	Init_Nodes(time(NULL));
+	Node thisnode;
+	Init_Nodes(thisnode);
+
+	LyapunovBox box;
+	box.node_head = &thisnode;
+	box.thisnode = box.node_head->node_id;
+	box.totalnode = box.node_head->total_nodes;
 
 	if (argc > 2)
-		Run(argc, argv);
+		Run(box, argc, argv);
 	else
-		Run_From_File(argc, argv);
+		Run_From_File(box, argc, argv);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

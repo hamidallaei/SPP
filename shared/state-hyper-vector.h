@@ -221,7 +221,7 @@ void State_Hyper_Vector::Periodic_Transform()
 	{
 		particle[i].r.Periodic_Transform();
 		particle[i].theta = particle[i].theta - 2*M_PI*ceil((particle[i].theta - M_PI) / (2*M_PI));
-	}	
+	}
 }
 
 void State_Hyper_Vector::Unit()

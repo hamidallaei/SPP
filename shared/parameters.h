@@ -29,8 +29,8 @@ class RepulsiveParticle;
 
 typedef double Real;
 //typedef VicsekParticle Particle;
-typedef ContinuousParticle Particle;
-//typedef MarkusParticle Particle;
+//typedef ContinuousParticle Particle;
+typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
 long int seed = 10;
