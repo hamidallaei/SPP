@@ -53,7 +53,7 @@ void Init()
 	r_image.x = 20;
 	r_image.y = 20;
 	d0 = 5;
-	d1 = 5;
+	d1 = 25;
 }
 
 void Save_Movie()

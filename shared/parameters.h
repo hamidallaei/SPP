@@ -30,8 +30,8 @@ class RepulsiveParticle;
 typedef double Real;
 //typedef VicsekParticle Particle;
 //typedef ContinuousParticle Particle;
-typedef MarkusParticle Particle;
-//typedef RepulsiveParticle Particle;
+//typedef MarkusParticle Particle;
+typedef RepulsiveParticle Particle;
 
 long int seed = 10;
 
@@ -41,7 +41,7 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 5;
+const int Lx_int = 60;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -52,12 +52,12 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 0.01;
+Real dt = 0.000025;
 Real half_dt = dt/2;
-const int cell_update_period = 4;
-const int saving_period = 5;
-const long int equilibrium_step = 10000;
-const long int total_step = 40000;
+const int cell_update_period = 20;
+const int saving_period = 400;
+const long int equilibrium_step = 0;
+const long int total_step = 120000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
@@ -71,13 +71,13 @@ const int npy = 2; // For parallel use only. This number must be even to avoid d
 const int tag_max = 32767; // For parallel use only
 
 // Interactions
-const Real A_p = 1.;		// interaction strength
+const Real A_p = 10.;		// interaction strength
 const Real A_w = 50.;
-const Real sigma_p = .5;		// sigma in Yukawa Potential
+const Real sigma_p = 0.9;		// sigma in Yukawa Potential
 const Real sigma_w = 1.;
 const Real r_f_p = 1.;		// flocking radius with particles
 const Real r_f_w = 1.;		// aligning radius with walls
-const Real r_c_p = 1.; 		// repulsive cutoff radius with particles
+const Real r_c_p = 1.1;		// repulsive cutoff radius with particles
 const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
 
 // Trap

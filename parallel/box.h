@@ -82,9 +82,10 @@ void Box::Init(Node* input_node, Real input_density)
 	{
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 // Positioning the particles
-		Polar_Formation(particle,N);
+//		Polar_Formation(particle,N);
 //		Triangle_Lattice_Formation(particle, N, 1);
-//		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+		Triangle_Lattice_Formation(particle, N, 0);
+//		Random_Formation(particle, N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 //		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(particle, N);
 	//	Four_Vortex_Formation(particle, N);

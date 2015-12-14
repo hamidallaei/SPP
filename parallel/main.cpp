@@ -101,9 +101,9 @@ bool Init_Box(Box& box, int argc, char *argv[])
 	if (box.thisnode == 0)
 	{
 // Positioning the particles
-		Polar_Formation(box.particle,box.N);
+//		Polar_Formation(box.particle,box.N);
 //		Triangle_Lattice_Formation(box.particle, box.N, 1);
-//		Random_Formation(box.particle, box.N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+		Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 //		Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(box.particle, box.N);
 		//	Four_Vortex_Formation(box.particle, box.N);

@@ -379,9 +379,10 @@ public:
 		C2DVector interaction_force;
 		if (d < r_c_p)
 		{
-			dr /= d; 
+			dr /= d;
 			Real r_c_p2 = r_c_p*r_c_p; 
-			interaction_force = dr * A_p * ( exp(- d / sigma_p ) * ( 1. / d2 + 1. / (sigma_p * d)) - exp(- r_c_p / sigma_p ) * ( 1. / r_c_p2 + 1. / (sigma_p * r_c_p)) );
+//			interaction_force = dr * A_p * ( exp(- d / sigma_p ) * ( 1. / d2 + 1. / (sigma_p * d)) - exp(- r_c_p / sigma_p ) * ( 1. / r_c_p2 + 1. / (sigma_p * r_c_p)) );
+			interaction_force = dr * A_p * ((r_c_p - d)*(r_c_p - d) / ((d-sigma_p)*(d-sigma_p)));
 
 			f += interaction_force;
 			p.f -= interaction_force;

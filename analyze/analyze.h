@@ -45,7 +45,7 @@ void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 
 void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
 {
-	for (int i = s->scene.size()/2; i < s->scene.size(); i++)
+	for (int i = 0; i < s->scene.size(); i++)
 	{
 		double L = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)

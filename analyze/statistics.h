@@ -13,7 +13,15 @@ public:
 	void Compute();
 	void Reset();
 	void Add_Data(T input);
+	template <class Tp>  friend std::ostream& operator<<(std::ostream&, Stat<Tp>&);
 };
+
+template <class Tp> std::ostream& operator<<(std::ostream& os, Stat<Tp>& s)
+{
+	for (int i = 0; i < s.data.size(); i++)
+		os << s.data[i] << endl;
+	return (os);
+}
 
 template <class T> void Stat<T>::Compute()
 {
