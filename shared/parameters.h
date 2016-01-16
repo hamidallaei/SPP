@@ -2,6 +2,7 @@
 #define _PARAMETERS_
 
 #define PERIODIC_BOUNDARY_CONDITION
+//#define NonPeriodicCompute
 //#define CIRCULAR_BOX
 #define verlet_list
 // This is for checking particles outside of the box
@@ -23,15 +24,16 @@ using namespace std;
 
 class BasicDynamicParticle;
 class VicsekParticle;
+class VicsekParticle2;
 class ContinuousParticle;
 class MarkusParticle;
 class RepulsiveParticle;
 
 typedef double Real;
-//typedef VicsekParticle Particle;
+typedef VicsekParticle2 Particle;
 //typedef ContinuousParticle Particle;
 //typedef MarkusParticle Particle;
-typedef RepulsiveParticle Particle;
+//typedef RepulsiveParticle Particle;
 
 long int seed = 10;
 
@@ -41,8 +43,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 60;
-const int Ly_int = Lx_int;
+const int Lx_int = 512;
+const int Ly_int = Lx_int / 8;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -52,18 +54,18 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 0.000025;
+Real dt = 1;
 Real half_dt = dt/2;
-const int cell_update_period = 20;
-const int saving_period = 400;
-const long int equilibrium_step = 0;
-const long int total_step = 120000;
+const int cell_update_period = 1;
+const int saving_period = 20;
+const long int equilibrium_step = 20000;//10000;
+const long int total_step = 5000;//120000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
-const int divisor_x = max_divisor_x;
-const int divisor_y = max_divisor_y ;
+const int divisor_x = max_divisor_x/3;
+const int divisor_y = max_divisor_y/3;
 
 // Parallel Use only
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks

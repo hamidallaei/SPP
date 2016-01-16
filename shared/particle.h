@@ -78,21 +78,26 @@ public:
 	Real average_theta;
 	void Move()
 	{
-		average_theta /= neighbor_size;
-		theta = theta + average_theta + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
+		if (neighbor_size > 0)
+			average_theta /= neighbor_size;
+		else
+			average_theta = theta;
+		theta = average_theta + noise_amplitude*gsl_ran_flat(C2DVector::gsl_r,-M_PI,M_PI);
 		C2DVector old_v = v;
 		v.x = cos(theta);
 		v.y = sin(theta);
 		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			r.Periodic_Transform();
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
 		#endif
 		Reset();
 	}
 
 	void Reset()
 	{
-		neighbor_size = 1;
+		neighbor_size = 0;
 		average_theta = 0;
 	}
 
@@ -110,12 +115,69 @@ public:
 			p.neighbor_size++;
 			Real dtheta = p.theta - theta;
 			dtheta -= 2*PI * (int (dtheta / PI));
-			average_theta += dtheta;
-			p.average_theta -= dtheta;
+			average_theta += p.theta;
+			p.average_theta += theta;
 		}
 	}
 };
 
+class VicsekParticle2: public BasicDynamicParticle {
+public:
+	C2DVector average_v;
+	static Real beta;
+	static Real rc;
+	void Move()
+	{
+		if (neighbor_size == 0)
+			average_v = v;
+		Real rand_angle = gsl_ran_flat(C2DVector::gsl_r,-M_PI,M_PI);
+		average_v.x += neighbor_size*noise_amplitude*cos(rand_angle);
+		average_v.y += neighbor_size*noise_amplitude*sin(rand_angle);
+		theta = atan2(average_v.y,average_v.x);
+		v.x = cos(theta);
+		v.y = sin(theta);
+		r += v*(dt*speed);
+		#ifdef PERIODIC_BOUNDARY_CONDITION
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
+		#endif
+		Reset();
+	}
+
+	void Reset()
+	{
+		neighbor_size = 0;
+		average_v.Null();
+	}
+
+	void Interact(VicsekParticle2& p)
+	{
+		C2DVector dr = r - p.r;
+		#ifdef PERIODIC_BOUNDARY_CONDITION
+			dr.Periodic_Transform();
+		#endif
+		Real d2 = dr.Square();
+		Real d = sqrt(d2);
+		C2DVector ehat = dr / d;
+
+		if (d2 < 1)
+		{
+			neighbor_size++;
+			p.neighbor_size++;
+			Real dtheta = p.theta - theta;
+			dtheta -= 2*PI * (int (dtheta / PI));
+			average_v += p.v;
+			p.average_v += v;
+			if (d < rc)
+			{
+				Real force_amplitude = beta/(1 + exp(d/rc-2));
+				average_v += ehat*force_amplitude;
+				p.average_v -= ehat*force_amplitude;
+			}
+		}
+	}
+};
 
 class ContinuousParticle: public BasicDynamicParticle {
 public:
@@ -138,7 +200,9 @@ public:
 
 		r += v*(speed*dt);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			r.Periodic_Transform();
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -234,7 +298,9 @@ public:
 
 		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			r.Periodic_Transform();
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -354,7 +420,9 @@ public:
 		v += f;
 		r += v*dt;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			r.Periodic_Transform();
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -431,6 +499,9 @@ void RepulsiveParticle::Reset()
 	torque = 0;
 	f.Null();
 }
+
+Real VicsekParticle2::beta = 2.5;
+Real VicsekParticle2::rc = 0.127;
 
 Real RepulsiveParticle::g = .5;
 Real RepulsiveParticle::kesi = .5;
