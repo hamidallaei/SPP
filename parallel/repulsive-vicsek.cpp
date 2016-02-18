@@ -72,7 +72,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	return(t);
 }
 
-void Change_Noise(Box& box, int argc, char *argv[])
+void Change_Noise(int argc, char *argv[], Node* thisnode)
 {
 	if (argc < 4)
 	{
@@ -92,7 +92,8 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	Particle::noise_amplitude = 0;
 	Particle::g = input_g;
 
-	box.Init(box.thisnode, input_rho);
+	Box box;
+	box.Init(thisnode, input_rho);
 
 	ofstream out_file;
 
@@ -102,7 +103,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-cooling";
 
-		if (box.thisnode->node_id == 0)
+		if (thisnode->node_id == 0)
 		{
 			stringstream address;
 			address.str("");
@@ -110,20 +111,20 @@ void Change_Noise(Box& box, int argc, char *argv[])
 			out_file.open(address.str().c_str());
 		}
 
-		if (box.thisnode->node_id == 0)
+		if (thisnode->node_id == 0)
 			cout << " Box information is: " << box.info.str() << endl;
 
 		MPI_Barrier(MPI_COMM_WORLD);
 		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (box.thisnode->node_id == 0)
+		if (thisnode->node_id == 0)
 			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
 
 		t_sim = data_gathering(&box, total_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (box.thisnode->node_id == 0)
+		if (thisnode->node_id == 0)
 		{
 			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
 			out_file.close();
@@ -157,10 +158,7 @@ int main(int argc, char *argv[])
 	Node thisnode;
 	Init_Nodes(thisnode);
 
-	Box box;
-	box.thisnode = &thisnode;
-
-	Change_Noise(box, argc, argv);
+	Change_Noise(argc, argv, &thisnode);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

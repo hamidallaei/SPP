@@ -103,7 +103,7 @@ bool Init_Box(Box& box, int argc, char *argv[])
 // Positioning the particles
 //		Polar_Formation(box.particle,box.N);
 //		Triangle_Lattice_Formation(box.particle, box.N, 1);
-		Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+		Random_Formation(box.particle, box.N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 //		Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(box.particle, box.N);
 		//	Four_Vortex_Formation(box.particle, box.N);
@@ -164,7 +164,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
-		Particle::noise_amplitude = noise_list[i] / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		Particle::noise_amplitude = sqrt(2*noise_list[i]) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
 
@@ -216,7 +216,7 @@ void Change_Alpha(Box& box, int argc, char *argv[])
 
 	Real t_eq,t_sim;
 
-	Particle::noise_amplitude = input_noise / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 	Particle::g = input_g;
 	Particle::alpha = 0;
 
