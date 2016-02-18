@@ -53,7 +53,7 @@ void Init()
 	r_image.x = 20;
 	r_image.y = 20;
 	d0 = 5;
-	d1 = 25;
+	d1 = 5;
 }
 
 void Save_Movie()
@@ -99,6 +99,7 @@ void Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
 	sceneset->scene[t].Magnify(r0,d0,r1,d1);
 	cout << (d1 / d0)*VisualParticle::thickness << endl;
 }
+
 
 void Draw_Color_Wheel(C2DVector r, float R0, float R1)
 {
@@ -149,9 +150,11 @@ void Display()
 	sceneset->scene[t].Draw();
 	if (magnify)
 		Magnify(r_lense,d0,r_image,d1);
-	r0.x = -49;
-	r0.y = 49;
-	Draw_Color_Wheel(r0,3,10);
+	r0.x = -0.82*sceneset->L;
+	r0.y = 0.82*sceneset->L;
+	Real raddi1 = 0.05*sceneset->L;
+	Real raddi2 = 0.15*sceneset->L;
+	Draw_Color_Wheel(r0,raddi1,raddi2);
 
 	glLineWidth(2);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
