@@ -4,7 +4,7 @@
 #define PERIODIC_BOUNDARY_CONDITION
 //#define NonPeriodicCompute
 //#define CIRCULAR_BOX
-#define verlet_list
+//#define verlet_list
 // This is for checking particles outside of the box
 //#define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
@@ -30,8 +30,8 @@ class MarkusParticle;
 class RepulsiveParticle;
 
 typedef double Real;
-typedef VicsekParticle2 Particle;
-//typedef ContinuousParticle Particle;
+//typedef VicsekParticle2 Particle;
+typedef ContinuousParticle Particle;
 //typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
 
@@ -43,8 +43,8 @@ const int max_wall_num = 8;
 const int max_N = 80000;
 
 // Box
-const int Lx_int = 512;
-const int Ly_int = Lx_int / 8;
+const int Lx_int = 32;
+const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -54,12 +54,12 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 1;
+Real dt = 0.05;
 Real half_dt = dt/2;
-const int cell_update_period = 1;
-const int saving_period = 20;
-const long int equilibrium_step = 20000;//10000;
-const long int total_step = 5000;//120000;
+const int cell_update_period = 2;
+const int saving_period = 5;
+const long int equilibrium_step = 2000;//10000;
+const long int total_step = 4000;//120000;
 
 // Cell division
 const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);

@@ -15,7 +15,7 @@
 class Box{
 public:
 	int N, wall_num; // N is the number of particles and wallnum is the number of walls in the system.
-	Particle particle[max_N]; // Array of particles that we are going to simulate.
+	Particle* particle; // Array of particles that we are going to simulate.
 	Wall wall[8]; // Array of walls in our system.
 
 	Real density;
@@ -48,6 +48,7 @@ Box::Box()
 	N = 0;
 	density = 0;
 	wall_num = 0;
+	particle = new Particle[max_N];
 }
 
 // Initialize the wall positions and numbers.

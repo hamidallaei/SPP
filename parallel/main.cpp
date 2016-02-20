@@ -78,7 +78,7 @@ bool Init_Box(Box& box, int argc, char *argv[])
 	if (argc < 4)
 	{
 		if (box.thisnode->node_id == 0)
-			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
+			cout << "arguments are: \n" << "density,\tg,\talpha,\tDr" << endl;
 		exit(0);
 	}
 
@@ -88,7 +88,7 @@ bool Init_Box(Box& box, int argc, char *argv[])
 	Real input_alpha = atof(argv[3]);
 	Real input_noise = atof(argv[4]);
 
-	Particle::noise_amplitude = input_noise;
+	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt);
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
 
@@ -103,7 +103,7 @@ bool Init_Box(Box& box, int argc, char *argv[])
 // Positioning the particles
 //		Polar_Formation(box.particle,box.N);
 //		Triangle_Lattice_Formation(box.particle, box.N, 1);
-		Random_Formation(box.particle, box.N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+		Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 //		Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
 //		Single_Vortex_Formation(box.particle, box.N);
 		//	Four_Vortex_Formation(box.particle, box.N);
@@ -112,7 +112,7 @@ bool Init_Box(Box& box, int argc, char *argv[])
 
 	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 	box.info.str("");
-	box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << Particle::noise_amplitude << "-L=" << Lx;
+	box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << input_noise << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
 
 	ofstream out_file;
 	if (box.thisnode == 0)
@@ -141,7 +141,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	if (argc < 4)
 	{
 		if (box.thisnode->node_id == 0)
-			cout << "arguments are: \n" << "density,\tkappa,\tmu+,\tmu-,\tDphi" << endl;
+			cout << "arguments are: \n" << "density,\tg,\talpha,\tDr" << endl;
 		exit(0);
 	}
 	Real input_rho = atof(argv[1]);
@@ -166,7 +166,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	{
 		Particle::noise_amplitude = sqrt(2*noise_list[i]) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << noise_list[i] << "-cooling";
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << noise_list[i] << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
 
 		if (box.thisnode->node_id == 0)
 		{
@@ -203,7 +203,7 @@ void Change_Alpha(Box& box, int argc, char *argv[])
 	if (argc < 4)
 	{
 		if (box.thisnode->node_id == 0)
-			cout << "arguments are: \n" << "density,\tg,\tepsilon" << endl;
+			cout << "arguments are: \n" << "density,\tg,\tDr,\talpha" << endl;
 		exit(0);
 	}
 	Real input_rho = atof(argv[1]);
@@ -228,8 +228,7 @@ void Change_Alpha(Box& box, int argc, char *argv[])
 	{
 		Particle::alpha = alpha_list[i];
 		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-noise=" << input_noise << "-cooling";
-
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << input_noise << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
 		if (box.thisnode->node_id == 0)
 		{
 			stringstream address;
@@ -298,6 +297,8 @@ int main(int argc, char *argv[])
 
 	Box box;
 	box.thisnode = &thisnode;
+	Particle::speed = 0.3;
+	Particle::rv = 1 + (2*Particle::speed*dt*(cell_update_period));
 
 //	Init_Box(box, argc, argv);
 	Change_Noise(box, argc, argv);
