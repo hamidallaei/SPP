@@ -43,9 +43,31 @@ void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 	polarization->Compute();
 }
 
+void Compute_Order_Parameters(SceneSet* s, double& polarization, double& sigma2, double& G)
+{
+	Stat<double> p,p2,p4;
+	for (int i = 0; i < s->scene.size(); i++)
+	{
+		C2DVector vp;
+		vp.Null();
+		for (int j = 0; j < Scene::number_of_particles; j++)
+			vp += s->scene[i].particle[j].v;
+		vp = vp / Scene::number_of_particles;
+		p.Add_Data(sqrt(vp.Square()));
+		p2.Add_Data(vp.Square());
+		p4.Add_Data(vp.Square()*vp.Square());
+	}
+	p.Compute();
+	p2.Compute();
+	p4.Compute();
+	polarization = p.mean;
+	sigma2 = (4*s->L*s->L)*(p2.mean - p.mean*p.mean);
+	G = 1 - (p4.mean / (3*p2.mean));
+}
+
 void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
 {
-	for (int i = s->scene.size()/2; i < s->scene.size(); i++)
+	for (int i = 0; i < s->scene.size(); i++)
 	{
 		double L = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)

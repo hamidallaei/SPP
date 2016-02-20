@@ -13,8 +13,8 @@
 #include "read-visual.h"
 #include "../shared/c2dvector.h"
 
-unsigned int window_width = 660;
-unsigned int window_height = 660;
+unsigned int window_width = 760;
+unsigned int window_height = 760;
 
 cv::VideoWriter writer;
 SceneSet* sceneset;
@@ -53,7 +53,7 @@ void Init()
 	r_image.x = 20;
 	r_image.y = 20;
 	d0 = 5;
-	d1 = 5;
+	d1 = 25;
 }
 
 void Save_Movie()
@@ -99,7 +99,6 @@ void Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
 	sceneset->scene[t].Magnify(r0,d0,r1,d1);
 	cout << (d1 / d0)*VisualParticle::thickness << endl;
 }
-
 
 void Draw_Color_Wheel(C2DVector r, float R0, float R1)
 {
@@ -150,17 +149,17 @@ void Display()
 	sceneset->scene[t].Draw();
 	if (magnify)
 		Magnify(r_lense,d0,r_image,d1);
-	r0.x = -0.82*sceneset->L;
-	r0.y = 0.82*sceneset->L;
-	Real raddi1 = 0.05*sceneset->L;
-	Real raddi2 = 0.15*sceneset->L;
-	Draw_Color_Wheel(r0,raddi1,raddi2);
+
+	float l = sceneset->L - 0.2;
+	
+	r0.x = -0.8*l;
+	r0.y = 0.8*l;
+	Draw_Color_Wheel(r0,l/20.0,l/6.0);
 
 	glLineWidth(2);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glColor4f(0, 0, 0,1);
 	glBegin(GL_POLYGON);
-	float l = sceneset->L - 0.2;
 	glVertex2f(-l, -l);
 	glVertex2f(l, -l);
 	glVertex2f(l, l);

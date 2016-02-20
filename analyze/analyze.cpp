@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields(128, name);
 //			sceneset->Plot_Averaged_Fields(64, name);
 //			sceneset->Plot_Averaged_Fields(32, name);
-			sceneset->Plot_Averaged_Fields(25, name);
+//			sceneset->Plot_Averaged_Fields(25, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 40, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
@@ -41,10 +41,14 @@ int main(int argc, char** argv)
 			boost::replace_all(name, "-g=", "\t");
 			boost::replace_all(name, "-alpha=", "\t");
 
-//			Stat<double>	angular_momentum_data;
-//			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
-//			cout << name << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
-//			angular_momentum_data.Reset();
+//			double p,sigma2,G;
+//			Compute_Order_Parameters(sceneset, p, sigma2, G);
+//			cout << name << "\t" << p << "\t" << sigma2 << "\t" << G << endl;
+
+			Stat<double>	angular_momentum_data;
+			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
+			cout << name << "\t" << sceneset->L << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
+			angular_momentum_data.Reset();
 //			cout << name << "\t" << Local_Cohesion(sceneset, 10) << endl;
 
 //			cout << "# " << name << endl;
