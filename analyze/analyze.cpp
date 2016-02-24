@@ -35,20 +35,28 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
 
 
+			size_t pos1,pos2;
+			pos1 = name.find("-Lx");
+			if (pos1 > 0 && pos1 < name.length())
+				name.erase(name.begin() + pos1,name.end());
+			pos1 = name.find("-2Lx");
+			if (pos1 > 0 && pos1 < name.length())
+				name.erase(name.begin() + pos1,name.end());
 			boost::replace_all(name, "rho=", "");
 			boost::replace_all(name, "-noise=", "\t");
 			boost::replace_all(name, "-cooling", "\t");
 			boost::replace_all(name, "-g=", "\t");
+			boost::replace_all(name, "-v=", "\t");
 			boost::replace_all(name, "-alpha=", "\t");
 
-//			double p,sigma2,G;
-//			Compute_Order_Parameters(sceneset, p, sigma2, G);
-//			cout << name << "\t" << p << "\t" << sigma2 << "\t" << G << endl;
+			double p,dp,sigma2,G;
+			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
+			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
 
-			Stat<double>	angular_momentum_data;
-			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
-			cout << name << "\t" << sceneset->L << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
-			angular_momentum_data.Reset();
+//			Stat<double>	angular_momentum_data;
+//			Compute_Angular_Momentum(sceneset, &angular_momentum_data);
+//			cout << name << "\t" << sceneset->L << "\t" << (angular_momentum_data.mean) << "\t" << angular_momentum_data.error << endl;
+//			angular_momentum_data.Reset();
 //			cout << name << "\t" << Local_Cohesion(sceneset, 10) << endl;
 
 //			cout << "# " << name << endl;
