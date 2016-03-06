@@ -40,7 +40,7 @@ long int seed = 10;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 80000;
+const int max_N = 200000;
 
 // Box
 const int Lx_int = 32;
@@ -54,18 +54,24 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 0.05;
+Real dt = 0.005;
 Real half_dt = dt/2;
-const int cell_update_period = 2;
-const int saving_period = 5;
-const long int equilibrium_step = 2000;//10000;
-const long int total_step = 4000;//120000;
+const int cell_update_period = 20;
+const int saving_period = 1000;
+const long int equilibrium_step = 200000;//10000;
+const long int total_step = 100000;//120000;
 
 // Cell division
-const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
-const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
-const int divisor_x = max_divisor_x/3;
-const int divisor_y = max_divisor_y/3;
+//const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
+//const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
+//const int divisor_x = max_divisor_x/3;
+//const int divisor_y = max_divisor_y/3;
+
+const Real lx_min = (1 + 2*cell_update_period*dt);
+const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
+const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
+const int divisor_x = max_divisor_x;
+const int divisor_y = max_divisor_y;
 
 // Parallel Use only
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks

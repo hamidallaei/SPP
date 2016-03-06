@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 
 	Box box;
 	box.thisnode = &thisnode;
-	Particle::speed = 0.3;
+	Particle::speed = 1.0;
 	Particle::rv = 1 + (2*Particle::speed*dt*(cell_update_period));
 
 //	Init_Box(box, argc, argv);
