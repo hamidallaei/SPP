@@ -197,6 +197,7 @@ void Field::Draw(string info)
 //	vector<boost::tuple<double, double, double, double, double, double, double, double> > temp;
 //	vector<boost::tuple<double, double, double, double> > pts;
 
+//	temp_file << "#x\ty\tvx\tvy\tdensity\tcohesion\tcurl\tomega\twx\twy" << endl;
 	for (int x = 0; x < grid_dim_x; x++)
 	{
 		for (int y = 0; y < grid_dim_x; y++)

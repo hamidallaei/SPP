@@ -42,6 +42,11 @@ int main(int argc, char** argv)
 			pos1 = name.find("-2Lx");
 			if (pos1 > 0 && pos1 < name.length())
 				name.erase(name.begin() + pos1,name.end());
+			pos1 = name.find("-v=");
+			pos2 = name.find("-noise=");
+			if (pos1 > 0 && pos1 < name.length())
+				name.erase(name.begin() + pos1 + 3,name.begin() + pos2);
+
 			boost::replace_all(name, "rho=", "");
 			boost::replace_all(name, "-noise=", "\t");
 			boost::replace_all(name, "-cooling", "\t");

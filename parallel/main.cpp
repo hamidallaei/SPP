@@ -50,7 +50,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	if (!flag)
 		flag = true;
 	#endif
-
+			out_file << box;
 	if (box->thisnode->node_id == 0)
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
@@ -144,26 +144,37 @@ void Change_Noise(Box& box, int argc, char *argv[])
 			cout << "arguments are: \n" << "density,\tg,\talpha,\tDr" << endl;
 		exit(0);
 	}
-	Real input_rho = atof(argv[1]);
-	Real input_g = atof(argv[2]);
-	Real input_alpha = atof(argv[3]);
+	string test = argv[1];
+	int input_file = 0;
+
+	if (test.length() > 10)
+		input_file = 1;
+
+	Real input_rho = atof(argv[1+input_file]);
+	Real input_g = atof(argv[2+input_file]);
+	Real input_alpha = atof(argv[3+input_file]);
 
 	vector<Real> noise_list;
-	for (int i = 4; i < argc; i++)
+	for (int i = 4+input_file; i < argc; i++)
 		noise_list.push_back(atof(argv[i]));
 
 	Real t_eq,t_sim;
 
 	Particle::noise_amplitude = 0;
+	Particle::Dr = 0;
+	if (input_file == 0)
+		box.Init(box.thisnode, input_rho);
+	else
+		box.Init(box.thisnode, test);
+
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
-
-	box.Init(box.thisnode, input_rho);
 
 	ofstream out_file;
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
+		Particle::Dr = noise_list[i];
 		Particle::noise_amplitude = sqrt(2*noise_list[i]) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << noise_list[i] << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;

@@ -13,8 +13,8 @@
 #include "read-visual.h"
 #include "../shared/c2dvector.h"
 
-unsigned int window_width = 760;
-unsigned int window_height = 760;
+unsigned int window_width = 680;
+unsigned int window_height = 680;
 
 cv::VideoWriter writer;
 SceneSet* sceneset;
@@ -231,7 +231,7 @@ void KeyboardInput(unsigned char key, int x, int y)
 	}
 	if ((key == 83) || (key == 115))
 	{
-		sceneset->Plot_Fields(41, t, sceneset->info);
+		sceneset->Plot_Fields(25, t, sceneset->info);
 		Save_Image(global_address);
 	}
 	if ((key == 72) || (key == 104))

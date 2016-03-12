@@ -107,89 +107,111 @@ void Box::Init(Node* input_node, Real input_density)
 }
 
 
-//// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
-//bool Box::Init(Node* input_node, const string input_name)
-//{
-//	#ifdef TRACK_PARTICLE
-//	track_p = &particle[track];
-//	#endif
+// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
+bool Box::Init(Node* input_node, const string input_name)
+{
+	#ifdef TRACK_PARTICLE
+	track_p = &particle[track];
+	#endif
 
-//	Real input_kapa;
-//	Real input_mu_plus;
-//	Real input_mu_minus;
-//	Real input_Dphi;
-//	Real input_L;
+	Real input_density;
+	Real input_g;
+	Real input_alpha;
+	Real input_v;
+	Real input_noise;
+	Real input_Lx;
+	Real input_Ly;
 
-//	string name = input_name;
-//	stringstream address(name);
-//	ifstream is;
-//	is.open(address.str().c_str());
-//	if (!is.is_open())
-//		return false;
+	string name = input_name;
+	stringstream address(name);
+	ifstream is;
+	is.open(address.str().c_str());
+	if (!is.is_open())
+		return false;
 
-//	boost::replace_all(name, "-r-v.bin", "");
-//	boost::replace_all(name, "rho=", "");
-//	boost::replace_all(name, "-k=", "");
-//	boost::replace_all(name, "-mu+=", "\t");
-//	boost::replace_all(name, "-mu-=", "\t");
-//	boost::replace_all(name, "-Dphi=", "\t");
-//	boost::replace_all(name, "-L=", "\t");
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-g=", "\t");
+	boost::replace_all(name, "-alpha=", "\t");
+	boost::replace_all(name, "-v=", "\t");
+	boost::replace_all(name, "-noise=", "\t");
+	boost::replace_all(name, "-2Lx=", "\t");
+	boost::replace_all(name, "-2Ly=", "\t");
 
-//	stringstream ss_name(name);
-//	ss_name >> density;
-//	ss_name >> input_kapa;
-//	ss_name >> input_mu_plus;
-//	ss_name >> input_mu_minus;
-//	ss_name >> input_Dphi;
-//	ss_name >> input_L;
-//	if (input_L != Lx_int)
-//	{
-//		cout << "The specified box size " << input_L << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
-//		return false;
-//	}
+	stringstream ss_name(name);
+	ss_name >> input_density;
+	ss_name >> input_g;
+	ss_name >> input_alpha;
+	ss_name >> input_v;
+	ss_name >> input_noise;
+	ss_name >> input_Lx;
+	ss_name >> input_Ly;
+	input_Lx /= 2.0;
+	input_Ly /= 2.0;
+	if (input_Lx != Lx_int)
+	{
+		cout << "The specified box size " << input_Lx << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
 
-//	Particle::kapa = input_kapa;
-//	Particle::mu_plus = input_mu_plus;
-//	Particle::mu_minus = input_mu_minus;
-//	Particle::D_phi = input_Dphi;
+	if (input_Ly != Ly_int)
+	{
+		cout << "The specified box size " << input_Ly << " is not the same as the size in binary file which is " << Ly_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
 
-//	thisnode = input_node;
+	density = input_density;
+	N = (int) round(Lx2*Ly2*input_density);
 
-//	is.read((char*) &N, sizeof(int) / sizeof(char));
-//	if (N < 0 || N > 1000000)
-//		return (false);
+	Particle::g = input_g;
+	Particle::alpha = input_alpha;
+	Particle::speed = input_v;
+	Particle::Dr = input_noise;
 
-//	for (int i = 0; i < N; i++)
-//	{
-//		is >> particle[i].r;
-//		is >> particle[i].v;
-//	}
+	thisnode = input_node;
 
-//	is.close();
+	is.read((char*) &N, sizeof(int) / sizeof(char));
+	if (N < 0 || N > 1000000)
+		return (false);
+	while (!is.eof())
+	{
+		for (int i = 0; i < N; i++)
+		{
+			is >> particle[i].r;
+			is >> particle[i].v;
+		}
+		is.read((char*) &N, sizeof(int) / sizeof(char));
+	}
+	for (int i = 0; i < N; i++)
+		particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
 
-//	MPI_Barrier(MPI_COMM_WORLD);
+	is.close();
 
-//	Init_Topology(); // Adding walls
+	MPI_Barrier(MPI_COMM_WORLD);
 
-//	if (thisnode->node_id == 0)
-//	{
-//		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-//	}
-//	MPI_Barrier(MPI_COMM_WORLD);
+	Init_Topology(); // Adding walls
 
-//// Master node will broadcast the particles information
-//	thisnode->Root_Bcast();
-//// Any node update cells, knowing particles and their cell that they are inside.
-//	thisnode->Full_Update_Cells();
+	if (thisnode->node_id == 0)
+	{
+		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 
-//	#ifdef verlet_list
-//	thisnode->Update_Neighbor_List();
-//	#endif
+// Master node will broadcast the particles information
+	thisnode->Root_Bcast();
+// Any node update cells, knowing particles and their cell that they are inside.
+	thisnode->Full_Update_Cells();
 
-//// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-//	info.str("");
-//	return (true);
-//}
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
+// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
+	info.str("");
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	return (true);
+}
 
 
 // Loading a state to the box.

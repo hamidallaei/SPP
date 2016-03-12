@@ -184,6 +184,7 @@ public:
 	Real torque;
 	static Real g, gw;
 	static Real alpha;
+	static Real Dr;
 
 	ContinuousParticle();
 	void Move()
@@ -271,7 +272,8 @@ void ContinuousParticle::Reset()
 }
 
 Real ContinuousParticle::g = 4;
-Real ContinuousParticle::alpha = 1;
+Real ContinuousParticle::alpha = 0.5;
+Real ContinuousParticle::Dr = 0;
 
 
 class MarkusParticle: public BasicDynamicParticle {

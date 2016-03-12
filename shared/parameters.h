@@ -43,7 +43,7 @@ const int max_wall_num = 8;
 const int max_N = 200000;
 
 // Box
-const int Lx_int = 32;
+const int Lx_int = 128;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
