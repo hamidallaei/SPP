@@ -5,6 +5,7 @@
 #include "../shared/particle.h"
 #include <boost/tuple/tuple.hpp>
 #include "gnuplot-iostream.h"
+#include "statistics.h"
 #include <vector>
 
 class Field_Cell{
@@ -26,6 +27,7 @@ public:
 	void Add(BasicParticle* p);
 	void Compute_Fields(Real L);
 	void Delta_Theta_Stat();
+	void Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold);
 };
 
 Real Field_Cell::dim_x = 0;
@@ -94,7 +96,16 @@ void Field_Cell::Compute_Fields(Real L)
 	}
 	for (int i = 0; i < particle.size(); i++)
 	{
-		dtheta[i] -= theta_ave;
+//		dtheta[i] -= theta_ave;
+	}
+}
+
+void Field_Cell::Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold)
+{
+	if (cohesion > cohesion_treshold)
+	{
+		for (int i = 0; i < particle.size(); i++)
+			stat_dtheta.Add_Data(dtheta[i]);
 	}
 }
 
@@ -115,6 +126,7 @@ public:
 	void Draw_Density_Contour(string, double);
 	void Add(Field* f);
 	void Average();
+	void Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold);
 	void Reset();
 };
 
@@ -435,6 +447,15 @@ void Field::Average()
 			cell[x][y].omega /= sample;
 			cell[x][y].curl /= sample;
 		}
+	}
+}
+
+void Field::Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold)
+{
+	for (int x = 0; x < grid_dim_x; x++)
+	{
+		for (int y = 0; y < grid_dim_x; y++)
+			cell[x][y].Add_Theta(stat_dtheta, cohesion_treshold);
 	}
 }
 

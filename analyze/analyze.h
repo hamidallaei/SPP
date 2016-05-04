@@ -230,6 +230,10 @@ double Compute_Fluctuation(SceneSet* s)
 	}
 }
 
+void Angle_Distribution(SceneSet* s)
+{
+}
+
 // Find radial density.
 void Radial_Density(SceneSet* s, int number_of_points)
 {

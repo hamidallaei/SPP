@@ -10,7 +10,6 @@ int main(int argc, char** argv)
 {
 	C2DVector::Init_Rand(321);
 	srand(time(NULL));
-
 	for (int i = 1; i < argc; i++)
 	{
 		string name = argv[i];
@@ -33,7 +32,7 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
-
+			sceneset->Accumulate_Theta(10, 200, 0.4, "theta-stat.dat");
 
 			size_t pos1,pos2;
 			pos1 = name.find("-Lx");
@@ -54,9 +53,11 @@ int main(int argc, char** argv)
 			boost::replace_all(name, "-v=", "\t");
 			boost::replace_all(name, "-alpha=", "\t");
 
-			double p,dp,sigma2,G;
-			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
-			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
+			
+
+//			double p,dp,sigma2,G;
+//			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
+//			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
 
 //			Stat<double>	angular_momentum_data;
 //			Compute_Angular_Momentum(sceneset, &angular_momentum_data);

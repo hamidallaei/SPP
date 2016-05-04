@@ -43,7 +43,7 @@ const int max_wall_num = 8;
 const int max_N = 200000;
 
 // Box
-const int Lx_int = 128;
+const int Lx_int = 10;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -54,12 +54,12 @@ const Real Ly2 = 2*Ly;
 //const Real L2 = 2*L; No need to these variables
 
 // Time
-Real dt = 0.005;
+Real dt = 0.01;
 Real half_dt = dt/2;
 const int cell_update_period = 20;
-const int saving_period = 1000;
-const long int equilibrium_step = 200000;//10000;
-const long int total_step = 100000;//120000;
+const int saving_period = 5;
+const long int equilibrium_step = 5000;//10000;
+const long int total_step = 5000;//120000;
 
 // Cell division
 //const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
