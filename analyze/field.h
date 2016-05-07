@@ -15,6 +15,7 @@ public:
 	C2DVector r,v,W;
 	Real density;
 	Real cohesion; // cohesion shows the amount of velocity cohesion
+	Real polarization;
 	Real omega;
 	Real curl;
 	Real theta_ave;
@@ -27,7 +28,7 @@ public:
 	void Add(BasicParticle* p);
 	void Compute_Fields(Real L);
 	void Delta_Theta_Stat();
-	void Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold);
+	void Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp);
 };
 
 Real Field_Cell::dim_x = 0;
@@ -81,8 +82,9 @@ void Field_Cell::Compute_Fields(Real L)
 			cohesion += (particle[i]->v*particle[j]->v)/sqrt(particle[i]->v.Square()*particle[j]->v.Square());
 	}
 	v /= particle.size();
-	if (particle.size() > 0)
-		theta_ave /= particle.size();
+	theta_ave /= particle.size();
+	polarization = sqrt(v.Square());
+	theta_ave = atan2(v.y,v.x);
 	omega /= particle.size();
 	cohesion /= particle.size()*(particle.size() - 1);
 	cohesion *= 2;
@@ -96,17 +98,16 @@ void Field_Cell::Compute_Fields(Real L)
 	}
 	for (int i = 0; i < particle.size(); i++)
 	{
-//		dtheta[i] -= theta_ave;
+		dtheta[i] -= theta_ave;
+		dtheta[i] -= 2*M_PI*floor((dtheta[i]+M_PI) / (2*M_PI));
 	}
 }
 
-void Field_Cell::Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold)
+void Field_Cell::Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp)
 {
-	if (cohesion > cohesion_treshold)
-	{
+	if (fabs(polarization - p_c) < dp)
 		for (int i = 0; i < particle.size(); i++)
 			stat_dtheta.Add_Data(dtheta[i]);
-	}
 }
 
 class Field{
@@ -126,7 +127,7 @@ public:
 	void Draw_Density_Contour(string, double);
 	void Add(Field* f);
 	void Average();
-	void Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold);
+	void Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp);
 	void Reset();
 };
 
@@ -450,12 +451,13 @@ void Field::Average()
 	}
 }
 
-void Field::Add_Theta(Stat<double>& stat_dtheta, const double cohesion_treshold)
+void Field::Add_Theta(Stat<double>& stat_dtheta, const double& pc, const double& dp)
 {
 	for (int x = 0; x < grid_dim_x; x++)
 	{
 		for (int y = 0; y < grid_dim_x; y++)
-			cell[x][y].Add_Theta(stat_dtheta, cohesion_treshold);
+			if (cell[x][y].particle.size() > 5)
+				cell[x][y].Add_Theta(stat_dtheta, pc, dp);
 	}
 }
 

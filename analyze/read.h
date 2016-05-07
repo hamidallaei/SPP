@@ -106,7 +106,7 @@ public:
 	void Plot_Averaged_Fields(int grid_dim, string name);
 	void Plot_Averaged_Fields_Section(int grid_dim, int y, string info);
 	void Plot_Density_Contour(int grid_dim, double rho, string info);
-	void Accumulate_Theta(int grid_dim, const int num_bins, const double cohesion_treshold, const string& info);
+	void Accumulate_Theta(int grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info);
 };
 
 SceneSet::SceneSet(string input_address) : L(0)
@@ -254,22 +254,26 @@ void SceneSet::Plot_Density_Contour(int grid_dim, double rho, string info)
 	averaged_field.Draw_Density_Contour(info, rho);
 }
 
-void SceneSet::Accumulate_Theta(int grid_dim, const int num_bins, const double cohesion_treshold, const string& info)
+void SceneSet::Accumulate_Theta(int grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info)
 {
 	Field f(grid_dim, L);
 	Stat<double> dtheta;
 	for (int i = 0; i < scene.size(); i++)
 	{
 		f.Compute(scene[i].particle, Scene::number_of_particles);
-		f.Add_Theta(dtheta,cohesion_treshold);
+		f.Add_Theta(dtheta,p_c,dp);
 		f.Reset();
 	}
+	stringstream address;
+	address.str("");
+	address << info << "-p-" << p_c << "-dp-" << dp << ".dat";
 	dtheta.Periodic_Transform(M_PI);
 	dtheta.Shift_Average();
 	dtheta.Periodic_Transform(M_PI);
 	dtheta.Shift_Average();
 	dtheta.Compute();
-	dtheta.Histogram(num_bins,info);
+	dtheta.Histogram(num_bins,address.str().c_str());
+	cout << "Number of date: " << dtheta.data.size() << endl;
 	dtheta.Reset();
 }
 

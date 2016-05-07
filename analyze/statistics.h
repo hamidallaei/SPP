@@ -83,6 +83,14 @@ template <class T> void Stat<T>::Histogram(const int& num_bins, const string& in
 	{
 		out_file << (min + i*bin_width) << "\t" << p[i] << endl;
 	}
+	double px = 0, py = 0, polarization;
+	for (int i = 0; i < num_bins; i++)
+	{
+		px += bin_width*cos(min + i*bin_width)*p[i];
+		py += bin_width*sin(min + i*bin_width)*p[i];
+	}
+	polarization = sqrt(px*px+py*py);
+	cout << "Polarization: " << polarization << endl;
 }
 
 template <class T> void Stat<T>::Periodic_Transform(const double& value)

@@ -32,7 +32,9 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
-			sceneset->Accumulate_Theta(10, 200, 0.4, "theta-stat.dat");
+			double p_c = atof(argv[2]);
+			double dp = atof(argv[3]);
+			sceneset->Accumulate_Theta(10, 30, p_c, dp, "theta-stat");
 
 			size_t pos1,pos2;
 			pos1 = name.find("-Lx");
