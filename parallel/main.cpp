@@ -164,7 +164,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		if (box.thisnode->node_id == 0)
 		{
 // Positioning the particles
-			if (Particle::Dr > 2.5)
+			if (Particle::Dr > Dc)
 				Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 			else
 				Polar_Formation(box.particle,box.N);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	Box box;
 	box.thisnode = &thisnode;
-	Particle::speed = 2.0;
+	Particle::speed = speed;
 	Particle::rv = 1 + (2*Particle::speed*dt*(cell_update_period));
 
 	Change_Noise(box, argc, argv);

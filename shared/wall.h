@@ -222,12 +222,12 @@ void Wall::Interact(RepulsiveParticle* p)
 	C2DVector dr = Distance_Vector(p->r);
 	Real d2 = dr.Square();
 	Real d = sqrt(d2); 	// distance of the particle from wall 
-	if (d < r_c_w)
+	if (d < RepulsiveParticle::r_c_w)
 	{
 		C2DVector interaction_force;
 		dr /= d; 
-		Real r_c_w2 = r_c_w*r_c_w; 
-		interaction_force = dr * A_w * ( exp(- d / sigma_w ) * ( 1. / d2 + 1. / (sigma_w * d)) - exp(- r_c_w / sigma_w ) * ( 1. / r_c_w2 + 1. / (sigma_w * r_c_w)) );
+		Real r_c_w2 = RepulsiveParticle::r_c_w*RepulsiveParticle::r_c_w; 
+		interaction_force = dr * RepulsiveParticle::A_w * ( exp(- d / RepulsiveParticle::sigma_w ) * ( 1. / d2 + 1. / (RepulsiveParticle::sigma_w * d)) - exp(- RepulsiveParticle::r_c_w / RepulsiveParticle::sigma_w ) * ( 1. / RepulsiveParticle::r_c_w2 + 1. / (RepulsiveParticle::sigma_w * RepulsiveParticle::r_c_w)) );
 		p->f += interaction_force;
 	}
 
@@ -235,7 +235,7 @@ void Wall::Interact(RepulsiveParticle* p)
 	#ifdef PERIODIC_BOUNDARY_CONDITION
 		dr_1.Periodic_Transform();
 	#endif
-	if ((d < r_f_w) && (dr_1*direction < length) && (dr_1*direction > 0.))
+	if ((d < RepulsiveParticle::r_f_w) && (dr_1*direction < length) && (dr_1*direction > 0.))
 	{
 		Real torque_interaction;
 		// self propulsion direction of the particle p

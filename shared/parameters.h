@@ -50,8 +50,6 @@ const Real Lx = Lx_int;
 const Real Ly = Ly_int;
 const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
-//const Real L = L_int; No need to these variables
-//const Real L2 = 2*L; No need to these variables
 
 // Time
 Real dt = 0.01;
@@ -61,13 +59,10 @@ const int saving_period = 5;
 const long int equilibrium_step = 5000;//10000;
 const long int total_step = 5000;//120000;
 
-// Cell division
-//const int max_divisor_x = 20*Lx_int/12;// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
-//const int max_divisor_y = 20*Ly_int/12;// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
-//const int divisor_x = max_divisor_x/3;
-//const int divisor_y = max_divisor_y/3;
+const Real speed = 2;
+const Real Dc = 2.4; // The noise above which the initial condition is disordered, and below it is polar ordered.
 
-const Real lx_min = (1 + 2*cell_update_period*dt);
+const Real lx_min = (1 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;
@@ -77,20 +72,6 @@ const int divisor_y = max_divisor_y;
 const int npx = 2; // For parallel use only. This number must be even to avoid dead locks
 const int npy = 2; // For parallel use only. This number must be even to avoid dead locks
 const int tag_max = 32767; // For parallel use only
-
-// Interactions
-const Real A_p = 10.;		// interaction strength
-const Real A_w = 50.;
-const Real sigma_p = 0.9;		// sigma in Yukawa Potential
-const Real sigma_w = 1.;
-const Real r_f_p = 1.;		// flocking radius with particles
-const Real r_f_w = 1.;		// aligning radius with walls
-const Real r_c_p = 1.1;		// repulsive cutoff radius with particles
-const Real r_c_w = 1.; 		// repulsive cutoff radius with walls
-
-// Trap
-const Real r_big = 15;
-const Real r_small = 6;
 
 #ifdef TRACK_PARTICLE
 const int track = 59;

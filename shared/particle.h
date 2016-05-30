@@ -397,6 +397,15 @@ public:
 	C2DVector f;
 	static Real g;
 	static Real kesi;
+	static Real A_p;		// interaction strength
+	static Real sigma_p;		// sigma in Yukawa Potential
+	static Real r_f_p;		// flocking radius with particles
+	static Real r_c_p;		// repulsive cutoff radius with particles
+
+	static Real A_w;
+	static Real sigma_w;
+	static Real r_f_w;		// aligning radius with walls
+	static Real r_c_w;		// repulsive cutoff radius with walls
 
 	RepulsiveParticle();
 	void Move()
@@ -507,6 +516,17 @@ Real VicsekParticle2::rc = 0.127;
 
 Real RepulsiveParticle::g = .5;
 Real RepulsiveParticle::kesi = .5;
+
+// Interactions for repulsive particles
+Real RepulsiveParticle::A_p = 10.;		// interaction strength
+Real RepulsiveParticle::sigma_p = 0.9;		// sigma in Yukawa Potential
+Real RepulsiveParticle::r_f_p = 1.;		// flocking radius with particles
+Real RepulsiveParticle::r_c_p = 1.1;		// repulsive cutoff radius with particles
+
+Real RepulsiveParticle::A_w = 50.;		// interaction strength with walls
+Real RepulsiveParticle::sigma_w = 1.;
+Real RepulsiveParticle::r_f_w = 1.;		// aligning radius with walls
+Real RepulsiveParticle::r_c_w = 1.; 		// repulsive cutoff radius with walls
 
 Real ContinuousParticle::gw = 20;
 
