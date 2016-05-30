@@ -227,7 +227,7 @@ void Wall::Interact(RepulsiveParticle* p)
 		C2DVector interaction_force;
 		dr /= d; 
 		Real r_c_w2 = RepulsiveParticle::r_c_w*RepulsiveParticle::r_c_w; 
-		interaction_force = dr * RepulsiveParticle::A_w * ( exp(- d / RepulsiveParticle::sigma_w ) * ( 1. / d2 + 1. / (RepulsiveParticle::sigma_w * d)) - exp(- RepulsiveParticle::r_c_w / RepulsiveParticle::sigma_w ) * ( 1. / RepulsiveParticle::r_c_w2 + 1. / (RepulsiveParticle::sigma_w * RepulsiveParticle::r_c_w)) );
+		interaction_force = dr * RepulsiveParticle::A_w * ( exp(- d / RepulsiveParticle::sigma_w ) * ( 1. / d2 + 1. / (RepulsiveParticle::sigma_w * d)) - exp(- RepulsiveParticle::r_c_w / RepulsiveParticle::sigma_w ) * ( 1. / r_c_w2 + 1. / (RepulsiveParticle::sigma_w * RepulsiveParticle::r_c_w)) );
 		p->f += interaction_force;
 	}
 

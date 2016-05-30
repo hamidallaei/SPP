@@ -246,6 +246,8 @@ void Square_Ring_Formation(Particle* particle, int N)
 	}
 }
 
+int r_big = 15;
+int r_small = 6;
 
 void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta)
 {

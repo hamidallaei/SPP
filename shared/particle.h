@@ -397,6 +397,7 @@ public:
 	C2DVector f;
 	static Real g;
 	static Real kesi;
+	static Real Dr;
 	static Real A_p;		// interaction strength
 	static Real sigma_p;		// sigma in Yukawa Potential
 	static Real r_f_p;		// flocking radius with particles
@@ -516,6 +517,7 @@ Real VicsekParticle2::rc = 0.127;
 
 Real RepulsiveParticle::g = .5;
 Real RepulsiveParticle::kesi = .5;
+Real RepulsiveParticle::Dr = 0;
 
 // Interactions for repulsive particles
 Real RepulsiveParticle::A_p = 10.;		// interaction strength

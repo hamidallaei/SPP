@@ -98,7 +98,8 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
-		Particle::noise_amplitude = noise_list[i] / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		Particle::Dr = noise_list[i];
+		Particle::noise_amplitude = sqrt(2*Particle::Dr/dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
 		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-cooling";
 
