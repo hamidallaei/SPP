@@ -7,6 +7,7 @@ struct Node{
 	int total_nodes; // total number of nodes
 	int node_id; // node_id is the id of thisnode.
 // Box is divided to reagions for our nodes. We lable the node position by idx and idy
+	int npx, npy; // For parallel use only. This number must be even to avoid dead locks
 	int idx,idy; // idx and idy shows the x position of the node inside the box
 	int size_x, size_y; // size_x and size_y is the column and row number of cells within thisnode. It might be different, because the number of columns in the box is not dividable to the number of node columns.
 // head_cell_idx is the idx of the first cell (the left most) in thisnode. The same for the head_cell_idy
@@ -71,6 +72,124 @@ void Node::Get_Box_Info(int size, Particle* p)
 
 void Node::Init_Topology() // This function must be called after box definition.
 {
+	switch(total_nodes){
+		case 1:
+			if (node_id == 0)
+				cout << "Bad Number of processors. The number of Processors must be greater than 1" << endl;
+			exit(0);
+			break;
+		case 2:
+			npx = 2;
+			npy = 1;
+			break;
+		case 3:
+			npx = 3;
+			npy = 1;
+			break;
+		case 4:
+			npx = 2;
+			npy = 2;
+			break;
+		case 5:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 5 is not dividable across the box, and the grid of processors will be 5 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 5;
+			npy = 1;
+			break;
+		case 6:
+			npx = 3;
+			npy = 2;
+			break;
+		case 7:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 7 is not dividable across the box, and the grid of processors will be 7 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 7;
+			npy = 1;
+			break;
+		case 8:
+			npx = 4;
+			npy = 2;
+			break;
+		case 9:
+			npx = 3;
+			npy = 3;
+			break;
+		case 10:
+			npx = 5;
+			npy = 2;
+			break;
+		case 11:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 11 is not dividable across the box, and the grid of processors will be 11 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 11;
+			npy = 1;
+			break;
+		case 12:
+			npx = 4;
+			npy = 3;
+			break;
+		case 13:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 13 is not dividable across the box, and the grid of processors will be 13 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 13;
+			npy = 1;
+			break;
+		case 14:
+			npx = 7;
+			npy = 2;
+			break;
+		case 15:
+			npx = 5;
+			npy = 3;
+			break;
+		case 16:
+			npx = 4;
+			npy = 4;
+			break;
+		case 17:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 17 is not dividable across the box, and the grid of processors will be 17 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 17;
+			npy = 1;
+			break;
+		case 18:
+			npx = 6;
+			npy = 3;
+			break;
+		case 19:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 19 is not dividable across the box, and the grid of processors will be 19 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 19;
+			npy = 1;
+			break;
+		case 20:
+			npx = 5;
+			npy = 4;
+			break;
+		case 21:
+			npx = 7;
+			npy = 3;
+			break;
+		case 22:
+			npx = 11;
+			npy = 2;
+			break;
+		case 23:
+			if (node_id == 0)
+				cout << "Warning: Bad number of processors. Prime number 23 is not dividable across the box, and the grid of processors will be 23 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
+			npx = 23;
+			npy = 1;
+			break;
+		case 24:
+			npx = 6;
+			npy = 4;
+			break;
+	}
+
+	if (node_id == 0)
+		cout << "Node structure is " << npx << " by " << npy << ". With total nodes = " << total_nodes << endl;
+  
+
 // Check if the number of total nodes is in agreement with the way that the system is devided
 	if ((npx*npy) != total_nodes)
 	{

@@ -69,8 +69,6 @@ const int divisor_x = max_divisor_x;
 const int divisor_y = max_divisor_y;
 
 // Parallel Use only
-const int npx = 2; // For parallel use only. This number must be even to avoid dead locks
-const int npy = 2; // For parallel use only. This number must be even to avoid dead locks
 const int tag_max = 32767; // For parallel use only
 
 #ifdef TRACK_PARTICLE
