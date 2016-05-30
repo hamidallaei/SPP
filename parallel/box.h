@@ -27,7 +27,8 @@ public:
 	// I believe that it is better to move these init functions to main files
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-	bool Init(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
+	bool Positioning_Particles(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
+	void Sync();
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
 	void Save(State_Hyper_Vector&) const; // Save current position and angles of particles and a gsl random generator to a state hyper vector
@@ -65,6 +66,22 @@ void Box::Init_Topology()
 	#endif
 }
 
+// Sync positions of the particles with other nodes
+void Box::Sync()
+{
+	MPI_Barrier(MPI_COMM_WORLD);
+	thisnode->Root_Bcast();
+// Any node update cells, knowing particles and their cell that they are inside.
+	thisnode->Full_Update_Cells();
+
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+
 // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
 void Box::Init(Node* input_node, Real input_density)
 {
@@ -79,27 +96,13 @@ void Box::Init(Node* input_node, Real input_density)
 
 	Init_Topology(); // Adding walls
 
+// Positioning the particles at first time. Note that, the positions can be tunned in the main file as well
 	if (thisnode->node_id == 0)
 	{
 		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-// Positioning the particles
-		Polar_Formation(particle,N);
 //		Triangle_Lattice_Formation(particle, N, 1);
-//		Random_Formation(particle, N, 0); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
-//		Random_Formation_Circle(particle, N, Lx-1); // Positioning partilces Randomly, but distant from walls
-//		Single_Vortex_Formation(particle, N);
-	//	Four_Vortex_Formation(particle, N);
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
-
-// Master node will broadcast the particles information
-	thisnode->Root_Bcast();
-// Any node update cells, knowing particles and their cell that they are inside.
-	thisnode->Full_Update_Cells();
-
-	#ifdef verlet_list
-	thisnode->Update_Neighbor_List();
-	#endif
+	Sync();
 
 // Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
 	info.str("");
@@ -108,19 +111,13 @@ void Box::Init(Node* input_node, Real input_density)
 
 
 // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
-bool Box::Init(Node* input_node, const string input_name)
+bool Box::Positioning_Particles(Node* input_node, const string input_name)
 {
 	#ifdef TRACK_PARTICLE
-	track_p = &particle[track];
+		track_p = &particle[track];
 	#endif
 
-	Real input_density;
-	Real input_g;
-	Real input_alpha;
-	Real input_v;
-	Real input_noise;
-	Real input_Lx;
-	Real input_Ly;
+	thisnode = input_node;
 
 	string name = input_name;
 	stringstream address(name);
@@ -129,82 +126,36 @@ bool Box::Init(Node* input_node, const string input_name)
 	if (!is.is_open())
 		return false;
 
-	boost::replace_all(name, "-r-v.bin", "");
-	boost::replace_all(name, "rho=", "");
-	boost::replace_all(name, "-g=", "\t");
-	boost::replace_all(name, "-alpha=", "\t");
-	boost::replace_all(name, "-v=", "\t");
-	boost::replace_all(name, "-noise=", "\t");
-	boost::replace_all(name, "-2Lx=", "\t");
-	boost::replace_all(name, "-2Ly=", "\t");
-
-	stringstream ss_name(name);
-	ss_name >> input_density;
-	ss_name >> input_g;
-	ss_name >> input_alpha;
-	ss_name >> input_v;
-	ss_name >> input_noise;
-	ss_name >> input_Lx;
-	ss_name >> input_Ly;
-	input_Lx /= 2.0;
-	input_Ly /= 2.0;
-	if (input_Lx != Lx_int)
+	if (thisnode->node_id == 0)
 	{
-		cout << "The specified box size " << input_Lx << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
-		return false;
-	}
-
-	if (input_Ly != Ly_int)
-	{
-		cout << "The specified box size " << input_Ly << " is not the same as the size in binary file which is " << Ly_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
-		return false;
-	}
-
-	density = input_density;
-	N = (int) round(Lx2*Ly2*input_density);
-
-	Particle::g = input_g;
-	Particle::alpha = input_alpha;
-	Particle::speed = input_v;
-	Particle::Dr = input_noise;
-
-	thisnode = input_node;
-
-	is.read((char*) &N, sizeof(int) / sizeof(char));
-	if (N < 0 || N > 1000000)
-		return (false);
-	while (!is.eof())
-	{
-		for (int i = 0; i < N; i++)
-		{
-			is >> particle[i].r;
-			is >> particle[i].v;
-		}
 		is.read((char*) &N, sizeof(int) / sizeof(char));
+		if (N < 0 || N > 1000000)
+			return (false);
+		while (!is.eof())
+		{
+			for (int i = 0; i < N; i++)
+			{
+				is >> particle[i].r;
+				is >> particle[i].v;
+			}
+			is.read((char*) &N, sizeof(int) / sizeof(char));
+		}
+		for (int i = 0; i < N; i++)
+			particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
+		cout << "number_of_particles = " << N << endl; // Printing number of particles.
 	}
-	for (int i = 0; i < N; i++)
-		particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
+	else
+	{
+		is.read((char*) &N, sizeof(int) / sizeof(char));
+		if (N < 0 || N > 1000000)
+			return (false);
+	}
 
 	is.close();
 
-	MPI_Barrier(MPI_COMM_WORLD);
-
 	Init_Topology(); // Adding walls
 
-	if (thisnode->node_id == 0)
-	{
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-
-// Master node will broadcast the particles information
-	thisnode->Root_Bcast();
-// Any node update cells, knowing particles and their cell that they are inside.
-	thisnode->Full_Update_Cells();
-
-	#ifdef verlet_list
-	thisnode->Update_Neighbor_List();
-	#endif
+	Sync();
 
 // Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
 	info.str("");

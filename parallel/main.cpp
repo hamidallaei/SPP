@@ -72,68 +72,63 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	return(t);
 }
 
-
-bool Init_Box(Box& box, int argc, char *argv[])
+// Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
+bool Init_Box_From_File(Box& box, const string input_name)
 {
-	if (argc < 4)
+	Real input_density;
+	Real input_g;
+	Real input_alpha;
+	Real input_v;
+	Real input_noise;
+	Real input_Lx;
+	Real input_Ly;
+
+	string name = input_name;
+
+	boost::replace_all(name, "-r-v.bin", "");
+	boost::replace_all(name, "rho=", "");
+	boost::replace_all(name, "-g=", "\t");
+	boost::replace_all(name, "-alpha=", "\t");
+	boost::replace_all(name, "-v=", "\t");
+	boost::replace_all(name, "-noise=", "\t");
+	boost::replace_all(name, "-2Lx=", "\t");
+	boost::replace_all(name, "-2Ly=", "\t");
+
+	stringstream ss_name(name);
+	ss_name >> input_density;
+	ss_name >> input_g;
+	ss_name >> input_alpha;
+	ss_name >> input_v;
+	ss_name >> input_noise;
+	ss_name >> input_Lx;
+	ss_name >> input_Ly;
+	input_Lx /= 2.0;
+	input_Ly /= 2.0;
+	if (input_Lx != Lx_int)
 	{
-		if (box.thisnode->node_id == 0)
-			cout << "arguments are: \n" << "density,\tg,\talpha,\tDr" << endl;
-		exit(0);
+		cout << "The specified box size " << input_Lx << " is not the same as the size in binary file which is " << Lx_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
 	}
 
+	if (input_Ly != Ly_int)
+	{
+		cout << "The specified box size " << input_Ly << " is not the same as the size in binary file which is " << Ly_int << " please recompile the code with the right Lx_int in parameters.h file." << endl;
+		return false;
+	}
 
-	Real input_rho = atof(argv[1]);
-	Real input_g = atof(argv[2]);
-	Real input_alpha = atof(argv[3]);
-	Real input_noise = atof(argv[4]);
+	box.density = input_density;
+	box.N = (int) round(Lx2*Ly2*input_density);
 
-	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt);
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
+	Particle::speed = input_v;
+	Particle::Dr = input_noise;
 
-	box.Init(box.thisnode, input_rho);
+	box.Positioning_Particles(box.thisnode, input_name);
 
-	Real t_eq,t_sim;
-
-	box.N = (int) round(Lx2*Ly2*box.density);
-
-	if (box.thisnode == 0)
-	{
-// Positioning the particles
-//		Polar_Formation(box.particle,box.N);
-//		Triangle_Lattice_Formation(box.particle, box.N, 1);
-		Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
-//		Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
-//		Single_Vortex_Formation(box.particle, box.N);
-		//	Four_Vortex_Formation(box.particle, box.N);
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
-	box.info.str("");
-	box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << input_noise << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
-
-	ofstream out_file;
-	if (box.thisnode == 0)
-	{
-		cout << "Number of particles is: " << box.N << endl;
-		stringstream address;
-		address.str("");
-		address << box.info.str() << "-r-v.bin";
-		out_file.open(address.str().c_str());
-	}
-
-	if (box.thisnode == 0)
-		cout << " Box information is: " << box.info.str() << endl;
-
-	MPI_Barrier(MPI_COMM_WORLD);
-	t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-	MPI_Barrier(MPI_COMM_WORLD);
-
-	if (box.thisnode == 0)
-		cout << " Done in " << floor(t_eq / 60.0) << " minutes and " << t_eq - 60*floor(t_eq / 60.0) << " s" << endl;
+	return (true);
 }
+
 
 
 void Change_Noise(Box& box, int argc, char *argv[])
@@ -161,11 +156,32 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	Real t_eq,t_sim;
 
 	Particle::noise_amplitude = 0;
-	Particle::Dr = 0;
+	Particle::Dr = noise_list[0];
+
 	if (input_file == 0)
+	{
 		box.Init(box.thisnode, input_rho);
+		if (box.thisnode->node_id == 0)
+		{
+// Positioning the particles
+			if (Particle::Dr > 2.5)
+				Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+			else
+				Polar_Formation(box.particle,box.N);
+//			Triangle_Lattice_Formation(box.particle, box.N, 1);
+//			Polar_Formation(box.particle,box.N);
+//			Random_Formation_Circle(box.particle, box.N, Lx-1); // Positioning partilces Randomly, but distant from walls
+//			Single_Vortex_Formation(box.particle, box.N);
+//			Four_Vortex_Formation(box.particle, box.N);
+		}
+		box.Sync();
+	}
 	else
-		box.Init(box.thisnode, test);
+	{
+		bool b = box.Positioning_Particles(box.thisnode, test);
+		if (!b)
+			exit(0);
+	}
 
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
@@ -209,77 +225,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void Change_Alpha(Box& box, int argc, char *argv[])
-{
-	if (argc < 4)
-	{
-		if (box.thisnode->node_id == 0)
-			cout << "arguments are: \n" << "density,\tg,\tDr,\talpha" << endl;
-		exit(0);
-	}
-	Real input_rho = atof(argv[1]);
-	Real input_g = atof(argv[2]);
-	Real input_noise = atof(argv[3]);
 
-	vector<Real> alpha_list;
-	for (int i = 4; i < argc; i++)
-		alpha_list.push_back(atof(argv[i]));
-
-	Real t_eq,t_sim;
-
-	Particle::noise_amplitude = sqrt(2*input_noise) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
-	Particle::g = input_g;
-	Particle::alpha = 0;
-
-	box.Init(box.thisnode, input_rho);
-
-	ofstream out_file;
-
-	for (int i = 0; i < alpha_list.size(); i++)
-	{
-		Particle::alpha = alpha_list[i];
-		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << input_noise << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
-		if (box.thisnode->node_id == 0)
-		{
-			stringstream address;
-			address.str("");
-			address << box.info.str() << "-r-v.bin";
-			out_file.open(address.str().c_str());
-		}
-
-		if (box.thisnode->node_id == 0)
-		{
-			cout << " Box information is: " << box.info.str() << endl;
-			Triangle_Lattice_Formation(box.particle, box.N, 1);
-		}
-
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		// Master node will broadcast the particles information
-		box.thisnode->Root_Bcast();
-		// Any node update cells, knowing particles and their cell that they are inside.
-		box.thisnode->Full_Update_Cells();
-
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (box.thisnode->node_id == 0)
-			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
-
-		t_sim = data_gathering(&box, total_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (box.thisnode->node_id == 0)
-		{
-			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
-			out_file.close();
-		}
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-}
 
 void Init_Nodes(Node& thisnode)
 {
@@ -311,9 +257,7 @@ int main(int argc, char *argv[])
 	Particle::speed = 2.0;
 	Particle::rv = 1 + (2*Particle::speed*dt*(cell_update_period));
 
-//	Init_Box(box, argc, argv);
 	Change_Noise(box, argc, argv);
-//	Change_Alpha(box, argc, argv);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
