@@ -164,8 +164,9 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		if (box.thisnode->node_id == 0)
 		{
 // Positioning the particles
+			Dc = input_g * input_rho * (1-input_alpha) / 2.0;
 			if (Particle::Dr > Dc)
-				Random_Formation(box.particle, box.N, 1); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
+				Random_Formation(box.particle, box.N, 0.5); // Positioning partilces Randomly, but distant from walls (the last argument is the distance from walls)
 			else
 				Polar_Formation(box.particle,box.N);
 //			Triangle_Lattice_Formation(box.particle, box.N, 1);

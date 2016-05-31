@@ -40,10 +40,10 @@ long int seed = 10;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 200000;
+const int max_N = 20000;
 
 // Box
-const int Lx_int = 10;
+const int Lx_int = 16;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -52,15 +52,15 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 0.01;
+Real dt = 1.0/64;
 Real half_dt = dt/2;
-const int cell_update_period = 20;
-const int saving_period = 5;
-const long int equilibrium_step = 5000;//10000;
-const long int total_step = 5000;//120000;
+const int cell_update_period = 8;
+const int saving_period = 32;
+const long int equilibrium_step = 16384;//10000;
+const long int total_step = 16384;//120000;
 
 const Real speed = 2;
-const Real Dc = 2.4; // The noise above which the initial condition is disordered, and below it is polar ordered.
+Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
 
 const Real lx_min = (1 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
