@@ -32,9 +32,9 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
-			double p_c = atof(argv[2]);
-			double dp = atof(argv[3]);
-			sceneset->Accumulate_Theta(10, 30, p_c, dp, "theta-stat");
+//			double p_c = atof(argv[2]);
+//			double dp = atof(argv[3]);
+//			sceneset->Accumulate_Theta(10, 30, p_c, dp, "theta-stat");
 
 			size_t pos1,pos2;
 			pos1 = name.find("-Lx");
@@ -55,11 +55,12 @@ int main(int argc, char** argv)
 			boost::replace_all(name, "-v=", "\t");
 			boost::replace_all(name, "-alpha=", "\t");
 
-			
+//			Stat<double> p;
+//			Compute_Polarization(sceneset,&p);
 
-//			double p,dp,sigma2,G;
-//			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
-//			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
+			double p,dp,sigma2,G;
+			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
+			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
 
 //			Stat<double>	angular_momentum_data;
 //			Compute_Angular_Momentum(sceneset, &angular_momentum_data);

@@ -13,8 +13,9 @@ template <class T>
 class Stat{
 public:
 	vector<T> data;
-	double mean, std, error, variance, min, max;
+	double mean, mean_square, std, error, variance, min, max, corr_len;
 	void Compute();
+	void Correlation();
 	void Shift_Average();
 	void Reset();
 	void Add_Data(T input);
@@ -44,10 +45,26 @@ template <class T> void Stat<T>::Compute()
 	double sum = accumulate(data.begin(), data.end(), 0.0);
 	mean = sum / data.size();
 	double sq_sum = inner_product(data.begin(), data.end(), data.begin(), 0.0);
-	double sq_mean = sq_sum / data.size();
-	variance = sq_mean - mean*mean;
+	mean_square = sq_sum / data.size();
+	variance = mean_square - mean*mean;
 	std = sqrt(variance);
-	error = sqrt(variance / data.size());
+	Correlation();
+}
+
+template <class T> void Stat<T>::Correlation()
+{
+	for (int tau = 0; tau < data.size()/2; tau++)
+	{
+		T c = 0;
+		for (int i = 0; i < (data.size() - tau); i++)
+			c += (data[i] - mean)*(data[i+tau]-mean) / (data.size() - tau);
+		c /= variance;
+		corr_len = tau;
+		if (c < 0.01)
+			tau = data.size();
+//		cout << tau << "\t" << c << endl;
+	}
+	error = sqrt(variance*corr_len / data.size());
 }
 
 template <class T> void Stat<T>::Shift_Average()

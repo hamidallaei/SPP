@@ -29,6 +29,19 @@ double Local_Cohesion(SceneSet* s, double rc)
 	return(phi);
 }
 
+void Polarization_Time(SceneSet* s)
+{
+	for (int i = 0; i < s->scene.size(); i++)
+	{
+		C2DVector p;
+		p.Null();
+		for (int j = 0; j < Scene::number_of_particles; j++)
+			p += s->scene[i].particle[j].v;
+		p = p / Scene::number_of_particles;
+		cout << i << "\t" << sqrt(p.Square()) << endl;
+	}
+}
+
 void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 {
 	for (int i = 0; i < s->scene.size(); i++)
@@ -45,7 +58,7 @@ void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 
 void Compute_Order_Parameters(SceneSet* s, double& polarization, double& error_polarization, double& sigma2, double& G)
 {
-	Stat<double> p,p2,p4;
+	Stat<double> p,p4;
 	for (int i = 0; i < s->scene.size(); i++)
 	{
 		C2DVector vp;
@@ -54,17 +67,15 @@ void Compute_Order_Parameters(SceneSet* s, double& polarization, double& error_p
 			vp += s->scene[i].particle[j].v;
 		vp = vp / Scene::number_of_particles;
 		p.Add_Data(sqrt(vp.Square()));
-		p2.Add_Data(vp.Square());
 		p4.Add_Data(vp.Square()*vp.Square());
 	}
 	p.Compute();
-	p2.Compute();
 	p4.Compute();
 	polarization = p.mean;
-	sigma2 = p2.mean - p.mean*p.mean;
-	error_polarization = sqrt(sigma2 / s->scene.size());
+	sigma2 = p.variance;
+	error_polarization = p.error;
 	sigma2 *= (4*s->L*s->L);
-	G = 1 - (p4.mean / (3*p2.mean));
+	G = 1 - (p4.mean / (3*p.mean_square));
 }
 
 void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
