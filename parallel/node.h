@@ -74,17 +74,16 @@ void Node::Init_Topology() // This function must be called after box definition.
 {
 	switch(total_nodes){
 		case 1:
-			if (node_id == 0)
-				cout << "Bad Number of processors. The number of Processors must be greater than 1" << endl;
-			exit(0);
+			npx = 1;
+			npy = 1;
 			break;
 		case 2:
-			npx = 2;
-			npy = 1;
+			npx = 1;
+			npy = 2;
 			break;
 		case 3:
-			npx = 3;
-			npy = 1;
+			npx = 1;
+			npy = 3;
 			break;
 		case 4:
 			npx = 2;
@@ -93,54 +92,54 @@ void Node::Init_Topology() // This function must be called after box definition.
 		case 5:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 5 is not dividable across the box, and the grid of processors will be 5 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 5;
-			npy = 1;
+			npx = 1;
+			npy = 5;
 			break;
 		case 6:
-			npx = 3;
-			npy = 2;
+			npx = 2;
+			npy = 3;
 			break;
 		case 7:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 7 is not dividable across the box, and the grid of processors will be 7 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 7;
-			npy = 1;
+			npx = 1;
+			npy = 7;
 			break;
 		case 8:
-			npx = 4;
-			npy = 2;
+			npx = 2;
+			npy = 4;
 			break;
 		case 9:
 			npx = 3;
 			npy = 3;
 			break;
 		case 10:
-			npx = 5;
-			npy = 2;
+			npx = 2;
+			npy = 5;
 			break;
 		case 11:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 11 is not dividable across the box, and the grid of processors will be 11 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 11;
-			npy = 1;
+			npx = 1;
+			npy = 11;
 			break;
 		case 12:
-			npx = 4;
-			npy = 3;
+			npx = 3;
+			npy = 4;
 			break;
 		case 13:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 13 is not dividable across the box, and the grid of processors will be 13 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 13;
-			npy = 1;
+			npx = 1;
+			npy = 13;
 			break;
 		case 14:
-			npx = 7;
-			npy = 2;
+			npx = 2;
+			npy = 7;
 			break;
 		case 15:
-			npx = 5;
-			npy = 3;
+			npx = 3;
+			npy = 5;
 			break;
 		case 16:
 			npx = 4;
@@ -149,46 +148,46 @@ void Node::Init_Topology() // This function must be called after box definition.
 		case 17:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 17 is not dividable across the box, and the grid of processors will be 17 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 17;
-			npy = 1;
+			npx = 1;
+			npy = 17;
 			break;
 		case 18:
-			npx = 6;
-			npy = 3;
+			npx = 3;
+			npy = 6;
 			break;
 		case 19:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 19 is not dividable across the box, and the grid of processors will be 19 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 19;
-			npy = 1;
+			npx = 1;
+			npy = 19;
 			break;
 		case 20:
-			npx = 5;
-			npy = 4;
+			npx = 4;
+			npy = 5;
 			break;
 		case 21:
-			npx = 7;
-			npy = 3;
+			npx = 3;
+			npy = 7;
 			break;
 		case 22:
-			npx = 11;
-			npy = 2;
+			npx = 2;
+			npy = 11;
 			break;
 		case 23:
 			if (node_id == 0)
 				cout << "Warning: Bad number of processors. Prime number 23 is not dividable across the box, and the grid of processors will be 23 by 1 that is not efficient. The boxes with high aspect ratios are exceptions." << endl;
-			npx = 23;
-			npy = 1;
+			npx = 1;
+			npy = 23;
 			break;
 		case 24:
-			npx = 6;
-			npy = 4;
+			npx = 4;
+			npy = 6;
 			break;
 	}
 
 	if (node_id == 0)
 		cout << "Node structure is " << npx << " by " << npy << ". With total nodes = " << total_nodes << endl;
-  
+
 
 // Check if the number of total nodes is in agreement with the way that the system is devided
 	if ((npx*npy) != total_nodes)
@@ -429,6 +428,25 @@ void Node::Init_Topology() // This function must be called after box definition.
 			boundary[1].is_active = false;
 		}
 	#endif
+// Reforming boundaries regarding the numbers of processors along x and y direction (npx,npy)
+	if (npx == 1)
+	{
+		boundary[4].is_active = false;
+		boundary[0].is_active = false;
+	}
+	if (npy == 1)
+	{
+		boundary[6].is_active = false;
+		boundary[2].is_active = false;
+	}
+	if ((npx == 1) && (npy == 1))
+	{
+		boundary[7].is_active = false;
+		boundary[5].is_active = false;
+		boundary[3].is_active = false;
+		boundary[1].is_active = false;
+	}
+
 	MPI_Barrier(MPI_COMM_WORLD);
 // All nodes are ready
 }
@@ -490,16 +508,31 @@ void Node::Quick_Update_Cells()
 	vector<int> node_pid; // pid is particle ids that possibly are within this node
 
 // First we add particles in the neighboring cells which are not within the node. These particles may travell inside thisnode and we add them to the list of possible particles (node_pid). thisnode has a list of boundaries (right, top right, ...) and in the list of boundaries we have pointer to cells that belong to thisnode (this_cell) or to the neighobring node (that_cell). Here we only add that_cell particle ids because in future we will add all thisnode particles.
+	if ((npx != 1) && (npy != 1)) // Depending on the topology of the nodes, we might neglect the neighboring cells located at the corners (To avoid duplication). For the case when either of npx or npy are not equal to 1, then all the neighboring cells must be considered.
+	{
+		for (int i = 0; i < boundary.size(); i++)
+			if (boundary[i].is_active)
+				for (int j = 0; j < boundary[i].that_cell.size(); j++)
+				{
+					for (int k = 0; k < boundary[i].that_cell[j]->pid.size(); k++)
+						node_pid.push_back(boundary[i].that_cell[j]->pid[k]);
+				}
+	}
+	else // Depending on the topology of the nodes, we might neglect the neighboring cells located at the corners (To avoid duplication). For the case when either of npx or npy are equal to 1, then each cell at the corners of one node are shared between two boundaries. For example the top right cell in that_node is also present in the right boundary cells of that_node. Nevertheless, considering only even boundaries (i+=2), solve the problem. That means we don't consider odd bounderies corresponding to duplicated cells at corners.
+	{
+		for (int i = 0; i < boundary.size(); i+=2)
+			if (boundary[i].is_active)
+				for (int j = 0; j < boundary[i].that_cell.size(); j++)
+				{
+					for (int k = 0; k < boundary[i].that_cell[j]->pid.size(); k++)
+						node_pid.push_back(boundary[i].that_cell[j]->pid[k]);
+				}
+	}
 	for (int i = 0; i < boundary.size(); i++)
-		for (int j = 0; j < boundary[i].that_cell.size(); j++)
-		{
-			for (int k = 0; k < boundary[i].that_cell[j]->pid.size(); k++)
-				node_pid.push_back(boundary[i].that_cell[j]->pid[k]);
-		}
-	for (int i = 0; i < boundary.size(); i++)
-		for (int j = 0; j < boundary[i].that_cell.size(); j++)
-			boundary[i].that_cell[j]->Delete();
-			
+		if (boundary[i].is_active)
+			for (int j = 0; j < boundary[i].that_cell.size(); j++)
+				boundary[i].that_cell[j]->Delete();
+
 
 // In this part we go over all cells of thisnode (the first two for) and add particle of each cell to the node_pid (particle ids that may be inside thisnode). Here I also delete each cell, because I will add particles in the node_pid to the cell the cell must be empty to avoid repeatation of particles list in a cell.
 	for (int x = head_cell_idx; x < tail_cell_idx; x++)
@@ -652,7 +685,7 @@ void Node::Update_Self_Neighbor_List()
 // The righmost cells and buttom cells must be excluded to avoid nieghbor node interactions.
 	for (int x = head_cell_idx; x < (tail_cell_idx-1); x++)
 		for (int y = head_cell_idy+1; y < (tail_cell_idy); y++)
-			cell[x][y].Neighbor_List(&cell[x+1][y-1]);	
+			cell[x][y].Neighbor_List(&cell[x+1][y-1]);
 }
 
 // Interaction of thisnode particles with particles outside of thisnode
