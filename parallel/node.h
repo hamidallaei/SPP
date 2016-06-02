@@ -455,47 +455,87 @@ void Node::Init_Topology() // This function must be called after box definition.
 // each node sends its information of boundary cells to the correspounding node.
 void Node::Send_Receive_Data()
 {
-	for (int i = 0; i < boundary.size(); i++)
+	if (npx != 1)
 	{
-		if (i % 4 != 2)
+		for (int i = 0; i < boundary.size(); i++)
 		{
-			if (idx % 2 == 0)
+			if (i % 4 != 2)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+				if (idx % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
 			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
-			if (idx % 2 == 1)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idy % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
-			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		else
+	}
+	else
+	{
+		for (int i = 0; i < boundary.size(); i++)
 		{
-			if (idy % 2 == 0)
+			if (i % 4 != 0)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idy % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node.
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
 			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
-			if (idy % 2 == 1)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idx % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+					if (boundary[i].is_active)
+						boundary[i].Send_Data(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
-			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Data(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		MPI_Barrier(MPI_COMM_WORLD);
 	}
 }
 
@@ -580,47 +620,87 @@ void Node::Quick_Update_Cells()
 // Now particle indices are changed and we have to update information of boundaries. The particles of other nodes that are at boundaries
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	for (int i = 0; i < boundary.size(); i++)
+	if (npx != 1)
 	{
-		if (i % 4 != 2)
+		for (int i = 0; i < boundary.size(); i++)
 		{
-			if (idx % 2 == 0)
+			if (i % 4 != 2)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+				if (idx % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node.
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
 			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node.
-			if (idx % 2 == 1)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idy % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
-			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		else
+	}
+	else
+	{
+		for (int i = 0; i < boundary.size(); i++)
 		{
-			if (idy % 2 == 0)
+			if (i % 4 != 0)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idy % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary.
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node.
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
 			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
-			if (idy % 2 == 1)
 			{
-				if (boundary[i].is_active)
-					boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				if (idx % 2 == 0)
+				{
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+				}
+				else
+				{
+					if (boundary[(i+4)%8].is_active)
+						boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+					if (boundary[i].is_active)
+						boundary[i].Send_Particle_Ids(); // Send information of i'th boundary of thisnode to the neighboring node that shares this boundary (if there is any).
+				}
 			}
-			else
-				if (boundary[(i+4)%8].is_active)
-					boundary[(i+4)%8].Receive_Particle_Ids(); // Receive information of i'th boundary of neighboring node (if the neighbor exitst).
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
-		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
