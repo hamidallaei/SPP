@@ -4,7 +4,7 @@
 #define PERIODIC_BOUNDARY_CONDITION
 //#define NonPeriodicCompute
 //#define CIRCULAR_BOX
-//#define verlet_list
+#define verlet_list
 // This is for checking particles outside of the box
 //#define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
@@ -54,10 +54,10 @@ const Real Ly2 = 2*Ly;
 // Time
 Real dt = 1.0/64;
 Real half_dt = dt/2;
-const int cell_update_period = 8;
+const int cell_update_period = 4;
 const int saving_period = 32;
-const long int equilibrium_step = 16384;//10000;
-const long int total_step = 16384;//120000;
+const long int equilibrium_step = 256;//10000;
+const long int total_step = 256;//120000;
 
 const Real speed = 2;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
@@ -67,6 +67,8 @@ const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller 
 const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;
 const int divisor_y = max_divisor_y;
+
+const Real rv = 1 + (2*speed*dt*(cell_update_period)); // Radius cut off for verlet list
 
 // Parallel Use only
 const int tag_max = 32767; // For parallel use only

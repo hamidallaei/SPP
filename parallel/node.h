@@ -185,6 +185,12 @@ void Node::Init_Topology() // This function must be called after box definition.
 			break;
 	}
 
+	if (total_nodes == 12)
+	{
+		npx = 1;
+		npy = 12;
+	}
+
 	if (node_id == 0)
 		cout << "Node structure is " << npx << " by " << npy << ". With total nodes = " << total_nodes << endl;
 

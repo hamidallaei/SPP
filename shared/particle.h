@@ -21,7 +21,6 @@ public:
 	int neighbor_size;
 	Real theta;
 	static Real noise_amplitude;
-	static Real rv; // Radius cut off for verlet list
 	static Real speed;
 	vector<int> neighbor_id; // id of neighboring particles
 
@@ -534,7 +533,7 @@ Real ContinuousParticle::gw = 20;
 
 Real BasicDynamicParticle::noise_amplitude = .1;
 Real BasicDynamicParticle::speed = 1;
-Real BasicDynamicParticle::rv = 1 + (2*BasicDynamicParticle::speed*dt*(cell_update_period));
+
 
 
 

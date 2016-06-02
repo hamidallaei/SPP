@@ -153,6 +153,8 @@ bool Box::Positioning_Particles(Node* input_node, const string input_name)
 
 	is.close();
 
+	density = N / (Lx2*Ly2);
+
 	Init_Topology(); // Adding walls
 
 	Sync();

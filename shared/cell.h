@@ -29,7 +29,7 @@ public:
 
 Cell::Cell()
 {
-	if (((Lx2 / divisor_x) < Particle::rv) || ((Ly2 / divisor_y) < Particle::rv))
+	if (((Lx2 / divisor_x) < rv) || ((Ly2 / divisor_y) < rv))
 	{
 		cout << "Error, cells are too small that befor a cell update the run particles neighbors change. You have to decrease number of cells (divisor_x or divisor_y)" << endl;
 		exit(0);
@@ -69,7 +69,7 @@ void Cell::Neighbor_List(Cell* c)
 				dr.Periodic_Transform();
 			#endif
 			Real d = sqrt(dr.Square());
-			if (d < Particle::rv)
+			if (d < rv)
 				particle[pid[i]].neighbor_id.push_back(c->pid[j]);
 		}
 	}
@@ -83,7 +83,7 @@ void Cell::Neighbor_List()
 		{
 			C2DVector dr = particle[pid[i]].r - particle[pid[j]].r;
 			Real d = sqrt(dr.Square());
-			if (d < Particle::rv)
+			if (d < rv)
 				particle[pid[i]].neighbor_id.push_back(pid[j]);
 		}
 	}

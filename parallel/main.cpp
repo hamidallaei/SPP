@@ -180,10 +180,11 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	else
 	{
 		bool b = box.Positioning_Particles(box.thisnode, test);
+		if (box.density != input_rho)
+			cout << "Confilict of density!" << endl;
 		if (!b)
 			exit(0);
 	}
-
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
 
@@ -256,7 +257,6 @@ int main(int argc, char *argv[])
 	Box box;
 	box.thisnode = &thisnode;
 	Particle::speed = speed;
-	Particle::rv = 1 + (2*Particle::speed*dt*(cell_update_period));
 
 	Change_Noise(box, argc, argv);
 
