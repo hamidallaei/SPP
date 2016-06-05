@@ -50,18 +50,19 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	if (!flag)
 		flag = true;
 	#endif
-			out_file << box;
 	if (box->thisnode->node_id == 0)
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
 
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
-		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,total_step);
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
+		box->Multi_Step(cell_update_period);
+		timing_information(box->thisnode,start_time,i,total_step);
 	}
+	if ((total_step / cell_update_period) % saving_period == 0)
+			out_file << box;
 
 	if (box->thisnode->node_id == 0)
 		cout << "Finished" << endl;
