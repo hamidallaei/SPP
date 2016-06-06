@@ -56,8 +56,8 @@ Real dt = 1.0/64;
 Real half_dt = dt/2;
 const int cell_update_period = 4;
 const int saving_period = 64;
-const long int equilibrium_step = 0;//10000;
-const long int total_step = 1024;//120000;
+const long int equilibrium_step = 16384;
+const long int total_step = 16384;
 
 const Real speed = 2;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.

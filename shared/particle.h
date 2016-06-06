@@ -183,7 +183,7 @@ public:
 	Real torque;
 	static Real g, gw;
 	static Real alpha;
-	static Real Dr;
+	static Real Dr,K,Kamp;
 
 	ContinuousParticle();
 	void Move()
@@ -199,6 +199,8 @@ public:
 		v.y = sin(theta);
 
 		r += v*(speed*dt);
+		r.x += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
+		r.y += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
 			#ifndef NonPeriodicCompute
 				r.Periodic_Transform();
@@ -273,6 +275,8 @@ void ContinuousParticle::Reset()
 Real ContinuousParticle::g = 4;
 Real ContinuousParticle::alpha = 0.5;
 Real ContinuousParticle::Dr = 0;
+Real ContinuousParticle::K = 0;
+Real ContinuousParticle::Kamp = 0;
 
 
 class MarkusParticle: public BasicDynamicParticle {

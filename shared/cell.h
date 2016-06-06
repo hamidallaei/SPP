@@ -25,6 +25,7 @@ public:
 	void Interact(Cell* c); // Interact all particles wihtin this cell with the cell c
 	void Self_Interact(); // Interact all particles within this cell with themselve
 	void Move();
+	C2DVector Compute_Polarization_Sum(); // Compute polarization of the particles inside the cell
 };
 
 Cell::Cell()
@@ -118,6 +119,15 @@ void Cell::Move()
 {
 	for (int i = 0; i < pid.size(); i++)
 		particle[pid[i]].Move();
+}
+
+// Compute polarization of the particles inside the cell
+C2DVector Cell::Compute_Polarization_Sum()
+{
+	C2DVector vp_sum;
+	for (int i = 0; i < pid.size(); i++)
+		vp_sum += particle[pid[i]].v;
+	return vp_sum;
 }
 
 C2DVector Cell::dim;

@@ -11,7 +11,7 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
 		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << "\t P=" << node->polarization << flush;
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -41,7 +41,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 }
 
 
-inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file)
+inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file, ofstream& polarization_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -58,6 +58,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	{
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
+		box->Save_Polarization(polarization_file);
 		box->Multi_Step(cell_update_period);
 		timing_information(box->thisnode,start_time,i,total_step);
 	}
@@ -81,6 +82,7 @@ bool Init_Box_From_File(Box& box, const string input_name)
 	Real input_alpha;
 	Real input_v;
 	Real input_noise;
+	Real input_K;
 	Real input_Lx;
 	Real input_Ly;
 
@@ -92,6 +94,8 @@ bool Init_Box_From_File(Box& box, const string input_name)
 	boost::replace_all(name, "-alpha=", "\t");
 	boost::replace_all(name, "-v=", "\t");
 	boost::replace_all(name, "-noise=", "\t");
+	boost::replace_all(name, "-Dr=", "\t");
+	boost::replace_all(name, "-K=", "\t");
 	boost::replace_all(name, "-2Lx=", "\t");
 	boost::replace_all(name, "-2Ly=", "\t");
 
@@ -101,6 +105,7 @@ bool Init_Box_From_File(Box& box, const string input_name)
 	ss_name >> input_alpha;
 	ss_name >> input_v;
 	ss_name >> input_noise;
+	ss_name >> input_K;
 	ss_name >> input_Lx;
 	ss_name >> input_Ly;
 	input_Lx /= 2.0;
@@ -124,6 +129,7 @@ bool Init_Box_From_File(Box& box, const string input_name)
 	Particle::alpha = input_alpha;
 	Particle::speed = input_v;
 	Particle::Dr = input_noise;
+	Particle::K = input_K;
 
 	box.Positioning_Particles(box.thisnode, input_name);
 
@@ -158,6 +164,8 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	Particle::noise_amplitude = 0;
 	Particle::Dr = noise_list[0];
+	Particle::K = 0.2;
+	Particle::Kamp = sqrt(2*Particle::K*dt);
 
 	if (input_file == 0)
 	{
@@ -189,14 +197,14 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	Particle::g = input_g;
 	Particle::alpha = input_alpha;
 
-	ofstream out_file;
+	ofstream out_file, polarization_file;
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
 		Particle::Dr = noise_list[i];
 		Particle::noise_amplitude = sqrt(2*noise_list[i]) / sqrt(dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-noise=" << noise_list[i] << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
+		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-alpha=" << Particle::alpha << "-v=" << Particle::speed << "-Dr=" << noise_list[i] << "-K=" << Particle::K << "-2Lx=" << Lx2 << "-2Ly=" << Ly2;
 
 		if (box.thisnode->node_id == 0)
 		{
@@ -204,6 +212,9 @@ void Change_Noise(Box& box, int argc, char *argv[])
 			address.str("");
 			address << box.info.str() << "-r-v.bin";
 			out_file.open(address.str().c_str());
+			address.str("");
+			address << "polarization-time-" << box.info.str() << ".dat";
+			polarization_file.open(address.str().c_str());
 		}
 
 		if (box.thisnode->node_id == 0)
@@ -216,13 +227,14 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		if (box.thisnode->node_id == 0)
 			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
 
-		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		t_sim = data_gathering(&box, total_step, saving_period, out_file, polarization_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (box.thisnode->node_id == 0)
 		{
 			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
 			out_file.close();
+			polarization_file.close();
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);

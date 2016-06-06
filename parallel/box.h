@@ -18,7 +18,9 @@ public:
 	Particle* particle; // Array of particles that we are going to simulate.
 	Wall wall[8]; // Array of walls in our system.
 
+	Real t;
 	Real density;
+	Real polarization;
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
 	Node* thisnode; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
@@ -39,6 +41,7 @@ public:
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
+	void Save_Polarization(std::ostream& os); // Save polarization of the particles inside the box
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
 	friend std::istream& operator>>(std::istream& is, Box* box); // Input
@@ -264,6 +267,7 @@ void Box::One_Step()
 {
 	Interact();
 	Move();
+	t += dt;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
@@ -276,6 +280,7 @@ void Box::Multi_Step(int steps)
 		Move();
 		MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
 	}
+	t += dt*steps;
 	thisnode->Quick_Update_Cells();
 	#ifdef verlet_list
 	thisnode->Update_Neighbor_List();
@@ -288,6 +293,7 @@ void Box::Multi_Step(int steps, int interval)
 	for (int i = 0; i < steps/interval; i++)
 		Multi_Step(interval);
 	Multi_Step(steps % interval);
+	t += interval;
 }
 
 // Translate position of all particles with vector d
@@ -304,6 +310,15 @@ void Box::Translate(C2DVector d)
 	#ifdef verlet_list
 	thisnode->Update_Neighbor_List();
 	#endif
+}
+
+// Save polarization of the particles inside the box
+void Box::Save_Polarization(std::ostream& os)
+{
+	thisnode->Compute_Polarization();
+	polarization = thisnode->polarization;
+	if (thisnode->node_id == 0)
+		os << t << "\t" << polarization << endl;
 }
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.

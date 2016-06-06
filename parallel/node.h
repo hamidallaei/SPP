@@ -22,6 +22,13 @@ struct Node{
 //Cell cell[divisor_x][divisor_y]; // We used cell list in our program. we divide the box to divisor_x by divisor_y cells. each cell has the information about particles id that are inside them.
 // Dynamic allocation
 	Cell** cell;
+
+// Summation of polarization of the node particles
+	C2DVector polarization_sum;
+// The average magnitude of polarization
+	Real polarization;
+// Number of the particles inside this node
+	int num_p;
 	
 	Node();
 
@@ -45,6 +52,10 @@ struct Node{
 
 	bool Chek_Seeds(); // Check if all nodes have seed number different from one another.
 	void Print_Info(); // Print information of this node
+
+	void Compute_Polarization_Sum(); // Computing the summation of polarization of the particles of the node
+	void Root_Gather_Polarization_Sum(); // Gather the polarization sum of all nodes in the root node.
+	void Compute_Polarization();
 };
 
 Node::Node()
@@ -1307,6 +1318,35 @@ void Node::Print_Info()
 {
 	cout << "Node: " << node_id << " cell dimx from: " << head_cell_idx << " to " << tail_cell_idx - 1 << " dimy from: " << head_cell_idy << " to " << tail_cell_idy - 1 << " Num. of boundaries: " << boundary.size() << " boundary nodes are: " << boundary[2].that_node_id << endl << flush;
 
+}
+
+// Computing the polarization of the particles of the node
+void Node::Compute_Polarization_Sum()
+{
+	polarization_sum.Null();
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+			polarization_sum += cell[x][y].Compute_Polarization_Sum();
+}
+
+void Node::Root_Gather_Polarization_Sum()
+{
+	double buffer_p[2];
+	double p_sum[2] = {0};
+	buffer_p[0] = polarization_sum.x;
+	buffer_p[1] = polarization_sum.y;
+	MPI_Reduce(&buffer_p, &p_sum, 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	polarization_sum.x = p_sum[0];
+	polarization_sum.y = p_sum[1];
+}
+
+void Node::Compute_Polarization()
+{
+	Compute_Polarization_Sum();
+	Root_Gather_Polarization_Sum();
+	polarization_sum /= N;
+	polarization = sqrt(polarization_sum.Square());
 }
 
 #endif
