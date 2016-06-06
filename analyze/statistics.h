@@ -16,6 +16,7 @@ public:
 	double mean, mean_square, std, error, variance, min, max, corr_len;
 	void Compute();
 	void Correlation();
+	void Find_Correlation_Length();
 	void Shift_Average();
 	void Reset();
 	void Add_Data(T input);
@@ -48,10 +49,23 @@ template <class T> void Stat<T>::Compute()
 	mean_square = sq_sum / data.size();
 	variance = mean_square - mean*mean;
 	std = sqrt(variance);
-	Correlation();
+	Find_Correlation_Length();
 }
 
 template <class T> void Stat<T>::Correlation()
+{
+	for (int tau = 0; tau < data.size()/2; tau++)
+	{
+		T c = 0;
+		for (int i = 0; i < (data.size() - tau); i++)
+			c += (data[i] - mean)*(data[i+tau]-mean) / (data.size() - tau);
+		c /= variance;
+		corr_len = tau;
+		cout << tau << "\t" << c << endl;
+	}
+}
+
+template <class T> void Stat<T>::Find_Correlation_Length()
 {
 	for (int tau = 0; tau < data.size()/2; tau++)
 	{

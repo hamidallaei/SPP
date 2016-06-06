@@ -29,6 +29,22 @@ double Local_Cohesion(SceneSet* s, double rc)
 	return(phi);
 }
 
+void Polarization_AutoCorr(SceneSet* s)
+{
+	Stat<double> p;
+	for (int i = 0; i < s->scene.size(); i++)
+	{
+		C2DVector vp;
+		vp.Null();
+		for (int j = 0; j < Scene::number_of_particles; j++)
+			vp += s->scene[i].particle[j].v;
+		vp = vp / Scene::number_of_particles;
+		p.Add_Data(sqrt(vp.Square()));
+	}
+	p.Compute();
+	p.Correlation();
+}
+
 void Polarization_Time(SceneSet* s)
 {
 	for (int i = 0; i < s->scene.size(); i++)

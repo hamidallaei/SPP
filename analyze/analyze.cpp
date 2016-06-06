@@ -55,6 +55,9 @@ int main(int argc, char** argv)
 			boost::replace_all(name, "-v=", "\t");
 			boost::replace_all(name, "-alpha=", "\t");
 
+//			Polarization_AutoCorr(sceneset);
+//			Polarization_Time(sceneset);
+
 //			Stat<double> p;
 //			Compute_Polarization(sceneset,&p);
 
