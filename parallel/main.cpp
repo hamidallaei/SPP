@@ -164,7 +164,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	Particle::noise_amplitude = 0;
 	Particle::Dr = noise_list[0];
-	Particle::K = 0.2;
+	Particle::K = K;
 	Particle::Kamp = sqrt(2*Particle::K*dt);
 
 	if (input_file == 0)

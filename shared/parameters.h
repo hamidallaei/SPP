@@ -40,11 +40,11 @@ long int seed = 10;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 20000;
+const int max_N = 64000;
 
 // Box
-const int Lx_int = 16;
-const int Ly_int = Lx_int;
+const int Lx_int = 64;
+const int Ly_int = 16;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
 const Real Ly = Ly_int;
@@ -57,10 +57,11 @@ Real half_dt = dt/2;
 const int cell_update_period = 4;
 const int saving_period = 64;
 const long int equilibrium_step = 16384;
-const long int total_step = 16384;
+const long int total_step = 524288;
 
-const Real speed = 2;
+const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
+const Real K = 0.125
 
 const Real lx_min = (1 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
@@ -84,5 +85,8 @@ bool flag = false;
 double digits =   100000000000000000;
 #endif
 
+#ifdef DEBUG
+int the_node_id = 0;
+#endif
 
 #endif

@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 		cout << "Finished" << endl;
 		cout << "Write the file" << endl;
 		if (read_state)
-			sceneset->Write(0, 0);
+			sceneset->Write(0, sceneset->scene.size()-1,0);
 		else
 			cout << "Can not read the file" << endl;
 		cout << "Finished" << endl;

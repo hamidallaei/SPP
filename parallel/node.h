@@ -64,6 +64,10 @@ Node::Node()
 	MPI_Comm_size(MPI_COMM_WORLD, &total_nodes);
 	MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
 
+	#ifdef DEBUG
+		the_node_id = node_id;
+	#endif
+
 // Dynamical array allocation for cell:
 	cell = new Cell*[divisor_x];
 	for (int i = 0; i < divisor_x; i++)
@@ -117,8 +121,8 @@ void Node::Init_Topology() // This function must be called after box definition.
 			npy = 7;
 			break;
 		case 8:
-			npx = 2;
-			npy = 4;
+			npx = 1;
+			npy = 8;
 			break;
 		case 9:
 			npx = 3;

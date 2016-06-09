@@ -100,7 +100,8 @@ public:
 	SceneSet(string input_address);
 	~SceneSet();
 	bool Read(int skip = 0);
-	void Write(int, int); // write from a time to the end
+	void Write(int, int); // write from a time to the end of the file
+	void Write(int start, int end, int limit); // write from start to the end if end-start > limit
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int grid_dim, string name);
@@ -180,6 +181,19 @@ void SceneSet::Write(int start, int limit)
 	{
 		output_file.open(address.str().c_str());
 		for (int i = start; i < scene.size(); i++)
+			output_file << scene[i];
+		output_file.close();
+	}
+	else
+		cout << "I will not cut the file because it is short enough!" << endl;
+}
+
+void SceneSet::Write(int start, int end, int limit)
+{
+	if ((end - start) > limit)
+	{
+		output_file.open(address.str().c_str());
+		for (int i = start; i < end; i++)
 			output_file << scene[i];
 		output_file.close();
 	}
