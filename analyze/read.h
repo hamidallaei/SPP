@@ -102,6 +102,7 @@ public:
 	bool Read(int skip = 0);
 	void Write(int, int); // write from a time to the end of the file
 	void Write(int start, int end, int limit); // write from start to the end if end-start > limit
+	void Write_Every(int interval); // write every interval
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int grid_dim, string name);
@@ -199,6 +200,16 @@ void SceneSet::Write(int start, int end, int limit)
 	}
 	else
 		cout << "I will not cut the file because it is short enough!" << endl;
+}
+
+void SceneSet::Write_Every(int interval)
+{
+	output_file.open(address.str().c_str());
+	for (int i = 0; i < scene.size(); i += interval)
+	{
+		output_file << scene[i];
+	}
+	output_file.close();
 }
 
 void SceneSet::Save_Theta_Deviation(int grid_dim, int start_t, int end_t, string info)
