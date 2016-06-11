@@ -100,7 +100,10 @@ template <class T> void Stat<T>::Add_Data(T input)
 
 template <class T> void Stat<T>::Histogram(const int& num_bins, const string& info)
 {
-	double p[num_bins] = {0};
+	double* p;
+	p = new double[num_bins];
+	for (int i = 0; i < num_bins; i++)
+		p[i] = 0;
 	double bin_width = (max - min) / num_bins;
 	for (int i = 0; i < data.size(); i++)
 	{
@@ -122,6 +125,7 @@ template <class T> void Stat<T>::Histogram(const int& num_bins, const string& in
 	}
 	polarization = sqrt(px*px+py*py);
 	cout << "Polarization: " << polarization << endl;
+	delete [] p;
 }
 
 template <class T> void Stat<T>::Periodic_Transform(const double& value)

@@ -61,7 +61,7 @@ const long int total_step = 524288;
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
-const Real K = 0.125
+const Real K = 0.125;
 
 const Real lx_min = (1 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
