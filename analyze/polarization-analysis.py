@@ -18,7 +18,7 @@ def Read_File(filename):
 			tl.append(x)
 			ptl.append(y)
 
-	n = len(tl) / 10
+	n = len(tl) / 2
 	for i in xrange(n):
 		tl.pop(0)
 		ptl.pop(0)
@@ -63,19 +63,18 @@ def Find_Polarity(t,pt,ic):
 	
 
 
-#start = filename.find('T=') + 2
-#end = filename.find('.dat', start)
-#print filename[start:end],P
 
 arg_list = sys.argv[1:]
 for i in arg_list:
 	filename = i
 	t,pt = Read_File(filename)
+	start = filename.find('Dr=') + 2
+	end = filename.find('-K=', start)
 	tau,c,ic = Auto_Corr(t,pt)
 #	for j in xrange(tau.size):
 #		print tau[j],c[j]
 	ave, error = Find_Polarity(t,pt,ic)
-	print ave,error
+	print filename[start+1:end],ave,error
 
 
 

@@ -130,8 +130,8 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	{
 		is >> scene.particle[i].r;
 		is >> scene.particle[i].v;
-		scene.particle[i].r *= -1;
-		scene.particle[i].v *= -1;
+//		scene.particle[i].r *= -1;
+//		scene.particle[i].v *= -1;
 	}
 }
 
@@ -148,8 +148,8 @@ std::ostream& operator<<(std::ostream& os, Scene& scene)
 class SceneSet{
 public:
 	vector<Scene> scene;
-	Real L;
-	Real L_min;
+	C2DVector L;
+	C2DVector L_min;
 	stringstream address;
 	string info;
 	ifstream input_file;
@@ -162,14 +162,15 @@ public:
 	void Write(int, int); // write from a time to the end
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
-	void Plot_Averaged_Fields(int grid_dim, string name);
-	void Plot_Averaged_Fields_Section(int grid_dim, int y, string info);
-	void Plot_Density_Contour(int grid_dim, double rho, string info);
-	void Accumulate_Theta(int grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info);
+	void Plot_Averaged_Fields(int smaller_grid_dim, string name);
+	void Plot_Averaged_Fields_Section(int smaller_grid_dim, int y, string info);
+	void Plot_Density_Contour(int smaller_grid_dim, double rho, string info);
+	void Accumulate_Theta(int smaller_grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info);
 };
 
-SceneSet::SceneSet(string input_address) : L(0)
+SceneSet::SceneSet(string input_address)
 {
+	L.Null();
 	address.str("");
 	address << input_address;
 	string name = input_address;
@@ -196,7 +197,7 @@ bool SceneSet::Read(int skip)
 {
 	int counter = 0;
 	static Scene temp_scene;
-	L = 0;
+	L.Null();
 
 	input_file.open(address.str().c_str());
 	if (input_file.is_open())
@@ -211,10 +212,10 @@ bool SceneSet::Read(int skip)
 			scene.push_back(temp_scene);
 			for (int i = 0; i < Scene::number_of_particles; i++)
 			{
-				if (abs(temp_scene.particle[i].r.x) > L)
-					L = abs(temp_scene.particle[i].r.x);
-				if (abs(temp_scene.particle[i].r.y) > L)
-					L = abs(temp_scene.particle[i].r.y);
+				if (abs(temp_scene.particle[i].r.x) > L.x)
+					L.x = abs(temp_scene.particle[i].r.x);
+				if (abs(temp_scene.particle[i].r.y) > L.y)
+					L.y = abs(temp_scene.particle[i].r.y);
 			}
 			if (counter*sizeof(temp_scene) > (3000000000))
 				return(false);
@@ -226,9 +227,11 @@ bool SceneSet::Read(int skip)
 
 	scene.pop_back();
 
-	L = round(L+0.1);
+	L.x = round(L.x+0.1);
+	L.y = round(L.y+0.1);
 	L_min = L;
-	L += 0.5;
+	L.x += 0.5;
+	L.y += 0.5;
 
 	return (true);
 }
@@ -246,12 +249,12 @@ void SceneSet::Write(int start, int limit)
 		cout << "I will not cut the file because it is short enough!" << endl;
 }
 
-void SceneSet::Save_Theta_Deviation(int grid_dim, int start_t, int end_t, string info)
+void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t, string info)
 {
-	Field averaged_field(grid_dim, L);
+	Field averaged_field(smaller_grid_dim, L);
 	for (int i = start_t; i < scene.size() && i < end_t; i++)
 	{
-		Field f(grid_dim, L);
+		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].particle, Scene::number_of_particles);
 		averaged_field.Add(&f);
 	}
@@ -264,19 +267,19 @@ void SceneSet::Save_Theta_Deviation(int grid_dim, int start_t, int end_t, string
 	averaged_field.Reset();
 }
 
-void SceneSet::Plot_Fields(int grid_dim, int t, string name)
+void SceneSet::Plot_Fields(int smaller_grid_dim, int t, string name)
 {
-	field = new Field(grid_dim,L);
+	field = new Field(smaller_grid_dim,L);
 	field->Compute((BasicParticle*) scene[t].particle, Scene::number_of_particles);
 	field->Draw(name);
 }
 
-void SceneSet::Plot_Averaged_Fields(int grid_dim, string info)
+void SceneSet::Plot_Averaged_Fields(int smaller_grid_dim, string info)
 {
-	Field averaged_field(grid_dim, L);
+	Field averaged_field(smaller_grid_dim, L);
 	for (int i = 0; i < scene.size(); i++)
 	{
-		Field f(grid_dim, L);
+		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].particle, Scene::number_of_particles);
 		averaged_field.Add(&f);
 	}
@@ -285,12 +288,12 @@ void SceneSet::Plot_Averaged_Fields(int grid_dim, string info)
 	averaged_field.Reset();
 }
 
-void SceneSet::Plot_Averaged_Fields_Section(int grid_dim, int y, string info)
+void SceneSet::Plot_Averaged_Fields_Section(int smaller_grid_dim, int y, string info)
 {
-	Field averaged_field(grid_dim, L);
+	Field averaged_field(smaller_grid_dim, L);
 	for (int i = 0; i < scene.size(); i++)
 	{
-		Field f(grid_dim, L);
+		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].particle, Scene::number_of_particles);
 		averaged_field.Add(&f);
 	}
@@ -299,10 +302,10 @@ void SceneSet::Plot_Averaged_Fields_Section(int grid_dim, int y, string info)
 	averaged_field.Reset();
 }
 
-void SceneSet::Plot_Density_Contour(int grid_dim, double rho, string info)
+void SceneSet::Plot_Density_Contour(int smaller_grid_dim, double rho, string info)
 {
-	Field averaged_field(grid_dim, L);
-	Field f(grid_dim, L);
+	Field averaged_field(smaller_grid_dim, L);
+	Field f(smaller_grid_dim, L);
 	for (int i = 0; i < scene.size(); i++)
 	{
 		f.Compute(scene[i].particle, Scene::number_of_particles);
@@ -313,9 +316,9 @@ void SceneSet::Plot_Density_Contour(int grid_dim, double rho, string info)
 	averaged_field.Draw_Density_Contour(info, rho);
 }
 
-void SceneSet::Accumulate_Theta(int grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info)
+void SceneSet::Accumulate_Theta(int smaller_grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info)
 {
-	Field f(grid_dim, L);
+	Field f(smaller_grid_dim, L);
 	Stat<double> dtheta;
 	for (int i = 0; i < scene.size(); i++)
 	{

@@ -90,7 +90,7 @@ void Compute_Order_Parameters(SceneSet* s, double& polarization, double& error_p
 	polarization = p.mean;
 	sigma2 = p.variance;
 	error_polarization = p.error;
-	sigma2 *= (4*s->L*s->L);
+	sigma2 *= (4*s->L.x*s->L.y);
 	G = 1 - (p4.mean / (3*p.mean_square));
 }
 
@@ -98,11 +98,11 @@ void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
 {
 	for (int i = 0; i < s->scene.size(); i++)
 	{
-		double L = 0;
+		double M = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)
-			L += (s->scene[i].particle[j].r.x * s->scene[i].particle[j].v.y - s->scene[i].particle[j].r.y * s->scene[i].particle[j].v.x);
-		L /= Scene::number_of_particles;
-		angular_momentum->Add_Data(L);
+			M += (s->scene[i].particle[j].r.x * s->scene[i].particle[j].v.y - s->scene[i].particle[j].r.y * s->scene[i].particle[j].v.x);
+		M /= Scene::number_of_particles;
+		angular_momentum->Add_Data(M);
 	}
 	angular_momentum->Compute();
 }
@@ -155,7 +155,7 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 		double r = (x*rc)/size;
 //		bin[x] /= Scene::number_of_particles*((s->scene.size() - s->scene.size()/2)/100);
 //		bin[x] /= 3.1415*((r+rc/ size)*(r+rc/ size) - r*r)/2;
-//		bin[x] -= Scene::number_of_particles / (4*s->L*s->L);
+//		bin[x] -= Scene::number_of_particles / (4*s->L.x*s->L.y);
 		if (num[x] != 0)
 		  bin[x] /= num[x];
 		else
@@ -213,44 +213,55 @@ void Angular_Velocity_Time(SceneSet* s, int index)
 		cout << Scene::density << "\t" << Scene::noise << "\t" << s->scene[i].particle[index].r << "\t" << sqrt(s->scene[i].particle[index].r.Square()) << "\t" << Find_Angular_Velocity(s, index, i) << endl;
 }
 
-void Window_Fluctuation(SceneSet* s, int number_of_windows, double& mean, double& variance)
+void Window_Fluctuation(SceneSet* s, int smaller_number_of_windows, double& mean, double& variance)
 {
-	Stat<int> window[number_of_windows][number_of_windows];
+	int number_of_windows_x, number_of_windows_y;
+	if (s->L.x > s->L.y)
+	{
+		number_of_windows_y = smaller_number_of_windows;
+		number_of_windows_x = (int) round(s->L.x*smaller_number_of_windows / s->L.y);
+	}
+	else
+	{
+		number_of_windows_x = smaller_number_of_windows;
+		number_of_windows_y = (int) round(s->L.y*smaller_number_of_windows / s->L.x);
+	}
+	Stat<int> window[number_of_windows_x][number_of_windows_y];
 	for (int i = s->scene.size()/2; i < s->scene.size(); i++)
 	{
-		int Np[number_of_windows][number_of_windows];
-		for (int x = 0; x < number_of_windows; x++)
-			for (int y = 0; y < number_of_windows; y++)
+		int Np[number_of_windows_x][number_of_windows_y];
+		for (int x = 0; x < number_of_windows_x; x++)
+			for (int y = 0; y < number_of_windows_y; y++)
 				Np[x][y] = 0;
 		for (int j = 0; j < Scene::number_of_particles; j++)
 		{
-			int x = (int) floor(number_of_windows*(s->scene[i].particle[j].r.x / s->L + 1)/2);
-			int y = (int) floor(number_of_windows*(s->scene[i].particle[j].r.y / s->L + 1)/2);
+			int x = (int) floor(number_of_windows_x*(s->scene[i].particle[j].r.x / s->L.x + 1)/2);
+			int y = (int) floor(number_of_windows_y*(s->scene[i].particle[j].r.y / s->L.y + 1)/2);
 			Np[x][y]++;
 		}
-		for (int x = 0; x < number_of_windows; x++)
-			for (int y = 0; y < number_of_windows; y++)
+		for (int x = 0; x < number_of_windows_x; x++)
+			for (int y = 0; y < number_of_windows_y; y++)
 				window[x][y].Add_Data(Np[x][y]);
 	}
-	for (int x = 0; x < number_of_windows; x++)
-		for (int y = 0; y < number_of_windows; y++)
+	for (int x = 0; x < number_of_windows_x; x++)
+		for (int y = 0; y < number_of_windows_y; y++)
 			window[x][y].Compute();
 
 	mean = variance = 0;
-	for (int x = 0; x < number_of_windows; x++)
-		for (int y = 0; y < number_of_windows; y++)
+	for (int x = 0; x < number_of_windows_x; x++)
+		for (int y = 0; y < number_of_windows_y; y++)
 		{
 			mean += window[x][y].mean;
 			variance += window[x][y].variance;
 		}
-	mean /= (number_of_windows*number_of_windows);
-	variance /= (number_of_windows*number_of_windows);
+	mean /= (number_of_windows_x*number_of_windows_y);
+	variance /= (number_of_windows_x*number_of_windows_y);
 }
 
 double Compute_Fluctuation(SceneSet* s)
 {
 	double mean, variance;
-	for (int i = 5; i < s->L; i = (int) (i*1.3))
+	for (int i = 5; i < s->L.y; i = (int) (i*1.3))
 	{
 		Window_Fluctuation(s, i, mean, variance);
 		cout << mean << "\t" << variance << endl;
@@ -270,7 +281,7 @@ void Radial_Density(SceneSet* s, int number_of_points)
 	int counter = 0;
 	double radius[number_of_points];
 	radius[0] = 1;
-	double factor = pow(((s->L+1)/radius[0]-0),1.0/number_of_points);
+	double factor = pow(((s->L.x+1)/radius[0]-0),1.0/number_of_points);
 	for (int i = 1; i < number_of_points; i++)
 		radius[i] = factor*radius[i-1];
 	for (int i = 0; i < s->scene.size(); i++)
@@ -295,13 +306,25 @@ void Radial_Density(SceneSet* s, int number_of_points)
 }
 
 // Find radial density.
-void Pair_Distribution(SceneSet* s, Real lx,int grid_size)
+void Pair_Distribution(SceneSet* s, Real lx, Real ly,int smaller_grid_size)
 {
-	double bin[grid_size][grid_size];
+	int grid_size_x, grid_size_y;
+	if (s->L.x > s->L.y)
+	{
+		grid_size_y = smaller_grid_size;
+		grid_size_x = (int) round(s->L.x*smaller_grid_size / s->L.y);
+	}
+	else
+	{
+		grid_size_x = smaller_grid_size;
+		grid_size_y = (int) round(s->L.y*smaller_grid_size / s->L.x);
+	}
+
+	double bin[grid_size_x][grid_size_y];
 	int counter = 0;
 
-	for (int x = 0; x < grid_size; x++)
-		for (int y = 0; y < grid_size; y++)
+	for (int x = 0; x < grid_size_x; x++)
+		for (int y = 0; y < grid_size_y; y++)
 		{
 			bin[x][y] = 0;
 		}
@@ -317,10 +340,11 @@ void Pair_Distribution(SceneSet* s, Real lx,int grid_size)
 					C2DVector tdr = dr;
 					tdr.y = s->scene[i].particle[j].v * dr;
 					tdr.x = (s->scene[i].particle[j].v.y * dr.x) - (s->scene[i].particle[j].v.x * dr.y);
-					if (fabs(tdr.x) < lx && fabs(tdr.y) < lx)
+					tdr /= sqrt(s->scene[i].particle[j].v.Square());
+					if (fabs(tdr.x) < lx && fabs(tdr.y) < ly)
 					{
-						int x = (int) (grid_size*((tdr.x / lx) + 1)/2);
-						int y = (int) (grid_size*((tdr.y / lx) + 1)/2);
+						int x = (int) (grid_size_x*((tdr.x / lx) + 1)/2);
+						int y = (int) (grid_size_y*((tdr.y / ly) + 1)/2);
 						bin[x][y]++;
 					}
 				}
@@ -328,13 +352,13 @@ void Pair_Distribution(SceneSet* s, Real lx,int grid_size)
 		counter++;
 	}
 
-	for (int x = 0; x < grid_size; x++)
+	for (int x = 0; x < grid_size_x; x++)
 	{
-		for (int y = 0; y < grid_size; y++)
+		for (int y = 0; y < grid_size_y; y++)
 		{
-			bin[x][y] /= (Scene::number_of_particles*(4*lx*lx/grid_size/grid_size));
+			bin[x][y] /= (Scene::number_of_particles*(4*lx*ly/grid_size_x/grid_size_y));
 			bin[x][y] /= counter;
-			cout << ((2.0*x)/grid_size-1)*lx << "\t" << ((2.0*y)/grid_size-1)*lx << "\t" << bin[x][y] << endl;
+			cout << ((2.0*x)/grid_size_x-1)*lx << "\t" << ((2.0*y)/grid_size_y-1)*ly << "\t" << bin[x][y] << endl;
 		}
 		cout << endl;
 	}

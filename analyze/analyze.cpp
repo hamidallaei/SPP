@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 		if (read_state)
 		{
 			sceneset->L -= 0.5-0.1;
-			Real box_dim = sceneset->L;
+			C2DVector box_dim(sceneset->L);
 
 			boost::replace_all(name, "-r-v.bin", "");
 
@@ -32,9 +32,33 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 38, name);
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
-//			double p_c = atof(argv[2]);
-//			double dp = atof(argv[3]);
-//			sceneset->Accumulate_Theta(10, 30, p_c, dp, "theta-stat");
+
+			std::size_t pos = name.find("Dr=");
+			std::string str = name.substr (pos);
+			pos = str.find("-");
+			str = str.substr(3,pos-3);
+			stringstream ss;
+			ss.str("");
+			ss << "theta_stat-Dr-" << str;
+
+			double p_c = atof(argv[2]);
+			double dp = atof(argv[3]);
+//			sceneset->Accumulate_Theta(16, 30, p_c, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.01, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.05, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.1, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.2, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.3, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.4, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.5, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.6, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.7, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.8, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.9, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.95, dp, ss.str().c_str());
+			sceneset->Accumulate_Theta(16, 30, 0.99, dp, ss.str().c_str());
+
+
 
 			size_t pos1,pos2;
 			pos1 = name.find("-Lx");
@@ -61,9 +85,9 @@ int main(int argc, char** argv)
 //			Stat<double> p;
 //			Compute_Polarization(sceneset,&p);
 
-			double p,dp,sigma2,G;
-			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
-			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
+//			double p,dp,sigma2,G;
+//			Compute_Order_Parameters(sceneset, p,dp, sigma2, G);
+//			cout << name << "\t" << p << "\t" << dp << "\t" << sigma2 << "\t" << G << endl;
 
 //			Stat<double>	angular_momentum_data;
 //			Compute_Angular_Momentum(sceneset, &angular_momentum_data);

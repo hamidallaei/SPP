@@ -107,7 +107,8 @@ template <class T> void Stat<T>::Histogram(const int& num_bins, const string& in
 	double bin_width = (max - min) / num_bins;
 	for (int i = 0; i < data.size(); i++)
 	{
-		int index = floor(round((data[i] - min) / bin_width));
+		float place = ((data[i] - min) / bin_width);
+		int index = floor(place);
 		p[index] += 1.0 / (data.size()*bin_width);
 	}
 	stringstream address("");
@@ -115,7 +116,7 @@ template <class T> void Stat<T>::Histogram(const int& num_bins, const string& in
 	ofstream out_file(address.str().c_str());
 	for (int i = 0; i < num_bins; i++)
 	{
-		out_file << (min + i*bin_width) << "\t" << p[i] << endl;
+		out_file << (min + (i+0.5)*bin_width) << "\t" << p[i] << endl;
 	}
 	double px = 0, py = 0, polarization;
 	for (int i = 0; i < num_bins; i++)

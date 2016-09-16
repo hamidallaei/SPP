@@ -19,19 +19,19 @@ public:
 	Real omega;
 	Real curl;
 	Real theta_ave;
-	static Real dim_x;
+	static C2DVector dim; // dimension of a single cell
 
 	Field_Cell();
 	~Field_Cell();
 	void Init(Real,Real);
 	void Reset();
 	void Add(BasicParticle* p);
-	void Compute_Fields(Real L);
+	void Compute_Fields(C2DVector L);
 	void Delta_Theta_Stat();
 	void Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp);
 };
 
-Real Field_Cell::dim_x = 0;
+C2DVector Field_Cell::dim;
 
 Field_Cell::Field_Cell()
 {
@@ -65,12 +65,12 @@ void Field_Cell::Add(BasicParticle* p)
 	particle.push_back((BasicParticle*) p);
 }
 
-void Field_Cell::Compute_Fields(Real L)
+void Field_Cell::Compute_Fields(C2DVector L)
 {
 	v.Null();
 	dtheta.clear();
 	theta_ave = cohesion = omega = 0;
-	density = particle.size()/(dim_x*dim_x);
+	density = particle.size()/(dim.x*dim.y);
 	for (int i = 0; i < particle.size(); i++)
 	{
 		v += particle[i]->v;
@@ -113,9 +113,9 @@ void Field_Cell::Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const d
 class Field{
 public:
 	Field_Cell** cell;
-	int grid_dim_x, sample; // sample is number of sampled field that we average. we need it to compute the average by dividing the summation of fields
-	Real L;
-	Field(int input_grid_dim_x, Real);
+	int grid_dim_y, grid_dim_x, sample; // sample is number of sampled field that we average. we need it to compute the average by dividing the summation of fields
+	C2DVector L;
+	Field(int smaller_grid_dim, C2DVector);
 	~Field();
 	void Init();
 	void Compute(BasicParticle* particle, int N);
@@ -131,13 +131,24 @@ public:
 	void Reset();
 };
 
-Field::Field(int input_grid_dim_x, Real input_L): L(input_L), grid_dim_x(input_grid_dim_x)
+Field::Field(int smaller_grid_dim, C2DVector input_L): L(input_L)
 {
-	Field_Cell::dim_x = 2*L / grid_dim_x;
+	if (L.y < L.x)
+	{
+		grid_dim_y = smaller_grid_dim;
+		grid_dim_x = (int) (round(L.x*grid_dim_y / L.y));
+	}
+	else
+	{
+		grid_dim_x = smaller_grid_dim;
+		grid_dim_y = (int) (round(L.y*grid_dim_x / L.x));
+	}
+	Field_Cell::dim.x = 2*L.x / grid_dim_x;
+	Field_Cell::dim.y = 2*L.y / grid_dim_y;
 	cell = new Field_Cell*[grid_dim_x];
 	for (int i = 0; i < grid_dim_x; i++)
 	{
-		cell[i] = new Field_Cell[grid_dim_x];
+		cell[i] = new Field_Cell[grid_dim_y];
 	}
 	Init();
 }
@@ -152,10 +163,10 @@ Field::~Field()
 void Field::Init()
 {
 	for (int x = 0; x < grid_dim_x; x++)
-		for (int y = 0; y < grid_dim_x; y++)
+		for (int y = 0; y < grid_dim_y; y++)
 		{
 			cell[x][y].Reset();
-			cell[x][y].Init(2*(x+0.5)*(L / grid_dim_x) - L, 2*(y+0.5)*(L / grid_dim_x) - L);
+			cell[x][y].Init(2*(x+0.5)*(L.x / grid_dim_x) - L.x, 2*(y+0.5)*(L.y / grid_dim_y) - L.y);
 		}
 	Reset();
 }
@@ -164,24 +175,24 @@ void Field::Compute(BasicParticle* particle, int N)
 {
 	for (int i = 0; i < N; i++)
 	{
-		int x = (int) floor((particle[i].r.x + L)*grid_dim_x / (2*L));
-		int y = (int) floor((particle[i].r.y + L)*grid_dim_x / (2*L));
+		int x = (int) floor((particle[i].r.x + L.x)*grid_dim_x / (2*L.x));
+		int y = (int) floor((particle[i].r.y + L.y)*grid_dim_y / (2*L.y));
 		cell[x][y].Add(&particle[i]);
 	}
 
 	for (int i = 0; i < grid_dim_x; i++)
-		for (int j = 0; j < grid_dim_x; j++)
+		for (int j = 0; j < grid_dim_y; j++)
 			cell[i][j].Compute_Fields(L);
 	for (int i = 0; i < grid_dim_x; i++)
-		for (int j = 0; j < grid_dim_x; j++)
-			cell[i][j].curl = (grid_dim_x/L)*(cell[(i+1)%grid_dim_x][j].v.y - cell[i][j].v.y) - (grid_dim_x/L)*(cell[i][(j+1)%grid_dim_x].v.x - cell[i][j].v.x);
+		for (int j = 0; j < grid_dim_y; j++)
+			cell[i][j].curl = (grid_dim_x/L.x)*(cell[(i+1)%grid_dim_x][j].v.y - cell[i][j].v.y) - (grid_dim_y/L.y)*(cell[i][(j+1)%grid_dim_y].v.x - cell[i][j].v.x);
 }
 
 void Field::Save(ofstream& data_file)
 {
 	for (int i = 0; i < grid_dim_x; i++)
 	{
-		for (int j = 0; j < grid_dim_x; j++)
+		for (int j = 0; j < grid_dim_y; j++)
 			data_file << cell[i][j].r << "\t" << cell[i][j].v << "\t" << cell[i][j].density << "\t"<< cell[i][j].cohesion << "\t" << cell[i][j].curl << "\t" << cell[i][j].omega << "\t" << cell[i][j].W << endl;
 		data_file << endl;
 	}
@@ -191,7 +202,7 @@ void Field::Save_Theta_Deviation(ofstream& data_file)
 {
 	for (int i = 0; i < grid_dim_x; i++)
 	{
-		for (int j = 0; j < grid_dim_x; j++)
+		for (int j = 0; j < grid_dim_y; j++)
 			for (int n = 0; n < cell[i][j].dtheta.size(); n++)
 				data_file << std::setprecision(20) << cell[i][j].dtheta[n] << endl;
 	}
@@ -213,23 +224,25 @@ void Field::Draw(string info)
 //	temp_file << "#x\ty\tvx\tvy\tdensity\tcohesion\tcurl\tomega\twx\twy" << endl;
 	for (int x = 0; x < grid_dim_x; x++)
 	{
-		for (int y = 0; y < grid_dim_x; y++)
+		for (int y = 0; y < grid_dim_y; y++)
 		{
 //			pts.push_back(boost::make_tuple(cell[x][y].r.x,cell[x][y].r.y,cell[x][y].v.x,cell[x][y].v.y,cell[x][y].density,cell[x][y].cohesion,cell[x][y].curl,cell[x][y].omega));
 //			pts.push_back(boost::make_tuple(cell[x][y].r.x,cell[x][y].r.y,cell[x][y].v.x,cell[x][y].v.y));
-			temp_file << std::fixed << std::setprecision(8) << cell[x][y].r / (2*L) << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
+			temp_file << std::fixed << std::setprecision(8) << cell[x][y].r << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
 		}
 			temp_file << endl;
 	}
 
-	gp << "L=" << 0.5 << "\n";
+	gp << "Lx=" << L.x << "\n";
+	gp << "Ly=" << L.y << "\n";
 
 	gp << "set term postscript eps enhanced color\n";
 	gp << "reset\n";
 	gp << "l=2\n";
 
 
-	gp << "set size square\n";
+//	gp << "set size square\n";
+	gp << "set size ratio -1\n";
 
 	gp << "set term postscript eps enhanced color font \"Times-Roman,30\"\n";
 
@@ -239,14 +252,14 @@ void Field::Draw(string info)
 	gp << "set output \"figures/" << info << "-density.eps\"\n";
 	gp << "set pm3d map\n";
 	gp << "set palette rgb 21,22,23\n";
-	gp << "set cbrange [0:3]\n";
+//	gp << "set cbrange [0:3]\n";
 	gp << "set colorbox vertical size 0.1,0.4\n";
-	gp << "set colorbox vertical user origin 0.72,0.28 size 0.035,0.5\n";
+//	gp << "set colorbox vertical user origin 0.72,0.28 size 0.035,0.5\n";
 	gp << "set cbtics offset -1,0\n";
 	gp << "set cblabel \"{/Symbol r}\" offset -6.5,3.5\n";
 //	gp << "unset colorbox\n";
-	gp << "set xrange [-L:L]\n";
-	gp << "set yrange [-L:L]\n";
+	gp << "set xrange [-Lx:Lx]\n";
+	gp << "set yrange [-Ly:Ly]\n";
 	gp << "set xlabel \"x/L\" offset 0,1.2\n";
 //	gp << "set ylabel \"y/L\" offset 3,0\n";
 	gp << "set xtics offset 0,0.7\n";
@@ -274,7 +287,7 @@ void Field::Draw(string info)
 	gp << "set ylabel \"y/L\" offset 4.5,0\n";
 	gp << "unset ylabel\n";
 	gp << "set ytics format \" \" \n";
-	gp << "set colorbox vertical user origin 0.8,0.24 size 0.04,0.63\n";
+//	gp << "set colorbox vertical user origin 0.8,0.24 size 0.04,0.63\n";
 	gp << "set cblabel \"v\" offset -6.4,4.2\n";
 //	gp << "unset colorbox\n";
 	gp << "set style arrow 1 head filled size screen 0.008,25,30 lw 2 lc palette\n";
@@ -283,8 +296,8 @@ void Field::Draw(string info)
 
 	gp << "l=1\n";
 	gp << "set output \"figures/"<< info << "-W.eps\"\n";
-	gp << "set xrange [-L:L]\n";
-	gp << "set yrange [-L:L]\n";
+	gp << "set xrange [-Lx:Lx]\n";
+	gp << "set yrange [-Ly:Ly]\n";
 	gp << "plot \"data.dat\" using 1:2:(l*($9)):(l*($10)):(($9**2 + $10**2)**0.5) with vectors arrowstyle 1 notitle\n";
 //	gp.send1d(pts);
 }
@@ -305,7 +318,7 @@ void Field::Draw_Section(string info, int y)
 	for (int x = 0; x < grid_dim_x; x++)
 	{
 
-		temp_file << std::fixed << std::setprecision(8) << cell[x][y].r.x / (2*L) << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
+		temp_file << std::fixed << std::setprecision(8) << cell[x][y].r.x / (2*L.x) << "\t" << cell[x][y].v << "\t" << cell[x][y].density << "\t" << cell[x][y].cohesion << "\t" << cell[x][y].curl << "\t" << cell[x][y].omega << "\t" << cell[x][y].W << endl;
 			temp_file << endl;
 	}
 
@@ -340,7 +353,7 @@ void Field::Draw_Section(string info, int y)
 	gp << "set xtics offset 0,0.4 \n";
 	gp << "set ytics offset 0.5,0 \n";
 	gp << "set ylabel \"{/Symbol r}, {/Symbol f}\" offset 3,0 \n";
-	gp << "set output \"figures/" << info << "-density-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
+	gp << "set output \"figures/" << info << "-density-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim.y - L.y)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:4 w lp ls 1 ti \"{/Symbol r}\", \"data.dat\" using 1:5 w lp ls 2 ti \"{/Symbol f}\"\n";
 
@@ -359,20 +372,20 @@ void Field::Draw_Section(string info, int y)
 
 	gp << "unset log \n";
 	gp << "set ylabel \"v\" offset 3,0 \n";
-	gp << "set output \"figures/"<< info << "-velocity-section-y=" << std::fixed << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
+	gp << "set output \"figures/"<< info << "-velocity-section-y=" << std::fixed << round((y+0.5)*Field_Cell::dim.y - L.y)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:3 w lp ls 1 ti \"v_y\", \"data.dat\" using 1:2 w lp ls 2 ti \"v_x\" \n";
 //	gp.send1d(pts);
 
 	gp << "set ylabel \"W\" offset 3,0 \n";
-	gp << "set output \"figures/"<< info << "-W-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
+	gp << "set output \"figures/"<< info << "-W-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim.y - L.y)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:9 w lp ls 1 ti \"W_y\", \"data.dat\" using 1:8 w lp ls 2 ti \"W_x\" \n";
 //	gp.send1d(pts);
 
 	gp << "set nokey\n";
 	gp << "set ylabel \"{/Symbol w}\" offset 3,0 \n";
-	gp << "set output \"figures/"<< info << "-omega-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim_x - L)  << ".eps\"\n";
+	gp << "set output \"figures/"<< info << "-omega-section-y=" << std::fixed << std::setprecision(0) << round((y+0.5)*Field_Cell::dim.y - L.y)  << ".eps\"\n";
 	gp << "set xrange [-L:L]\n";
 	gp << "plot \"data.dat\" using 1:(-$3/$1) w lp ls 1\n";
 //	gp.send1d(pts);
@@ -386,11 +399,12 @@ void Field::Draw_Density_Contour(string info, Real rho)
 
 	C2DVector r[grid_dim_x];
 	for (int x = 0; x < grid_dim_x; x++)
-		for (int y = (grid_dim_x-3); y > 1; y--)
+		for (int y = (grid_dim_y-3); y > 1; y--)
 		{
-			if (fabs(log(cell[x][y-1].density / cell[x][y].density)/(L/grid_dim_x)) > rho)
+			if (fabs(log(cell[x][y-1].density / cell[x][y].density)/(L.x/grid_dim_x)) > rho)
 			{
-				r[x] = cell[x][y].r / (2*L);
+				r[x].x = cell[x][y].r.x / (2*L.x);
+				r[x].y = cell[x][y].r.y / (2*L.y);
 				r[x].y = (0.5 - r[x].y);
 				r[x].x += 0.5;
 				y = 0;
@@ -405,18 +419,18 @@ void Field::Draw_Density_Contour(string info, Real rho)
 void Field::Reset()
 {
 	for (int x = 0; x < grid_dim_x; x++)
-		for (int y = 0; y < grid_dim_x; y++)
+		for (int y = 0; y < grid_dim_y; y++)
 			cell[x][y].Reset();
 	sample = 0;
 }
 
 void Field::Add(Field* f)
 {
-	if (grid_dim_x == f->grid_dim_x)
+	if ((grid_dim_x == f->grid_dim_x) && (grid_dim_y == f->grid_dim_y))
 	{
 		for (int x = 0; x < grid_dim_x; x++)
 		{
-			for (int y = 0; y < grid_dim_x; y++)
+			for (int y = 0; y < grid_dim_y; y++)
 			{
 				cell[x][y].dtheta.insert(cell[x][y].dtheta.end(), f->cell[x][y].dtheta.begin(), f->cell[x][y].dtheta.end());
 				cell[x][y].v += f->cell[x][y].v;
@@ -438,7 +452,7 @@ void Field::Average()
 {
 	for (int x = 0; x < grid_dim_x; x++)
 	{
-		for (int y = 0; y < grid_dim_x; y++)
+		for (int y = 0; y < grid_dim_y; y++)
 		{
 			cell[x][y].v /= sample;
 			cell[x][y].W /= sample;
@@ -455,7 +469,7 @@ void Field::Add_Theta(Stat<double>& stat_dtheta, const double& pc, const double&
 {
 	for (int x = 0; x < grid_dim_x; x++)
 	{
-		for (int y = 0; y < grid_dim_x; y++)
+		for (int y = 0; y < grid_dim_y; y++)
 			if (cell[x][y].particle.size() > 5)
 				cell[x][y].Add_Theta(stat_dtheta, pc, dp);
 	}

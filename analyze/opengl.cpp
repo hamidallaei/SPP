@@ -15,6 +15,8 @@
 
 unsigned int window_width = 680;
 unsigned int window_height = 680;
+const unsigned int max_height = 680;
+const unsigned int max_width = 1300;
 
 cv::VideoWriter writer;
 SceneSet* sceneset;
@@ -24,7 +26,7 @@ int t = 0;
 bool save = false;
 bool frame_maker = false;
 bool magnify = false;
-float box_dim = 0;
+C2DVector box_dim;
 C2DVector r_lense;
 C2DVector r_image;
 float d0, d1;
@@ -58,7 +60,7 @@ void Init()
 
 void Save_Movie()
 {
-		static cv::Mat img(window_width,window_height,CV_8UC3);
+		static cv::Mat img(window_height,window_width,CV_8UC3);
 		glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
 		glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
 		glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
@@ -68,7 +70,7 @@ void Save_Movie()
 
 void Save_Image(string address)
 {
-		static cv::Mat img(window_width,window_height,CV_8UC3);
+		static cv::Mat img(window_height,window_width,CV_8UC3);
 		glPixelStorei(GL_PACK_ALIGNMENT, (img.step & 3) ? 1 : 4);
 		glPixelStorei(GL_PACK_ROW_LENGTH, img.step/img.elemSize());
 		glReadPixels(0, 0, img.cols, img.rows, GL_BGR, GL_UNSIGNED_BYTE, img.data);
@@ -150,20 +152,24 @@ void Display()
 	if (magnify)
 		Magnify(r_lense,d0,r_image,d1);
 
-	float l = sceneset->L - 0.2;
+	C2DVector l(sceneset->L);
+//	l.x -= 0.2;
+//	l.y -= 0.2;
 	
-	r0.x = -0.8*l;
-	r0.y = 0.8*l;
-	Draw_Color_Wheel(r0,l/20.0,l/6.0);
+	r0.y = 0.65*l.y;
+	r0.x = -l.x + 0.35*l.y;
+	r0.x = -r0.x;
+	float l_small = min(l.x,l.y);
+	Draw_Color_Wheel(r0,l_small/20.0,l_small/3.5);
 
 	glLineWidth(2);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glColor4f(0, 0, 0,1);
 	glBegin(GL_POLYGON);
-	glVertex2f(-l, -l);
-	glVertex2f(l, -l);
-	glVertex2f(l, l);
-	glVertex2f(-l, l);
+	glVertex2f(-l.x, -l.y);
+	glVertex2f(l.x, -l.y);
+	glVertex2f(l.x, l.y);
+	glVertex2f(-l.x, l.y);
 	glEnd();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth(1);
@@ -231,7 +237,8 @@ void KeyboardInput(unsigned char key, int x, int y)
 	}
 	if ((key == 83) || (key == 115))
 	{
-		sceneset->Plot_Fields(25, t, sceneset->info);
+		cout << "Saving a snapshot" << endl;
+		sceneset->Plot_Fields(16, t, sceneset->info);
 		Save_Image(global_address);
 	}
 	if ((key == 72) || (key == 104))
@@ -279,14 +286,14 @@ void MouseInput(int button, int state, int x, int y)
 	{
 		if (button == GLUT_LEFT_BUTTON)
 		{
-			r_lense.x = (2*x*sceneset->L) / window_width - sceneset->L;
-			r_lense.y = sceneset->L - (2*y*sceneset->L) / window_width;
+			r_lense.x = (2*x*sceneset->L.x) / window_width - sceneset->L.x;
+			r_lense.y = sceneset->L.y - (2*y*sceneset->L.y) / window_height;
 			cout << x << "\t" << y << "\t" << window_width << endl;
 		}
 		if (button == GLUT_RIGHT_BUTTON)
 		{
-			r_image.x = (2*x*sceneset->L) / window_width - sceneset->L;
-			r_image.y = sceneset->L - (2*y*sceneset->L) / window_width;
+			r_image.x = (2*x*sceneset->L.x) / window_width - sceneset->L.x;
+			r_image.y = sceneset->L.y - (2*y*sceneset->L.y) / window_height;
 		}
 		Display();
 	}
@@ -301,7 +308,7 @@ void Reshape(int w, int h)
 	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-box_dim, box_dim,  -box_dim, box_dim, -1.0, 1.0);
+	glOrtho(-box_dim.x, box_dim.x,  -box_dim.y, box_dim.y, -1.0, 1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -348,6 +355,14 @@ int main(int argc, char** argv)
 	{
 		box_dim = sceneset->L;
 
+		window_height = max_height;
+		window_width = (unsigned int) round(box_dim.x*window_height / box_dim.y);
+		if (window_width > max_width)
+		{
+			window_width = max_width;
+			window_height = (unsigned int) round(box_dim.y*window_width / box_dim.x);
+		}
+
 		string name = argv[argc-1];
 		string::size_type position_of_txt = name.find("-r-v", 0);
 		if (position_of_txt < 20000)
@@ -358,8 +373,8 @@ int main(int argc, char** argv)
 
 		if (save)
 		{
-//			writer.open(address.str().c_str(), CV_FOURCC('F','L','V','1'), 20, cv::Size(window_width,window_height), true);
-			writer.open(address.str().c_str(), CV_FOURCC('P','I','M','1'), 20, cv::Size(window_width,window_height), true);
+//			writer.open(address.str().c_str(), CV_FOURCC('F','L','V','1'), 20, cv::Size(window_height,window_width), true);
+			writer.open(address.str().c_str(), CV_FOURCC('P','I','M','1'), 20, cv::Size(window_height,window_width), true);
 		}
 		else
 			cv::VideoCapture cap(0);

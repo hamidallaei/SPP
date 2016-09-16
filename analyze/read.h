@@ -89,8 +89,7 @@ std::ostream& operator<<(std::ostream& os, Scene& scene)
 class SceneSet{
 public:
 	vector<Scene> scene;
-	Real L;
-	Real L_min;
+	C2DVector L, L_min;
 	stringstream address;
 	string info;
 	ifstream input_file;
@@ -139,7 +138,7 @@ bool SceneSet::Read(int skip)
 {
 	int counter = 0;
 	static Scene temp_scene;
-	L = 0;
+	L.x = L.y = 0;
 
 	input_file.open(address.str().c_str());
 	if (input_file.is_open())
@@ -154,10 +153,10 @@ bool SceneSet::Read(int skip)
 			scene.push_back(temp_scene);
 			for (int i = 0; i < Scene::number_of_particles; i++)
 			{
-				if (abs(temp_scene.particle[i].r.x) > L)
-					L = abs(temp_scene.particle[i].r.x);
-				if (abs(temp_scene.particle[i].r.y) > L)
-					L = abs(temp_scene.particle[i].r.y);
+				if (abs(temp_scene.particle[i].r.x) > L.x)
+					L.x = abs(temp_scene.particle[i].r.x);
+				if (abs(temp_scene.particle[i].r.y) > L.y)
+					L.y = abs(temp_scene.particle[i].r.y);
 			}
 			if (counter*sizeof(temp_scene) > (3000000000))
 				return(false);
@@ -169,9 +168,11 @@ bool SceneSet::Read(int skip)
 
 	scene.pop_back();
 
-	L = round(L+0.1);
+	L.x = round(L.x+0.1);
+	L.y = round(L.y+0.1);
 	L_min = L;
-	L += 0.5;
+	L.x += 0.5;
+	L.y += 0.5;
 
 	return (true);
 }
@@ -283,7 +284,10 @@ void SceneSet::Accumulate_Theta(int grid_dim, const int num_bins, const double& 
 {
 	Field f(grid_dim, L);
 	Stat<double> dtheta;
-	for (int i = 0; i < scene.size(); i++)
+	int step = (scene.size()/500);
+	if (step == 0)
+		step = 1;
+	for (int i = 0; i < scene.size(); i+=step)
 	{
 		f.Compute(scene[i].particle, Scene::number_of_particles);
 		f.Add_Theta(dtheta,p_c,dp);
