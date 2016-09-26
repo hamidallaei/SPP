@@ -171,8 +171,8 @@ void Random_Formation_Circle(Particle* particle, int N, double radius)
 // Polar state
 void Polar_Formation(Particle* particle, int N)
 {
-	Triangle_Lattice_Formation(particle, N, 0);
-//	Random_Formation(particle,N);
+//	Triangle_Lattice_Formation(particle, N, 0);
+	Random_Formation(particle,N);
 
 	for (int i = 0; i < N; i++)
 	{

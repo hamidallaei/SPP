@@ -121,8 +121,8 @@ void Node::Init_Topology() // This function must be called after box definition.
 			npy = 7;
 			break;
 		case 8:
-			npx = 1;
-			npy = 8;
+			npx = 2;
+			npy = 4;
 			break;
 		case 9:
 			npx = 3;
