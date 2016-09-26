@@ -613,15 +613,23 @@ void Node::Quick_Update_Cells()
 		y = (int) (particle[node_pid[i]].r.y + Ly)*divisor_y / Ly2;
 
 // Check if the particles are inside the box for a debug.
-		#ifdef DEBUG
+//		#ifdef DEBUG
 		if ((x >= divisor_x) || (x < 0) || (y >= divisor_y) || (y < 0))
 		{
 			cout << "\n Particle number " << node_pid[i] << " is Out of the box" << endl << flush;
 			cout << "Particle Position is " << particle[node_pid[i]].r << endl;
 			cout << "Particle  " << particle[node_pid[i]].v << endl;
-			exit(0);
+//			exit(0);
+			if (x == divisor_x)
+				x--;
+			if (y == divisor_y)
+				y--;
+			if (x == -1)
+				x++;
+			if (y == -1)
+				y++;
 		}
-		#endif
+//		#endif
 
 		#ifdef TRACK_PARTICLE
 //			if (node_pid[i] == track)

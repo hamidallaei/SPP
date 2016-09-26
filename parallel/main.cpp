@@ -57,10 +57,12 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		if ((i / cell_update_period) % saving_period == 0)
+		{
 			out_file << box;
+			timing_information(box->thisnode,start_time,i,total_step);
+		}
 		box->Save_Polarization(polarization_file);
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,total_step);
 	}
 	if ((total_step / cell_update_period) % saving_period == 0)
 			out_file << box;

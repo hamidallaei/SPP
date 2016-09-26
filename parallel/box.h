@@ -287,7 +287,7 @@ void Box::Multi_Step(int steps)
 	#endif
 }
 
-// Several steps with a cell upgrade call after each interval.
+// Several steps with a cell upgrade call after each interval. Warning, I see no cell update function call! I have to fix it!
 void Box::Multi_Step(int steps, int interval)
 {
 	for (int i = 0; i < steps/interval; i++)
