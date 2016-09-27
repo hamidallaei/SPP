@@ -613,7 +613,7 @@ void Node::Quick_Update_Cells()
 		y = (int) (particle[node_pid[i]].r.y + Ly)*divisor_y / Ly2;
 
 // Check if the particles are inside the box for a debug.
-//		#ifdef DEBUG
+		#ifdef DEBUG
 		if ((x >= divisor_x) || (x < 0) || (y >= divisor_y) || (y < 0))
 		{
 			cout << "\n Particle number " << node_pid[i] << " is Out of the box" << endl << flush;
@@ -629,7 +629,7 @@ void Node::Quick_Update_Cells()
 			if (y == -1)
 				y++;
 		}
-//		#endif
+		#endif
 
 		#ifdef TRACK_PARTICLE
 //			if (node_pid[i] == track)
@@ -639,7 +639,7 @@ void Node::Quick_Update_Cells()
 //							cout << "Node: " << node_id << " Cell: " << x << " " << y << " " << particle[track].r << " " << particle[track].theta << endl << flush;
 		#endif
 		
-		cell[x][y].Add(node_pid[i]);
+		cell[x%divisor_x][y%divisor_y].Add(node_pid[i]);
 	}
 
 // We don't need node_pid anymore and we need it to be empty for our further use.
