@@ -639,7 +639,7 @@ void Node::Quick_Update_Cells()
 //							cout << "Node: " << node_id << " Cell: " << x << " " << y << " " << particle[track].r << " " << particle[track].theta << endl << flush;
 		#endif
 		
-		cell[x%divisor_x][y%divisor_y].Add(node_pid[i]);
+		cell[x % divisor_x][y % divisor_y].Add(node_pid[i]);
 	}
 
 // We don't need node_pid anymore and we need it to be empty for our further use.
@@ -760,7 +760,7 @@ void Node::Full_Update_Cells()
 		}
 		#endif
 
-		cell[x][y].Add(i);
+		cell[x % divisor_x][y % divisor_y].Add(i);
 	}
 }
 
