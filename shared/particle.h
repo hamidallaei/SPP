@@ -515,6 +515,142 @@ void RepulsiveParticle::Reset()
 	f.Null();
 }
 
+
+class EjtehadiParticle: public ContinuousParticle {
+public:
+	Real torque, torque_phi;
+	Real phi;
+	Real speed;
+	static Real g, gw, g_phi;
+	static Real alpha;
+	static Real Dr,K,Kamp,D_phi;
+	static Real vmin,vmax,vmid,vamp;
+	static Real Rphi;
+	static Real omega;
+	static Real noise_amplitude_phi;
+
+	EjtehadiParticle();
+	void Move()
+	{
+		#ifdef COMPARE
+			torque = round(digits*torque)/digits;
+		#endif
+		torque = g*torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
+		torque_phi = torque_phi + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude_phi);
+		theta += torque*dt;
+		phi += torque_phi*dt;
+
+		C2DVector old_v = v;
+		v.x = cos(theta);
+		v.y = sin(theta);
+
+		speed = vmid + vamp*cos(phi);
+		r += v*(speed*dt);
+		r.x += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
+		r.y += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
+		#ifdef PERIODIC_BOUNDARY_CONDITION
+			#ifndef NonPeriodicCompute
+				r.Periodic_Transform();
+			#endif
+		#endif
+		#ifdef TRACK_PARTICLE
+			if (this == track_p && flag)
+			{
+				cout << "Particle:         " << setprecision(50)  << r << "\t" << theta << "\t" << torque << endl << flush;
+			}
+		#endif
+		Reset();
+	}
+
+	virtual void Reset();
+	void Interact(EjtehadiParticle& p)
+	{
+		C2DVector dr = r - p.r;
+		#ifdef PERIODIC_BOUNDARY_CONDITION
+			dr.Periodic_Transform();
+		#endif
+		Real d2 = dr.Square();
+		Real d = sqrt(d2);
+
+		Real torque_interaction;
+		if (d2 < 1)
+		{
+			neighbor_size++;
+			p.neighbor_size++;
+
+			torque_interaction = (1-alpha)*sin(p.theta - theta)/(PI);
+
+			torque += torque_interaction;
+			p.torque -= torque_interaction;
+
+			torque -= alpha*(dr.x*v.y - dr.y*v.x) /(PI*d);
+			p.torque += alpha*(dr.x*p.v.y - dr.y*p.v.x) /(PI*d);
+
+			#ifdef TRACK_PARTICLE
+				if (this == track_p && flag)
+				{
+//					if (abs(torque) > 0.1)
+//						cout << "Intthis:     " << setprecision(100) << d2 << "\t" << torque_interaction << endl << flush;
+//						cout << "Intthis:     " << setprecision(100) << r << "\t" << d2 << endl << flush;
+				}
+			#endif
+
+			#ifdef TRACK_PARTICLE
+				if (&p == track_p && flag)
+				{
+//						cout << "Intthat:     " << setprecision(100) <<  d2 << "\t" << torque_interaction << endl << flush;
+//					if (abs(p.torque) > 0.1)
+//						cout << "Intthat:     " << setprecision(100) << p.r << "\t" << d2 << "\t" << p.theta << "\t" << torque_interaction << endl << flush;
+				}
+			#endif
+		}
+		if (d < Rphi)
+		{
+			torque_interaction = g_phi*sin(p.phi - phi)/(PI);
+			torque_phi += torque_interaction;
+			p.torque_phi -= torque_interaction;
+		}
+	}
+	static void Set_Variables();
+};
+
+EjtehadiParticle::EjtehadiParticle()
+{
+	Init();
+}
+
+void EjtehadiParticle::Reset()
+{
+	neighbor_size = 1;
+	torque = 0;
+	torque_phi = omega;
+}
+
+void EjtehadiParticle::Set_Variables()
+{
+	Kamp = sqrt(2*K*dt);
+	noise_amplitude = sqrt(2*Dr*dt);
+	noise_amplitude_phi = sqrt(2*D_phi*dt);
+	vamp = (vmax - vmin) / 2.0;
+	vmid = (vmax + vmin) / 2.0;
+}
+
+Real EjtehadiParticle::g = 1;
+Real EjtehadiParticle::gw = 20;
+Real EjtehadiParticle::g_phi = 1;
+Real EjtehadiParticle::alpha = 0.5;
+Real EjtehadiParticle::Rphi = 1;
+Real EjtehadiParticle::D_phi = 0;
+Real EjtehadiParticle::Dr = 0;
+Real EjtehadiParticle::K = 0.2;
+Real EjtehadiParticle::Kamp = 0.2;
+Real EjtehadiParticle::noise_amplitude_phi = 0;
+Real EjtehadiParticle::omega = 1;
+Real EjtehadiParticle::vmin = 0.1;
+Real EjtehadiParticle::vamp = 1.0;
+Real EjtehadiParticle::vmax = 1.1;
+Real EjtehadiParticle::vmid = 0.5;
+
 Real VicsekParticle2::beta = 2.5;
 Real VicsekParticle2::rc = 0.127;
 
@@ -537,8 +673,5 @@ Real ContinuousParticle::gw = 20;
 
 Real BasicDynamicParticle::noise_amplitude = .1;
 Real BasicDynamicParticle::speed = 1;
-
-
-
 
 #endif

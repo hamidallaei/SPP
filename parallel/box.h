@@ -281,9 +281,9 @@ void Box::Multi_Step(int steps)
 		MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
 	}
 	t += dt*steps;
-	cout << "Updating cells" << endl;
+//	cout << "Updating cells" << endl;
 	thisnode->Quick_Update_Cells();
-	cout << "Updating finished" << endl;
+//	cout << "Updating finished" << endl;
 	#ifdef verlet_list
 	thisnode->Update_Neighbor_List();
 	#endif

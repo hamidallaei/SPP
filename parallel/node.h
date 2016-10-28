@@ -977,7 +977,7 @@ void Node::Send_To_Root()
 
 // Allocation
 		int* index_buffer = new int[particle_count];
-		double* data_buffer = new double[3*particle_count];
+		double* data_buffer = new double[dof*particle_count];
 
 // Assigning the buffer arrays
 		int counter = 0; // count particles. We can not use a shift very simply becasue we need to write both index_buffer and data_buffer.
@@ -988,15 +988,18 @@ void Node::Send_To_Root()
 				{
 					int index = cell[x][y].pid[i];
 					index_buffer[counter] = index;
-					data_buffer[3*counter] = particle[index].r.x;
-					data_buffer[3*counter+1] = particle[index].r.y;
-					data_buffer[3*counter+2] = particle[index].theta;
+					data_buffer[dof*counter] = particle[index].r.x;
+					data_buffer[dof*counter+1] = particle[index].r.y;
+					data_buffer[dof*counter+2] = particle[index].theta;
+					#ifdef ejtehadi
+						data_buffer[dof*counter+3] = particle[index].phi;
+					#endif
 					counter++;
 				}
 			}
 // tag_max is the maximum of the available tag value. tag_max-1 is for index and tag_max is for the data
 		MPI_Send(index_buffer, particle_count, MPI_INT, 0, tag_max-1,MPI_COMM_WORLD);
-		MPI_Send(data_buffer, 3*particle_count, MPI_DOUBLE, 0, tag_max,MPI_COMM_WORLD);
+		MPI_Send(data_buffer, dof*particle_count, MPI_DOUBLE, 0, tag_max,MPI_COMM_WORLD);
 
 // Deallocation
 		delete [] index_buffer;
@@ -1018,15 +1021,19 @@ void Node::Root_Receive()
 			MPI_Status status;
 			MPI_Recv(index_buffer,N,MPI_INT,i,tag_max-1,MPI_COMM_WORLD,&status); // receiving the indices.
 			MPI_Get_count(&status, MPI_INT, &count); // Finding the number of indices that masternode received form node i.
-			data_buffer = new double[3*count]; // Initialize array with length 3*counts (3 double for each particle)
-			MPI_Recv(data_buffer,3*count,MPI_DOUBLE,i,tag_max,MPI_COMM_WORLD,&status); // receiving the data
+			data_buffer = new double[dof*count]; // Initialize array with length 3*counts (3 double for each particle)
+			MPI_Recv(data_buffer,dof*count,MPI_DOUBLE,i,tag_max,MPI_COMM_WORLD,&status); // receiving the data
 // Update each particle in according to the data that is received.
 			for (int j = 0; j < count; j++)
 			{
 // particle id is index_buffer[j] and we assign the data to that particle x,y and theta.
-				particle[index_buffer[j]].r.x = data_buffer[3*j];
-				particle[index_buffer[j]].r.y = data_buffer[3*j+1];
-				particle[index_buffer[j]].theta = data_buffer[3*j+2];
+				particle[index_buffer[j]].r.x = data_buffer[dof*j];
+				particle[index_buffer[j]].r.y = data_buffer[dof*j+1];
+				particle[index_buffer[j]].theta = data_buffer[dof*j+2];
+				#ifdef ejtehadi
+					particle[index_buffer[j]].phi = data_buffer[dof*j+3];
+				#endif
+
 				particle[index_buffer[j]].v.x = cos(particle[index_buffer[j]].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 				particle[index_buffer[j]].v.y = sin(particle[index_buffer[j]].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocty of particles that are within the node, not the one on the neighboring cells of that node.
 			}
@@ -1049,27 +1056,34 @@ void Node::Root_Gather()
 // Bcast send the information of every particles from the master node to other nodes. Perhaps befor a Bcast we may call Gather to have the correct information of all particles.
 void Node::Root_Bcast()
 {
-	double* data_buffer = new double[3*N]; // Data buffer, three times of particle number N (x,y and theta)
+	double* data_buffer = new double[dof*N]; // Data buffer, three times of particle number N (x,y and theta)
 // Master node collect partilces information into the data_buffer.
 	if (node_id == 0)
 	{
 		for (int i = 0; i < N; i++)
 		{
-			data_buffer[3*i] = particle[i].r.x;
-			data_buffer[3*i+1] = particle[i].r.y;
-			data_buffer[3*i+2] = particle[i].theta;
+			data_buffer[dof*i] = particle[i].r.x;
+			data_buffer[dof*i+1] = particle[i].r.y;
+			data_buffer[dof*i+2] = particle[i].theta;
+			#ifdef ejtehadi
+				data_buffer[dof*i+3] = particle[i].phi;
+			#endif
 		}
 	}
 // Broad casting to all nodes. The root node is 0.
-	MPI_Bcast(data_buffer, 3*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(data_buffer, dof*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 // Other nodes have to assign the received valuse to the particles. No index is needed because we sent the information of particles by their order.
 	if (node_id != 0)
 	{
 		for (int i = 0; i < N; i++)
 		{
-			particle[i].r.x = data_buffer[3*i];
-			particle[i].r.y = data_buffer[3*i+1];
-			particle[i].theta = data_buffer[3*i+2];
+				particle[i].r.x = data_buffer[dof*i];
+				particle[i].r.y = data_buffer[dof*i+1];
+				particle[i].theta = data_buffer[dof*i+2];
+			#ifdef ejtehadi
+				particle[i].phi = data_buffer[dof*i+3];
+			#endif
+
 			particle[i].v.x = cos(particle[i].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 			particle[i].v.y = sin(particle[i].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 		}
