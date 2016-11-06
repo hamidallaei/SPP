@@ -629,8 +629,8 @@ void EjtehadiParticle::Reset()
 void EjtehadiParticle::Set_Variables()
 {
 	Kamp = sqrt(2*K*dt);
-	noise_amplitude = sqrt(2*Dr*dt);
-	noise_amplitude_phi = sqrt(2*D_phi*dt);
+	noise_amplitude = sqrt(2*Dr/dt);
+	noise_amplitude_phi = sqrt(2*D_phi/dt);
 	vamp = (vmax - vmin) / 2.0;
 	vmid = (vmax + vmin) / 2.0;
 }

@@ -53,7 +53,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 16;
+const int Lx_int = 32;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -65,7 +65,7 @@ const Real Ly2 = 2*Ly;
 Real dt = 1.0/64;
 Real half_dt = dt/2;
 const int cell_update_period = 4;
-const int saving_period = 64;
+const int saving_period = 16;
 const long int equilibrium_step = 0;
 const long int total_step = 262144;
 
