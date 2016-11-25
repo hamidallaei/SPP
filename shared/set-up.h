@@ -246,11 +246,12 @@ void Square_Ring_Formation(Particle* particle, int N)
 	}
 }
 
-int r_big = 15;
-int r_small = 6;
 
 void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta)
 {
+	int r_big = 15;
+	int r_small = 6;
+
 	// Star Trap (points)
 	C2DVector end_point[100];
 	Real theta, alpha, beta;
@@ -275,6 +276,73 @@ void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta)
 	{
 		geometry->Add_Wall(end_point[i], end_point[i+1]);
 		geometry->Add_Wall(end_point[i+2], end_point[(i+3)%(3*N_hands)]);
+	}
+}
+
+
+void Ring_Membrane(Particle* particle, int N_m)
+{/*
+	Put all of the membrane beads on a circular ring
+	N_m = Number of membrane beads
+	bead_radius = Particle::sigma_p
+*/
+	C2DVector r;
+	Real	bead_diameter = Particle::sigma_p;
+	Real membrane_radius = 0.5*N_m*bead_diameter/M_PI;
+	Real theta =  0;
+
+	for (int i = 0; i < N_m; i++)
+	{
+		r.x = membrane_radius*cos(theta);
+		r.y = membrane_radius*sin(theta);
+		particle[i].r = r;
+
+		theta += 2*M_PI /N_m;
+	}
+}
+
+
+void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
+{/*
+	Put all of the active beads inside the circular ring
+	we divide active beads to some parts and then put each part on a ring 
+		adjacent to each other and the membrane.
+	N_s = Number of swimmers
+	N_m = Number of membrane beads
+	bead_radius = Particle::sigma_p
+*/
+	C2DVector r;
+	Real bead_diameter = Particle::sigma_p - 0.1;
+	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;
+	int chain_length = particle[N_m].nb;
+
+	int i = 0;
+	int n_1 = 0;
+	int ring_index = 1;
+	Real ring_theta = 0;
+	while (n_1 < N_s)
+	{ /* ring_radius is radius of each ring of active particles
+		n_ring is number of active particles on that ring
+		ring_index renotes the index of each ring
+		*/
+		Real ring_radius = membrane_radius - ring_index * chain_length * bead_diameter;// - bead_diameter/2;
+		Real n_ring = (int) floor(2 * M_PI * ring_radius / bead_diameter);
+		for (int i = n_1; i < (n_1 + n_ring) && i < N_s; i++)
+		{
+			r.x = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*cos(ring_theta);
+			r.y = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*sin(ring_theta);
+			particle[N_m+i].r = r;
+			particle[N_m+i].theta = ring_theta;
+			particle[N_m+i].v.x = cos(particle[N_m+i].theta);
+			particle[N_m+i].v.y = sin(particle[N_m+i].theta);
+			if (n_ring < (N_s - n_1))
+				ring_theta += 2 * M_PI /n_ring;
+			else
+				ring_theta += 2 * M_PI / (N_s - n_1);
+		}
+		n_1 += n_ring;
+		ring_index += 1;
+		ring_theta = 0;
 	}
 }
 

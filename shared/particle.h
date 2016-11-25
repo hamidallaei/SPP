@@ -3,19 +3,25 @@
 
 #include "c2dvector.h"
 #include "parameters.h"
+#include "force-fields.h"
 #include <vector>
 
+//###################################################################
 class BasicParticle0{
 public:
 	C2DVector r;
 	Real theta;
 };
+//###################################################################
 
+//###################################################################
 class BasicParticle{
 public:
 	C2DVector r,v;
 };
+//###################################################################
 
+//###################################################################
 class BasicDynamicParticle: public BasicParticle {  // This is an abstract class for all of dynamic particles
 public:
 	int neighbor_size;
@@ -30,6 +36,7 @@ public:
 	virtual void Reset();
 	void Move();
 	void Interact();
+	void Write(std::ostream&);
 };
 
 void BasicDynamicParticle::Init()
@@ -72,6 +79,21 @@ void BasicDynamicParticle::Init(C2DVector position, C2DVector velocity)
 
 void BasicDynamicParticle::Reset() {}
 
+void BasicDynamicParticle::Write(std::ostream& os)
+{
+	r.write(os);
+	C2DVector v_temp;
+	v_temp.x = cos(theta);
+	v_temp.y = sin(theta);
+	v_temp.write(os);
+}
+
+Real BasicDynamicParticle::noise_amplitude = .1;
+Real BasicDynamicParticle::speed = 1;
+//###################################################################
+
+
+//###################################################################
 class VicsekParticle: public BasicDynamicParticle {
 public:
 	Real average_theta;
@@ -119,7 +141,9 @@ public:
 		}
 	}
 };
+//###################################################################
 
+//###################################################################
 class VicsekParticle2: public BasicDynamicParticle {
 public:
 	C2DVector average_v;
@@ -178,6 +202,11 @@ public:
 	}
 };
 
+Real VicsekParticle2::beta = 2.5;
+Real VicsekParticle2::rc = 0.127;
+//###################################################################
+
+//###################################################################
 class ContinuousParticle: public BasicDynamicParticle {
 public:
 	Real torque;
@@ -277,8 +306,12 @@ Real ContinuousParticle::alpha = 0.5;
 Real ContinuousParticle::Dr = 0;
 Real ContinuousParticle::K = 0;
 Real ContinuousParticle::Kamp = 0;
+Real ContinuousParticle::gw = 20;
+//###################################################################
 
 
+
+//###################################################################
 class MarkusParticle: public BasicDynamicParticle {
 public:
 	Real torque;
@@ -393,7 +426,9 @@ Real MarkusParticle::D_phi = 1;
 Real MarkusParticle::kisi_r = 0.1;
 Real MarkusParticle::kisi_a = 1;//0.2;
 Real MarkusParticle::kisi = 1;
+//###################################################################
 
+//###################################################################
 class RepulsiveParticle: public BasicDynamicParticle {
 public:
 	Real torque;
@@ -515,7 +550,170 @@ void RepulsiveParticle::Reset()
 	f.Null();
 }
 
+Real RepulsiveParticle::g = .5;
+Real RepulsiveParticle::kesi = .5;
+Real RepulsiveParticle::Dr = 0;
 
+// Interactions for repulsive particles
+Real RepulsiveParticle::A_p = 10.;		// interaction strength
+Real RepulsiveParticle::sigma_p = 0.9;		// sigma in Yukawa Potential
+Real RepulsiveParticle::r_f_p = 1.;		// flocking radius with particles
+Real RepulsiveParticle::r_c_p = 1.1;		// repulsive cutoff radius with particles
+
+Real RepulsiveParticle::A_w = 50.;		// interaction strength with walls
+Real RepulsiveParticle::sigma_w = 1.;
+Real RepulsiveParticle::r_f_w = 1.;		// aligning radius with walls
+Real RepulsiveParticle::r_c_w = 1.; 		// repulsive cutoff radius with walls
+//###################################################################
+
+
+//###################################################################
+class ActiveChain : public BasicDynamicParticle {
+public:
+	const int dof = 3; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
+	int nb; // number of beads
+	Real m_parallel;  // Mobility parallel to the direction
+	Real m_perpendicular; // Mobility perpendicular to the direction
+	Real k_perpendicular; // Mobility perpendicular to the direction
+
+	C2DVector r,f; // position, force, self propullsion direction
+	Real torque; // tourque acting on the chain
+	Real theta; // self propullsion angle
+	Real F0; // self propullsion strength
+	static Real Dr; // rotational diffusion of self propullsion angle
+	static Real noise_amplitude; // Sqrt(2*Dr/dt)
+	static Real sigma_p;
+	static Real cut_off_radius;
+	static Real A_p;
+
+	ActiveChain();
+
+	virtual  void Reset();
+	void Set_Parameters(int input_nb, Real input_F0);
+	void Move();
+	void Interact(ActiveChain& ac);
+	void Write(std::ostream& os);
+};
+
+ActiveChain::ActiveChain()
+{
+	Init();
+	F0 = 0;
+}
+
+void ActiveChain::Reset()
+{
+	neighbor_size = 0;
+	torque = 0.02;
+	f.Null();
+}
+
+void ActiveChain::Set_Parameters(int input_nb, Real input_F0)
+{
+	nb = input_nb;
+	F0 = input_F0;
+	noise_amplitude = sqrt(2*Dr*dt);
+	if (nb == 1)
+	{
+		m_parallel = 1;  // Mobility parallel to the direction
+		m_perpendicular = 1; // Mobility perpendicular to the direction
+		k_perpendicular = 1; // Mobility perpendicular to the direction
+	}
+	else
+	{
+		m_parallel = 1.0;
+		m_perpendicular = 0.87;
+		k_perpendicular = 4.8;
+	}
+}
+
+inline void ActiveChain::Move()
+{
+	theta += k_perpendicular*dt*(torque);
+	theta += gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
+	C2DVector old_f = f;
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); //  v is the direction of the particle
+	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+
+	r += f*(dt*m_perpendicular);
+	r += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		#ifndef NonPeriodicCompute
+			r.Periodic_Transform();
+		#endif
+	#endif
+
+	Reset();
+}
+
+inline void ActiveChain::Interact(ActiveChain& ac)
+{
+	C2DVector dr0 = r - ac.r;
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		dr0.Periodic_Transform();
+	#endif
+	C2DVector dr;
+	for (int i = 0; i < nb; i++)
+		for (int j = 0; j < ac.nb; j++)
+		{
+			C2DVector s_this, s_that;
+			s_this = v*(sigma_p*((1-nb)/2.0+i)); //  v is the direction of the particle
+			s_that = ac.v*(sigma_p*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
+
+			dr = dr0 + s_this - s_that;
+
+			Real d2 = dr.Square();
+			Real d = sqrt(d2);
+
+			C2DVector interaction_force;
+			if (d < cut_off_radius)
+			{
+				dr /= d;
+
+				interaction_force = R12_Repulsive_Truncated(dr,d,cut_off_radius,sigma_p,A_p);
+
+				f += interaction_force;
+				ac.f -= interaction_force;
+
+				torque += s_this.x*interaction_force.y - s_this.y*interaction_force.x;
+				ac.torque += -s_that.x*interaction_force.y + s_that.y*interaction_force.x;
+			}
+		}
+}
+
+
+
+void ActiveChain::Write(std::ostream& os)
+{
+	C2DVector v_temp, r_temp;
+	v_temp.x = cos(theta);
+	v_temp.y = sin(theta);
+
+	for (int i = 0; i < nb; i++)
+	{
+		C2DVector s_i = v_temp*(sigma_p*((1-nb)/2.0 + i));
+
+		r_temp = r + s_i;
+
+		r_temp.write(os);
+		v_temp.write(os);
+	}
+}
+
+Real ActiveChain::Dr = 0;
+
+// Interactions parameters for active chain
+Real ActiveChain::A_p = 1.;		// interaction strength
+Real ActiveChain::sigma_p = 1.0;		// sigma in Yukawa Potential
+Real ActiveChain::cut_off_radius = 1.1;		// repulsive cutoff radius
+Real ActiveChain::noise_amplitude = 0; // noise amplitude
+//###################################################################
+
+
+
+//####################################################################
 class EjtehadiParticle: public ContinuousParticle {
 public:
 	Real torque, torque_phi;
@@ -650,28 +848,6 @@ Real EjtehadiParticle::vmin = 0.1;
 Real EjtehadiParticle::vamp = 1.0;
 Real EjtehadiParticle::vmax = 1.1;
 Real EjtehadiParticle::vmid = 0.5;
-
-Real VicsekParticle2::beta = 2.5;
-Real VicsekParticle2::rc = 0.127;
-
-Real RepulsiveParticle::g = .5;
-Real RepulsiveParticle::kesi = .5;
-Real RepulsiveParticle::Dr = 0;
-
-// Interactions for repulsive particles
-Real RepulsiveParticle::A_p = 10.;		// interaction strength
-Real RepulsiveParticle::sigma_p = 0.9;		// sigma in Yukawa Potential
-Real RepulsiveParticle::r_f_p = 1.;		// flocking radius with particles
-Real RepulsiveParticle::r_c_p = 1.1;		// repulsive cutoff radius with particles
-
-Real RepulsiveParticle::A_w = 50.;		// interaction strength with walls
-Real RepulsiveParticle::sigma_w = 1.;
-Real RepulsiveParticle::r_f_w = 1.;		// aligning radius with walls
-Real RepulsiveParticle::r_c_w = 1.; 		// repulsive cutoff radius with walls
-
-Real ContinuousParticle::gw = 20;
-
-Real BasicDynamicParticle::noise_amplitude = .1;
-Real BasicDynamicParticle::speed = 1;
+//###################################################################
 
 #endif

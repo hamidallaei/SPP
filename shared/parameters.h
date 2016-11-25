@@ -4,9 +4,9 @@
 #define PERIODIC_BOUNDARY_CONDITION
 //#define NonPeriodicCompute
 //#define CIRCULAR_BOX
-#define verlet_list
+//#define verlet_list
 // This is for checking particles outside of the box
-//#define DEBUG
+#define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (if we change order of a sum, the result will change because of the truncation error)
@@ -28,9 +28,10 @@ class VicsekParticle2;
 class ContinuousParticle;
 class MarkusParticle;
 class RepulsiveParticle;
+class ActiveChain;
 class EjtehadiParticle;
 
-#define ejtehadi
+//#define ejtehadi
 
 typedef double Real;
 
@@ -38,10 +39,11 @@ typedef double Real;
 	typedef EjtehadiParticle Particle;
 	const int dof = 4; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
 #else
-	typedef ContinuousParticle Particle;
+//	typedef ContinuousParticle Particle;
 //typedef VicsekParticle2 Particle;
 //typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
+	typedef ActiveChain Particle;
 	const int dof = 3;
 #endif
 
@@ -53,7 +55,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 32;
+const int Lx_int = 20;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -62,18 +64,18 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/64;
+Real dt = 1.0/1024;
 Real half_dt = dt/2;
-const int cell_update_period = 4;
-const int saving_period = 16;
+const int cell_update_period = 2;
+const int saving_period = 512;
 const long int equilibrium_step = 0;
-const long int total_step = 262144;
+const long int total_step = 10240000;
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
-const Real K = 0.125;
+const Real K = 0;
 
-const Real lx_min = (1 + 2*speed*cell_update_period*dt);
+const Real lx_min = (2 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;
