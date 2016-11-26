@@ -25,6 +25,12 @@ public:
 	void Interact(Cell* c); // Interact all particles wihtin this cell with the cell c
 	void Self_Interact(); // Interact all particles within this cell with themselve
 	void Move();
+
+	#ifdef RUNGE_KUTTA
+	void Move_Runge_Kutta_1();
+	void Move_Runge_Kutta_2();
+	#endif
+
 	C2DVector Compute_Polarization_Sum(); // Compute polarization of the particles inside the cell
 };
 
@@ -120,6 +126,20 @@ void Cell::Move()
 	for (int i = 0; i < pid.size(); i++)
 		particle[pid[i]].Move();
 }
+
+#ifdef RUNGE_KUTTA
+void Cell::Move_Runge_Kutta_1()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta_1();
+}
+
+void Cell::Move_Runge_Kutta_2()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta_2();
+}
+#endif
 
 // Compute polarization of the particles inside the cell
 C2DVector Cell::Compute_Polarization_Sum()

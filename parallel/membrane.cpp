@@ -89,9 +89,12 @@ void Run(Box& box, int argc, char *argv[])
 	if (test.length() > 10)
 		input_file = 1;
 
-	Real input_packing_fraction = atof(argv[1+input_file]);
-	int input_chain_length = atoi(argv[2+input_file]);
-	int input_Nm = atoi(argv[3+input_file]);
+	int input_chain_length = atoi(argv[1+input_file]);
+	int input_Nm = atoi(argv[2+input_file]);
+	Real input_packing_fraction = atof(argv[3+input_file]);
+	Real input_chiral_radius = atof(argv[4+input_file]);
+
+
 
 	box.packing_fraction = input_packing_fraction;
 	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
@@ -99,13 +102,13 @@ void Run(Box& box, int argc, char *argv[])
 
 	Real t_eq,t_sim;
 
-	Particle::Dr = 0.3;
+	Particle::Dr = 0.1;
 	Particle::noise_amplitude = sqrt(2*Particle::Dr*dt);
-	Particle::torque0 = 0.02;
+	Particle::R0 = input_chiral_radius;
 
-	Particle::lambda = 0.1; // tumbling rate
-	Particle::t_tumble = 10*Particle::lambda; // tumbling duration
-	Particle::torque_tumble = 1; // torque strength of a tumble
+//	Particle::lambda = 0.1; // tumbling rate
+//	Particle::t_tumble = 0.1/Particle::lambda; // tumbling duration
+//	Particle::torque_tumble = 0.2; // torque strength of a tumble
 
 
 
@@ -115,7 +118,6 @@ void Run(Box& box, int argc, char *argv[])
 		box.particle[i].Set_Parameters(1,0.0);
 	for (int i = input_Nm; i < input_Ns+input_Nm; i++)
 		box.particle[i].Set_Parameters(input_chain_length,1.0);
-// After the above, one can call box.init
 
 	box.Init(box.thisnode, input_Ns, input_Nm);
 
@@ -132,7 +134,9 @@ void Run(Box& box, int argc, char *argv[])
 	}
 
 	box.info.str("");
-	box.info << "phi=" << box.packing_fraction;
+	box.info << "Nm=" << box.Nm;
+	box.info << "-phi=" << box.packing_fraction;
+	box.info << "-R0=" << Particle::R0;
 
 	ofstream out_file;
 

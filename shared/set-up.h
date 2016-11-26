@@ -284,12 +284,14 @@ void Ring_Membrane(Particle* particle, int N_m)
 {/*
 	Put all of the membrane beads on a circular ring
 	N_m = Number of membrane beads
-	bead_radius = Particle::sigma_p
+	bead_diameter = Particle::sigma_p
 */
 	C2DVector r;
 	Real	bead_diameter = Particle::sigma_p;
 	Real membrane_radius = 0.5*N_m*bead_diameter/M_PI;
 	Real theta =  0;
+
+	cout << "Membrane Radius:\t" << membrane_radius << "\tBox dim:\t" << 2*Lx << endl;
 
 	for (int i = 0; i < N_m; i++)
 	{
@@ -309,7 +311,7 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 		adjacent to each other and the membrane.
 	N_s = Number of swimmers
 	N_m = Number of membrane beads
-	bead_radius = Particle::sigma_p
+	bead_diameter = Particle::sigma_p
 */
 	C2DVector r;
 	Real bead_diameter = Particle::sigma_p - 0.1;
@@ -332,7 +334,7 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 			r.x = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*cos(ring_theta);
 			r.y = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*sin(ring_theta);
 			particle[N_m+i].r = r;
-			particle[N_m+i].theta = ring_theta;
+			particle[N_m+i].theta = ring_theta + M_PI*(i%2);
 			particle[N_m+i].v.x = cos(particle[N_m+i].theta);
 			particle[N_m+i].v.y = sin(particle[N_m+i].theta);
 			if (n_ring < (N_s - n_1))

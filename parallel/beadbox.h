@@ -31,9 +31,11 @@ public:
 	bool Positioning_Particles(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
 	void Sync();
 
-	void Interact_Wall_Beads(); // Here the wall particles interact via a spring
+	void Interact_Membrane_Beads(); // Here the wall particles interact via a spring
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
+	void Move_Runge_Kutta_1(); // Do the first step of Runge Kutta
+	void Move_Runge_Kutta_2(); // Do the second step of Runge Kutta
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
@@ -97,8 +99,8 @@ void Box::Init(Node* input_node, const int input_Ns, const int input_Nm)
 // Positioning the particles at first time. Note that, the positions can be tunned in the main file as well
 	if (thisnode->node_id == 0)
 	{
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-		cout << "number_of_beads = " << Nb << endl; // Printing number of particles.
+		cout << "number_of_swimmer = " << Ns << endl; // Printing number of particles.
+		cout << "number_of_membrane = " << Nm << endl; // Printing number of particles.
 //		Triangle_Lattice_Formation(particle, N, 1);
 	}
 	Sync();
@@ -164,7 +166,7 @@ bool Box::Positioning_Particles(Node* input_node, const string input_name)
 }
 
 
-void Box::Interact_Wall_Beads()
+void Box::Interact_Membrane_Beads()
 {
 	for (int i = 0; i < Nm; i++)
 	{
@@ -199,14 +201,39 @@ void Box::Move()
 	thisnode->Move();
 }
 
+// Do the first step of Runge Kutta
+void Box::Move_Runge_Kutta_1()
+{
+	thisnode->Move_Runge_Kutta_1();
+}
+
+// Do the second step of Runge Kutta
+void Box::Move_Runge_Kutta_2()
+{
+	thisnode->Move_Runge_Kutta_2();
+}
+
 // One full step, composed of interaction computation and move.
 void Box::One_Step()
 {
-	Interact_Wall_Beads();
-	Interact();
-	Move();
+	#ifndef RUNGE_KUTTA
+		Interact_Membrane_Beads();
+		Interact();
+		Move();
+		MPI_Barrier(MPI_COMM_WORLD);
+	#else
+		Interact_Membrane_Beads();
+		Interact();
+		Move_Runge_Kutta_1();
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		Interact_Membrane_Beads();
+		Interact();
+		Move_Runge_Kutta_2();
+		MPI_Barrier(MPI_COMM_WORLD);
+	#endif
 	t += dt;
-	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 // Several steps befor a cell upgrade.
@@ -214,17 +241,31 @@ void Box::Multi_Step(int steps)
 {
 	for (int i = 0; i < steps; i++)
 	{
-		Interact_Wall_Beads();
-		Interact();
-		Move();
-		MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+		#ifndef RUNGE_KUTTA
+			Interact_Membrane_Beads();
+			Interact();
+			Move();
+			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+		#else		
+			Interact_Membrane_Beads();
+			Interact();
+			Move_Runge_Kutta_1();
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			Interact_Membrane_Beads();
+			Interact();
+			Move_Runge_Kutta_2();
+
+			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+		#endif
 	}
 	t += dt*steps;
 //	cout << "Updating cells" << endl;
 	thisnode->Quick_Update_Cells();
 //	cout << "Updating finished" << endl;
 	#ifdef verlet_list
-	thisnode->Update_Neighbor_List();
+		thisnode->Update_Neighbor_List();
 	#endif
 }
 

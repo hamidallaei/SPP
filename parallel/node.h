@@ -50,6 +50,11 @@ struct Node{
 	void Boundary_Interact(); // Compute interaction of particles of thisnode at the boundaries with the particles of neighboring node at the sam boundary.
 	void Move(); // Move all particles within thisnode
 
+	#ifdef RUNGE_KUTTA
+	void Move_Runge_Kutta_1(); // The first update of Runge Kutta algorithm
+	void Move_Runge_Kutta_2(); // The second update of Runge Kutta algorithm
+	#endif
+
 	bool Chek_Seeds(); // Check if all nodes have seed number different from one another.
 	void Print_Info(); // Print information of this node
 
@@ -1297,6 +1302,24 @@ void Node::Move()
 		for (int y = head_cell_idy; y < tail_cell_idy; y++)
 				cell[x][y].Move();
 }
+
+#ifdef RUNGE_KUTTA
+// The first update of Runge Kutta algorithm
+void Node::Move_Runge_Kutta_1()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta_1();
+}
+
+// The second update of Runge Kutta algorithm
+void Node::Move_Runge_Kutta_2()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta_2();
+}
+#endif
 
 bool Node::Chek_Seeds()
 {

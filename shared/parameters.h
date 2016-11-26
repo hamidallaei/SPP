@@ -1,6 +1,7 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
+#define RUNGE_KUTTA
 #define PERIODIC_BOUNDARY_CONDITION
 //#define NonPeriodicCompute
 //#define CIRCULAR_BOX
@@ -44,8 +45,8 @@ typedef double Real;
 //typedef VicsekParticle2 Particle;
 //typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
-//	typedef ActiveBrownianChain Particle;
-	typedef RTPChain Particle;
+	typedef ActiveBrownianChain Particle;
+//	typedef RTPChain Particle;
 	const int dof = 3;
 #endif
 
@@ -57,7 +58,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 20;
+const int Lx_int = 64;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -66,10 +67,10 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/1024;
+Real dt = 1.0/512;
 Real half_dt = dt/2;
-const int cell_update_period = 2;
-const int saving_period = 512;
+const int cell_update_period = 256;
+const int saving_period = 4;
 const long int equilibrium_step = 0;
 const long int total_step = 10240000;
 

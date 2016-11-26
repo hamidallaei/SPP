@@ -34,6 +34,7 @@ public:
 	void Init(C2DVector);
 	void Init(C2DVector, C2DVector);
 	virtual void Reset();
+
 	void Move();
 	void Interact();
 	void Write(std::ostream&);
@@ -576,22 +577,28 @@ public:
 	Real m_perpendicular; // Mobility perpendicular to the direction
 	Real k_perpendicular; // Mobility perpendicular to the direction
 
-	C2DVector f; // position, force, self propullsion direction
+	C2DVector f, r_old; // position, force, self propullsion direction
 	Real torque; // tourque acting on the chain
 	Real theta; // self propullsion angle
+	Real theta_old; // self propullsion angle
 	Real F0; // self propullsion strength
+	Real dtheta; // amount of noise added to theta
 	static Real Dr; // rotational diffusion of self propullsion angle
 	static Real noise_amplitude; // Sqrt(2*Dr/dt)
 	static Real sigma_p;
 	static Real cut_off_radius;
 	static Real A_p;
 	static Real torque0; // The intrinsinc torque in the particle. This make the motion chiral
+	static Real R0; // The intrinsinc radius of motion. This make the motion chiral
 
 	ActiveBrownianChain();
 
 	void Reset();
 	void Set_Parameters(int input_nb, Real input_F0);
-	virtual void Move();
+	void Move();
+	void Move_Runge_Kutta_1();
+	void Move_Runge_Kutta_2();
+	virtual void Noise_Gen();
 	void Interact(ActiveBrownianChain& ac);
 	void Write(std::ostream& os);
 };
@@ -626,19 +633,73 @@ void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
 		m_perpendicular = 0.87;
 		k_perpendicular = 4.8;
 	}
+	torque0 = F0 / (k_perpendicular*R0);
+}
+
+inline void ActiveBrownianChain::Noise_Gen()
+{
+	dtheta =  gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
 }
 
 inline void ActiveBrownianChain::Move()
 {
+	Noise_Gen();
 	theta += k_perpendicular*dt*(torque);
-	theta += gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
-	C2DVector old_f = f;
+	theta += dtheta;
 	v.x = cos(theta); // v is the direction of the particle
 	v.y = sin(theta); //  v is the direction of the particle
 	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
 
 	r += f*(dt*m_perpendicular);
 	r += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		#ifndef NonPeriodicCompute
+			r.Periodic_Transform();
+		#endif
+	#endif
+
+	Reset();
+}
+
+void ActiveBrownianChain::Move_Runge_Kutta_1()
+{
+	Noise_Gen();
+
+	theta_old = theta;
+	r_old = r;
+
+	theta += k_perpendicular*half_dt*(torque);
+	theta += dtheta/2;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); //  v is the direction of the particle
+	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+
+	r += f*(half_dt*m_perpendicular);
+	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		#ifndef NonPeriodicCompute
+			r.Periodic_Transform();
+		#endif
+	#endif
+
+	Reset();
+}
+
+void ActiveBrownianChain::Move_Runge_Kutta_2()
+{
+	theta_old = theta;
+	r_old = r;
+	theta = theta_old + k_perpendicular*dt*(torque);
+	theta += dtheta;
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); //  v is the direction of the particle
+	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+
+	r = r_old + f*(half_dt*m_perpendicular);
+	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
 		#ifndef NonPeriodicCompute
@@ -711,6 +772,7 @@ Real ActiveBrownianChain::sigma_p = 1.0;		// sigma in Yukawa Potential
 Real ActiveBrownianChain::cut_off_radius = 1.1;		// repulsive cutoff radius
 Real ActiveBrownianChain::noise_amplitude = 0; // noise amplitude
 Real ActiveBrownianChain::torque0 = 0; // The intrinsinc torque in the particle. This make the motion chiral
+Real ActiveBrownianChain::R0 = 0; // The intrinsinc radius of motion. This make the motion chiral
 //###################################################################
 
 
@@ -725,7 +787,7 @@ public:
 
 	RTPChain();
 
-	virtual void Move();
+	virtual void Noise_Gen();
 };
 
 RTPChain::RTPChain()
@@ -736,7 +798,7 @@ RTPChain::RTPChain()
 	tumble_elapesed_time = 0; // The time that the particle stays in tumbling state.
 }
 
-inline void RTPChain::Move()
+inline void RTPChain::Noise_Gen()
 {
 	if (tumble_flag == 0)
 	{
@@ -757,25 +819,9 @@ inline void RTPChain::Move()
 			tumble_flag = 0;
 		}
 	}
-
-	theta += k_perpendicular*dt*(torque + tumble_flag*torque_tumble);
-
-	C2DVector old_f = f;
-	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); //  v is the direction of the particle
-	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
-
-	r += f*(dt*m_perpendicular);
-	r += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
-
-	#ifdef PERIODIC_BOUNDARY_CONDITION
-		#ifndef NonPeriodicCompute
-			r.Periodic_Transform();
-		#endif
-	#endif
-
-	Reset();
+	dtheta = k_perpendicular*dt*tumble_flag*torque_tumble;
 }
+
 
 Real RTPChain::lambda = 0.1; // tumbling rate
 Real RTPChain::t_tumble = 10*RTPChain::lambda; // tumbling duration
