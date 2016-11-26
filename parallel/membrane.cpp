@@ -89,42 +89,50 @@ void Run(Box& box, int argc, char *argv[])
 	if (test.length() > 10)
 		input_file = 1;
 
-	Real input_Np = atoi(argv[1+input_file]);
-	Real input_Nw = atoi(argv[2+input_file]);
+	Real input_packing_fraction = atof(argv[1+input_file]);
+	int input_chain_length = atoi(argv[2+input_file]);
+	int input_Nm = atoi(argv[3+input_file]);
+
+	box.packing_fraction = input_packing_fraction;
+	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
+//	box.packing_fraction = box.Ns*input_chain_length*M_PI*M_PI / (box.Nm*box.Nm);
 
 	Real t_eq,t_sim;
 
 	Particle::Dr = 0.3;
 	Particle::noise_amplitude = sqrt(2*Particle::Dr*dt);
+	Particle::torque0 = 0.02;
 
-	int input_chain_length = 2;
+	Particle::lambda = 0.1; // tumbling rate
+	Particle::t_tumble = 10*Particle::lambda; // tumbling duration
+	Particle::torque_tumble = 1; // torque strength of a tumble
+
+
 
 
 // The following must be before box.init
-	for (int i = 0; i < input_Nw; i++)
+	for (int i = 0; i < input_Nm; i++)
 		box.particle[i].Set_Parameters(1,0.0);
-	for (int i = input_Nw; i < input_Np+input_Nw; i++)
+	for (int i = input_Nm; i < input_Ns+input_Nm; i++)
 		box.particle[i].Set_Parameters(input_chain_length,1.0);
 // After the above, one can call box.init
 
-	box.Init(box.thisnode, input_Np, input_Nw);
+	box.Init(box.thisnode, input_Ns, input_Nm);
 
 
 	if (input_file == 0)
 	{
 		if (box.thisnode->node_id == 0)
 		{
-			Ring_Membrane(box.particle, box.Nw);
-			Confined_In_Ring_Membrane(box.particle, box.Np, box.Nw);
-//			Triangle_Lattice_Formation(&box.particle[box.Nw], box.Np, 2*Particle::sigma_p);
+			Ring_Membrane(box.particle, box.Nm);
+			Confined_In_Ring_Membrane(box.particle, box.Ns, box.Nm);
+//			Triangle_Lattice_Formation(&box.particle[box.Nm], box.Ns, 2*Particle::sigma_p);
 		}
 		box.Sync();
 	}
 
-	box.packing_fraction = box.Np*input_chain_length*M_PI*M_PI / (box.Nw*box.Nw);
-
 	box.info.str("");
-	box.info << "phi=" << box.packing_fraction <<  "-Dr=" << Particle::Dr;
+	box.info << "phi=" << box.packing_fraction;
 
 	ofstream out_file;
 

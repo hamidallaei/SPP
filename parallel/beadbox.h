@@ -14,7 +14,7 @@
 
 class Box{
 public:
-	int N, Nb, Np, Nw; // N is the number of particles, Nb is number of beads, Np is number of active particles and Nw is the number of 
+	int N, Nb, Ns, Nm; // N is the number of particles, Nb is number of beads, Ns is number of active particles and Nm is the number of 
 	Particle* particle; // Array of particles that we are going to simulate.
 
 	Real t;
@@ -74,7 +74,7 @@ void Box::Sync()
 
 
 // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-void Box::Init(Node* input_node, const int input_Np, const int input_Nw)
+void Box::Init(Node* input_node, const int input_Ns, const int input_Nm)
 {
 	#ifdef TRACK_PARTICLE
 		track_p = &particle[track];
@@ -82,17 +82,15 @@ void Box::Init(Node* input_node, const int input_Np, const int input_Nw)
 
 	thisnode = input_node;
 
-	Np = input_Np;
-	Nw = input_Nw;
-	N = Np + Nw;
+	Ns = input_Ns;
+	Nm = input_Nm;
+	N = Ns + Nm;
 
-	Nb = Nw;
-	for (int i = Nw; i < N; i++)
+	Nb = Nm;
+	for (int i = Nm; i < N; i++)
 	{
 			Nb += particle[i].nb;
 	}
-
-	packing_fraction=0.5;
 
 	Init_Topology(); // Adding walls
 
@@ -168,14 +166,14 @@ bool Box::Positioning_Particles(Node* input_node, const string input_name)
 
 void Box::Interact_Wall_Beads()
 {
-	for (int i = 0; i < Nw; i++)
+	for (int i = 0; i < Nm; i++)
 	{
-		C2DVector dr = particle[i].r - particle[(i+1)%Nw].r;
+		C2DVector dr = particle[i].r - particle[(i+1)%Nm].r;
 		dr.Periodic_Transform();
 		Real d = sqrt(dr.Square());
 		C2DVector f = Spring(dr, d, Particle::sigma_p, 500);
 		particle[i].f += f;
-		particle[(i+1)%Nw].f -= f;
+		particle[(i+1)%Nm].f -= f;
 	}
 }
 

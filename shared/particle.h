@@ -568,7 +568,7 @@ Real RepulsiveParticle::r_c_w = 1.; 		// repulsive cutoff radius with walls
 
 
 //###################################################################
-class ActiveChain : public BasicDynamicParticle {
+class ActiveBrownianChain : public BasicDynamicParticle {
 public:
 	const int dof = 3; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
 	int nb; // number of beads
@@ -576,7 +576,7 @@ public:
 	Real m_perpendicular; // Mobility perpendicular to the direction
 	Real k_perpendicular; // Mobility perpendicular to the direction
 
-	C2DVector r,f; // position, force, self propullsion direction
+	C2DVector f; // position, force, self propullsion direction
 	Real torque; // tourque acting on the chain
 	Real theta; // self propullsion angle
 	Real F0; // self propullsion strength
@@ -585,30 +585,31 @@ public:
 	static Real sigma_p;
 	static Real cut_off_radius;
 	static Real A_p;
+	static Real torque0; // The intrinsinc torque in the particle. This make the motion chiral
 
-	ActiveChain();
+	ActiveBrownianChain();
 
-	virtual  void Reset();
+	void Reset();
 	void Set_Parameters(int input_nb, Real input_F0);
-	void Move();
-	void Interact(ActiveChain& ac);
+	virtual void Move();
+	void Interact(ActiveBrownianChain& ac);
 	void Write(std::ostream& os);
 };
 
-ActiveChain::ActiveChain()
+ActiveBrownianChain::ActiveBrownianChain()
 {
 	Init();
 	F0 = 0;
 }
 
-void ActiveChain::Reset()
+void ActiveBrownianChain::Reset()
 {
 	neighbor_size = 0;
-	torque = 0.02;
+	torque = torque0;
 	f.Null();
 }
 
-void ActiveChain::Set_Parameters(int input_nb, Real input_F0)
+void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
 {
 	nb = input_nb;
 	F0 = input_F0;
@@ -627,7 +628,7 @@ void ActiveChain::Set_Parameters(int input_nb, Real input_F0)
 	}
 }
 
-inline void ActiveChain::Move()
+inline void ActiveBrownianChain::Move()
 {
 	theta += k_perpendicular*dt*(torque);
 	theta += gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
@@ -648,7 +649,7 @@ inline void ActiveChain::Move()
 	Reset();
 }
 
-inline void ActiveChain::Interact(ActiveChain& ac)
+inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 {
 	C2DVector dr0 = r - ac.r;
 	#ifdef PERIODIC_BOUNDARY_CONDITION
@@ -685,7 +686,7 @@ inline void ActiveChain::Interact(ActiveChain& ac)
 
 
 
-void ActiveChain::Write(std::ostream& os)
+void ActiveBrownianChain::Write(std::ostream& os)
 {
 	C2DVector v_temp, r_temp;
 	v_temp.x = cos(theta);
@@ -702,15 +703,85 @@ void ActiveChain::Write(std::ostream& os)
 	}
 }
 
-Real ActiveChain::Dr = 0;
+Real ActiveBrownianChain::Dr = 0;
 
 // Interactions parameters for active chain
-Real ActiveChain::A_p = 1.;		// interaction strength
-Real ActiveChain::sigma_p = 1.0;		// sigma in Yukawa Potential
-Real ActiveChain::cut_off_radius = 1.1;		// repulsive cutoff radius
-Real ActiveChain::noise_amplitude = 0; // noise amplitude
+Real ActiveBrownianChain::A_p = 1.;		// interaction strength
+Real ActiveBrownianChain::sigma_p = 1.0;		// sigma in Yukawa Potential
+Real ActiveBrownianChain::cut_off_radius = 1.1;		// repulsive cutoff radius
+Real ActiveBrownianChain::noise_amplitude = 0; // noise amplitude
+Real ActiveBrownianChain::torque0 = 0; // The intrinsinc torque in the particle. This make the motion chiral
 //###################################################################
 
+
+//###################################################################
+class RTPChain : public ActiveBrownianChain {
+public:
+	int tumble_flag; // in tumbling state = -+1, otherwise 0
+	Real tumble_elapesed_time; // The time that the particle stays in tumbling state.
+	static Real lambda; // tumbling rate
+	static Real t_tumble; // tumbling duration
+	static Real torque_tumble; // torque strength of a tumble
+
+	RTPChain();
+
+	virtual void Move();
+};
+
+RTPChain::RTPChain()
+{
+	Init();
+	F0 = 0;
+	tumble_flag = 0; // in tumbling state = true
+	tumble_elapesed_time = 0; // The time that the particle stays in tumbling state.
+}
+
+inline void RTPChain::Move()
+{
+	if (tumble_flag == 0)
+	{
+		Real random_number = gsl_rng_uniform(C2DVector::gsl_r);
+		if (random_number < lambda*dt)
+		{
+			tumble_flag = 2*gsl_rng_uniform_int(C2DVector::gsl_r,2) - 1;
+			tumble_elapesed_time += dt;
+		}
+	}
+	else
+	{
+		if (tumble_elapesed_time < t_tumble)
+			tumble_elapesed_time += dt;
+		else
+		{
+			tumble_elapesed_time = 0;
+			tumble_flag = 0;
+		}
+	}
+
+	theta += k_perpendicular*dt*(torque + tumble_flag*torque_tumble);
+
+	C2DVector old_f = f;
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); //  v is the direction of the particle
+	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+
+	r += f*(dt*m_perpendicular);
+	r += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		#ifndef NonPeriodicCompute
+			r.Periodic_Transform();
+		#endif
+	#endif
+
+	Reset();
+}
+
+Real RTPChain::lambda = 0.1; // tumbling rate
+Real RTPChain::t_tumble = 10*RTPChain::lambda; // tumbling duration
+Real RTPChain::torque_tumble = 1; // torque strength of a tumble
+
+//###################################################################
 
 
 //####################################################################

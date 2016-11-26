@@ -28,7 +28,8 @@ class VicsekParticle2;
 class ContinuousParticle;
 class MarkusParticle;
 class RepulsiveParticle;
-class ActiveChain;
+class ActiveBrownianChain;
+class RTPChain;
 class EjtehadiParticle;
 
 //#define ejtehadi
@@ -43,7 +44,8 @@ typedef double Real;
 //typedef VicsekParticle2 Particle;
 //typedef MarkusParticle Particle;
 //typedef RepulsiveParticle Particle;
-	typedef ActiveChain Particle;
+//	typedef ActiveBrownianChain Particle;
+	typedef RTPChain Particle;
 	const int dof = 3;
 #endif
 
