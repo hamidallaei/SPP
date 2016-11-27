@@ -20,6 +20,16 @@ public:
 	Real t;
 	Real packing_fraction;
 
+	Real t_old; // old time, the previous time that coordinates are saved for further analysis
+	C2DVector* rm_old; // old position of membrane beads
+	C2DVector r_cm, v_cm;
+	Real xx,yy,xy; // Qxx, Qyy, Qxy. Q = 1/N sum (\vec{r} - \vec{r}_cm) (\vec{r} - \vec{r}_cm)
+	Real l; // Angular momentum per particle
+	Real omega; // Angular velocity
+	Real lambda1, lambda2; // Eigenvalues of Q tensor
+	Real Rg; // Gyration radius
+	Real Delta; // Aspherisity
+
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
 	Node* thisnode; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
@@ -40,7 +50,11 @@ public:
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
 	void Translate(C2DVector d); // Translate position of all particles with vector d
-	void Save_Polarization(std::ostream& os); // Save polarization of the particles inside the box
+
+	void RootGather(); // Gather all needed data for computing variables such as center of mass, angular momentum, angular velocity, and ...
+	void Save_Membrane_Position(); // Save the position of membrane beads to compute their velocities in future.
+	void Compute_All_Variables(); // Compute center of mass position and speed, I, ...
+	void Save_All_Variables(std::ostream& os); // Save center of mass position and speed, I, ...
 
 	friend std::ostream& operator<<(std::ostream& os, Box* box); // Save
 	friend std::istream& operator>>(std::istream& is, Box* box); // Input
@@ -50,6 +64,7 @@ Box::Box()
 {
 	N = 0;
 	particle = new Particle[max_N];
+	rm_old = new C2DVector[5000];
 }
 
 // Initialize the wall positions and numbers.
@@ -294,6 +309,83 @@ void Box::Translate(C2DVector d)
 	#endif
 }
 
+void Box::Save_Membrane_Position()
+{
+	t_old = t;
+	for (int i = 0; i < Nm; i++)
+		rm_old[i] = particle[i].r;
+}
+
+void Box::Compute_All_Variables() // Compute center of mass position and speed, I, ...
+{
+	r_cm.Null();
+	v_cm.Null();
+	xx = yy = xy = l = 0;
+	int n_data = 8;
+
+	for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
+		for (int y = thisnode->head_cell_idy; y < thisnode->tail_cell_idy; y++)
+			for (int i = 0; i < thisnode->cell[x][y].pid.size(); i++)
+			{
+				if (thisnode->cell[x][y].pid[i] < Nm)
+				{
+					C2DVector v;
+					v = (particle[thisnode->cell[x][y].pid[i]].r - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
+					r_cm += particle[thisnode->cell[x][y].pid[i]].r;
+					v_cm += v;
+					l += particle[thisnode->cell[x][y].pid[i]].r.x * v.y - particle[thisnode->cell[x][y].pid[i]].r.y * v.x;
+					xx += particle[thisnode->cell[x][y].pid[i]].r.x*particle[thisnode->cell[x][y].pid[i]].r.x;
+					yy += particle[thisnode->cell[x][y].pid[i]].r.y*particle[thisnode->cell[x][y].pid[i]].r.y;
+					xy += particle[thisnode->cell[x][y].pid[i]].r.x*particle[thisnode->cell[x][y].pid[i]].r.y;
+				}
+			}
+	double buffer[n_data];
+	double buffer_sum[n_data] = {0};
+
+	buffer[0] = r_cm.x;
+	buffer[1] = r_cm.y;
+	buffer[2] = v_cm.x;
+	buffer[3] = v_cm.y;
+	buffer[4] = xx;
+	buffer[5] = yy;
+	buffer[6] = xy;
+	buffer[7] = l;
+
+	MPI_Reduce(&buffer, &buffer_sum, n_data, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	r_cm.x = buffer[0] / Nm;
+	r_cm.y = buffer[1] / Nm;
+	v_cm.x = buffer[2] / Nm;
+	v_cm.y = buffer[3] / Nm;
+	xx = (buffer[4] / Nm) - r_cm.x*r_cm.x;
+	yy = (buffer[5] / Nm) - r_cm.x*r_cm.y;
+	xy = (buffer[6] / Nm) - r_cm.y*r_cm.y;
+	l = (buffer[7] / Nm) - r_cm.x*v_cm.y + r_cm.y*r_cm.x;
+
+	Real lambda1, lambda2;
+	lambda1 = 0.5*(xx+yy) + 0.5*sqrt((xx-yy)*(xx-yy) + 4*xy*xy);
+	lambda2 = 0.5*(xx+yy) - 0.5*sqrt((xx-yy)*(xx-yy) + 4*xy*xy);
+
+	Rg = sqrt(xx+yy);
+	Delta = (lambda1 - lambda2) / (lambda1 + lambda2);
+	Delta = Delta*Delta;
+	omega = l / (xx+yy);
+	Save_Membrane_Position();
+}
+
+void Box::Save_All_Variables(std::ostream& os) // Save center of mass position and speed, I, ...
+{
+	Compute_All_Variables();
+	static bool first_time = true;
+	if (thisnode->node_id == 0)
+	{
+		if (first_time)
+			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAspherisity" << endl;	
+		os << t << "\t" << r_cm << "\t" << v_cm << "\t" << l << "\t" << omega << "\t" << Rg << "\t" << Delta << endl;
+		first_time = false;
+	}
+}
 
 // Saving the particle information (position and velocities) to a standard output stream (probably a file). This must be called by only the root.
 std::ostream& operator<<(std::ostream& os, Box* box)

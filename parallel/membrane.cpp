@@ -16,32 +16,7 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-
-inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, ofstream& out_file)
-{
-	clock_t start_time, end_time;
-	start_time = clock();
-
-	if (box->thisnode->node_id == 0)
-		cout << "equilibrium:" << endl;
-
-	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
-	{
-		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,equilibrium_step);
-	}
-
-	if (box->thisnode->node_id == 0)
-		cout << "Finished" << endl;
-
-	end_time = clock();
-
-	Real t = (Real) (end_time - start_time) / CLOCKS_PER_SEC;
-	return(t);
-}
-
-
-inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file)
+inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file, ofstream& variables_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -54,6 +29,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
 
+	box->Save_Membrane_Position();
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
 		if ((i / cell_update_period) % saving_period == 0)
@@ -61,6 +37,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 			out_file << box;
 			timing_information(box->thisnode,start_time,i,total_step);
 		}
+		box->Save_All_Variables(variables_file);
 		box->Multi_Step(cell_update_period);
 	}
 	if ((total_step / cell_update_period) % saving_period == 0)
@@ -93,8 +70,6 @@ void Run(Box& box, int argc, char *argv[])
 	int input_Nm = atoi(argv[2+input_file]);
 	Real input_packing_fraction = atof(argv[3+input_file]);
 	Real input_chiral_radius = atof(argv[4+input_file]);
-
-
 
 	box.packing_fraction = input_packing_fraction;
 	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
@@ -139,26 +114,23 @@ void Run(Box& box, int argc, char *argv[])
 	box.info << "-R0=" << Particle::R0;
 
 	ofstream out_file;
+	ofstream variables_file;
 
 	if (box.thisnode->node_id == 0)
 	{
 		stringstream address;
 		address.str("");
-		address << box.info.str() << "-r-v.bin";
+		address << "r-v-" << box.info.str() << ".bin";
 		out_file.open(address.str().c_str());
+		address.str("");
+		address << "variables-" << box.info.str() << ".dat";
+		variables_file.open(address.str().c_str());
 	}
 
 	if (box.thisnode->node_id == 0)
 		cout << " Box information is: " << box.info.str() << endl;
 
-		MPI_Barrier(MPI_COMM_WORLD);
-		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
-
-		if (box.thisnode->node_id == 0)
-			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
-
-		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		t_sim = data_gathering(&box, total_step, saving_period, out_file, variables_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (box.thisnode->node_id == 0)
