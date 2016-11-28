@@ -18,6 +18,9 @@ public:
 class BasicParticle{
 public:
 	C2DVector r,v;
+	#ifdef NonPeriodicCompute
+		C2DVector r_original;
+	#endif
 };
 //###################################################################
 
@@ -110,9 +113,7 @@ public:
 		v.y = sin(theta);
 		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		Reset();
 	}
@@ -162,9 +163,7 @@ public:
 		v.y = sin(theta);
 		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		Reset();
 	}
@@ -232,9 +231,7 @@ public:
 		r.x += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
 		r.y += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -337,9 +334,7 @@ public:
 
 		r += v*(dt*speed);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -471,9 +466,7 @@ public:
 		v += f;
 		r += v*dt;
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)
@@ -577,7 +570,7 @@ public:
 	Real m_perpendicular; // Mobility perpendicular to the direction
 	Real k_perpendicular; // Mobility perpendicular to the direction
 
-	C2DVector f, r_old; // position, force, self propullsion direction
+	C2DVector f, r_old; // force, old position
 	Real torque; // tourque acting on the chain
 	Real theta; // self propullsion angle
 	Real theta_old; // self propullsion angle
@@ -650,13 +643,14 @@ inline void ActiveBrownianChain::Move()
 	v.y = sin(theta); //  v is the direction of the particle
 	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
 
-	r += f*(dt*m_perpendicular);
-	r += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
+
+	r_original += f*(dt*m_perpendicular);
+	r_original += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
+	r = r_original;
+
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-		#ifndef NonPeriodicCompute
-			r.Periodic_Transform();
-		#endif
+		r.Periodic_Transform();
 	#endif
 
 	Reset();
@@ -667,7 +661,7 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 	Noise_Gen();
 
 	theta_old = theta;
-	r_old = r;
+	r_old = r_original;
 
 	theta += k_perpendicular*half_dt*(torque);
 	theta += dtheta/2;
@@ -680,9 +674,7 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-		#ifndef NonPeriodicCompute
-			r.Periodic_Transform();
-		#endif
+		r.Periodic_Transform();
 	#endif
 
 	Reset();
@@ -690,21 +682,19 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 
 void ActiveBrownianChain::Move_Runge_Kutta_2()
 {
-	theta_old = theta;
-	r_old = r;
 	theta = theta_old + k_perpendicular*dt*(torque);
 	theta += dtheta;
 	v.x = cos(theta); // v is the direction of the particle
 	v.y = sin(theta); //  v is the direction of the particle
 	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
 
-	r = r_old + f*(half_dt*m_perpendicular);
-	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
+	r_original = r_old + f*(half_dt*m_perpendicular);
+	r_original += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
+
+	r = r_original;
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
-		#ifndef NonPeriodicCompute
-			r.Periodic_Transform();
-		#endif
+		r.Periodic_Transform();
 	#endif
 
 	Reset();
@@ -864,9 +854,7 @@ public:
 		r.x += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
 		r.y += gsl_ran_gaussian(C2DVector::gsl_r,Kamp);
 		#ifdef PERIODIC_BOUNDARY_CONDITION
-			#ifndef NonPeriodicCompute
-				r.Periodic_Transform();
-			#endif
+			r.Periodic_Transform();
 		#endif
 		#ifdef TRACK_PARTICLE
 			if (this == track_p && flag)

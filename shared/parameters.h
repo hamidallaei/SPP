@@ -3,7 +3,7 @@
 
 #define RUNGE_KUTTA
 #define PERIODIC_BOUNDARY_CONDITION
-//#define NonPeriodicCompute
+#define NonPeriodicCompute
 //#define CIRCULAR_BOX
 //#define verlet_list
 // This is for checking particles outside of the box
@@ -47,7 +47,12 @@ typedef double Real;
 //typedef RepulsiveParticle Particle;
 	typedef ActiveBrownianChain Particle;
 //	typedef RTPChain Particle;
-	const int dof = 3;
+	#ifdef NonPeriodicCompute
+		const int dof = 5;
+	#else
+		const int dof = 3;
+	#endif
+
 #endif
 
 long int seed = 10;
@@ -58,7 +63,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 64;
+const int Lx_int = 32;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -69,10 +74,10 @@ const Real Ly2 = 2*Ly;
 // Time
 Real dt = 1.0/512;
 Real half_dt = dt/2;
-const int cell_update_period = 256;
-const int saving_period = 4;
+const int cell_update_period = 512;
+const int saving_period = 1;
 const long int equilibrium_step = 0;
-const long int total_step = 10240000;
+const long int total_step = 1048576;
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.

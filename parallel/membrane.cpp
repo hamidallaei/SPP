@@ -16,7 +16,7 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-inline Real data_gathering(Box* box, long int total_step, int saving_period, ofstream& out_file, ofstream& variables_file)
+inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_period, int quantities_saving_period, ofstream& out_file, ofstream& variables_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
@@ -32,16 +32,17 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	box->Save_Membrane_Position();
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
-		if ((i / cell_update_period) % saving_period == 0)
+		if ((i / cell_update_period) % trajectory_saving_period == 0)
 		{
 			out_file << box;
 			timing_information(box->thisnode,start_time,i,total_step);
 		}
-		box->Save_All_Variables(variables_file);
 		box->Multi_Step(cell_update_period);
+		if ((i / cell_update_period) % quantities_saving_period == 0)
+			box->Save_All_Variables(variables_file);
 	}
-	if ((total_step / cell_update_period) % saving_period == 0)
-			out_file << box;
+	if ((total_step / cell_update_period) % trajectory_saving_period == 0)
+		out_file << box;
 
 	if (box->thisnode->node_id == 0)
 		cout << "Finished" << endl;
@@ -66,14 +67,23 @@ void Run(Box& box, int argc, char *argv[])
 	if (test.length() > 10)
 		input_file = 1;
 
-	int input_chain_length = atoi(argv[1+input_file]);
-	int input_Nm = atoi(argv[2+input_file]);
-	Real input_packing_fraction = atof(argv[3+input_file]);
-	Real input_chiral_radius = atof(argv[4+input_file]);
+	if (box.thisnode->node_id == 0)
+	{
+		cout << "Arguments are:\t" << endl;
+		cout << "1-membrane elasticity" << endl;
+		cout << "2-membrane radius" << endl;
+		cout << "3-chirality radius" << endl;
+		cout << "4-packing fraction" << endl;
+	}
 
-	box.packing_fraction = input_packing_fraction;
+	int input_chain_length = 2;
+	Real input_membrane_elasticity = atof(argv[1+input_file]);
+	Real input_membrane_radius = atof(argv[2+input_file]);
+	Real input_chiral_radius = atof(argv[3+input_file]);
+	Real input_packing_fraction = atof(argv[4+input_file]);
+
+	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
 	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
-//	box.packing_fraction = box.Ns*input_chain_length*M_PI*M_PI / (box.Nm*box.Nm);
 
 	Real t_eq,t_sim;
 
@@ -95,7 +105,9 @@ void Run(Box& box, int argc, char *argv[])
 		box.particle[i].Set_Parameters(input_chain_length,1.0);
 
 	box.Init(box.thisnode, input_Ns, input_Nm);
-
+	box.membrane_elasticity = input_membrane_elasticity;
+	box.membrane_radius = input_membrane_radius;
+	box.packing_fraction = input_packing_fraction;
 
 	if (input_file == 0)
 	{
@@ -103,15 +115,16 @@ void Run(Box& box, int argc, char *argv[])
 		{
 			Ring_Membrane(box.particle, box.Nm);
 			Confined_In_Ring_Membrane(box.particle, box.Ns, box.Nm);
-//			Triangle_Lattice_Formation(&box.particle[box.Nm], box.Ns, 2*Particle::sigma_p);
 		}
 		box.Sync();
 	}
 
 	box.info.str("");
-	box.info << "Nm=" << box.Nm;
+	box.info << "k="<< box.membrane_elasticity;
+	box.info << "-R="<< box.membrane_radius;
+	box.info << "-r=" << Particle::R0;
 	box.info << "-phi=" << box.packing_fraction;
-	box.info << "-R0=" << Particle::R0;
+	box.info << "-ABP";
 
 	ofstream out_file;
 	ofstream variables_file;
@@ -123,14 +136,15 @@ void Run(Box& box, int argc, char *argv[])
 		address << "r-v-" << box.info.str() << ".bin";
 		out_file.open(address.str().c_str());
 		address.str("");
-		address << "variables-" << box.info.str() << ".dat";
+		address << "quantities-" << box.info.str() << ".dat";
 		variables_file.open(address.str().c_str());
 	}
 
 	if (box.thisnode->node_id == 0)
 		cout << " Box information is: " << box.info.str() << endl;
 
-		t_sim = data_gathering(&box, total_step, saving_period, out_file, variables_file);
+		int quantities_saving_period = ( (int) round(1/dt) ) / cell_update_period;
+		t_sim = data_gathering(&box, total_step, saving_period, quantities_saving_period, out_file, variables_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (box.thisnode->node_id == 0)

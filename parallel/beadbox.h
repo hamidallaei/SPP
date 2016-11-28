@@ -14,11 +14,13 @@
 
 class Box{
 public:
-	int N, Nb, Ns, Nm; // N is the number of particles, Nb is number of beads, Ns is number of active particles and Nm is the number of 
+	int N, Nb, Ns, Nm; // N = Nb+Ns is the number of particles, Nb is number of beads, Ns is number of active particles and Nm is the number of 
 	Particle* particle; // Array of particles that we are going to simulate.
 
 	Real t;
 	Real packing_fraction;
+	Real membrane_elasticity;
+	Real membrane_radius;
 
 	Real t_old; // old time, the previous time that coordinates are saved for further analysis
 	C2DVector* rm_old; // old position of membrane beads
@@ -85,6 +87,9 @@ void Box::Sync()
 	#ifdef verlet_list
 	thisnode->Update_Neighbor_List();
 	#endif
+
+	for (int i = 0; i < N; i++)
+		particle[i].r_original = particle[i].r;
 
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -188,7 +193,7 @@ void Box::Interact_Membrane_Beads()
 		C2DVector dr = particle[i].r - particle[(i+1)%Nm].r;
 		dr.Periodic_Transform();
 		Real d = sqrt(dr.Square());
-		C2DVector f = Spring(dr, d, Particle::sigma_p, 500);
+		C2DVector f = Spring(dr, d, Particle::sigma_p, membrane_elasticity);
 		particle[i].f += f;
 		particle[(i+1)%Nm].f -= f;
 	}
@@ -313,7 +318,7 @@ void Box::Save_Membrane_Position()
 {
 	t_old = t;
 	for (int i = 0; i < Nm; i++)
-		rm_old[i] = particle[i].r;
+		rm_old[i] = particle[i].r_original;
 }
 
 void Box::Compute_All_Variables() // Compute center of mass position and speed, I, ...
@@ -325,20 +330,20 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 
 	for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
 		for (int y = thisnode->head_cell_idy; y < thisnode->tail_cell_idy; y++)
+		{
 			for (int i = 0; i < thisnode->cell[x][y].pid.size(); i++)
-			{
 				if (thisnode->cell[x][y].pid[i] < Nm)
 				{
 					C2DVector v;
-					v = (particle[thisnode->cell[x][y].pid[i]].r - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
-					r_cm += particle[thisnode->cell[x][y].pid[i]].r;
+					v = (particle[thisnode->cell[x][y].pid[i]].r_original - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
+					r_cm += particle[thisnode->cell[x][y].pid[i]].r_original;
 					v_cm += v;
-					l += particle[thisnode->cell[x][y].pid[i]].r.x * v.y - particle[thisnode->cell[x][y].pid[i]].r.y * v.x;
-					xx += particle[thisnode->cell[x][y].pid[i]].r.x*particle[thisnode->cell[x][y].pid[i]].r.x;
-					yy += particle[thisnode->cell[x][y].pid[i]].r.y*particle[thisnode->cell[x][y].pid[i]].r.y;
-					xy += particle[thisnode->cell[x][y].pid[i]].r.x*particle[thisnode->cell[x][y].pid[i]].r.y;
+					l += particle[thisnode->cell[x][y].pid[i]].r_original.x * v.y - particle[thisnode->cell[x][y].pid[i]].r_original.y * v.x;
+					xx += particle[thisnode->cell[x][y].pid[i]].r_original.x*particle[thisnode->cell[x][y].pid[i]].r_original.x;
+					yy += particle[thisnode->cell[x][y].pid[i]].r_original.y*particle[thisnode->cell[x][y].pid[i]].r_original.y;
+					xy += particle[thisnode->cell[x][y].pid[i]].r_original.x*particle[thisnode->cell[x][y].pid[i]].r_original.y;
 				}
-			}
+		}
 	double buffer[n_data];
 	double buffer_sum[n_data] = {0};
 
@@ -351,17 +356,18 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 	buffer[6] = xy;
 	buffer[7] = l;
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Reduce(&buffer, &buffer_sum, n_data, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	r_cm.x = buffer[0] / Nm;
-	r_cm.y = buffer[1] / Nm;
-	v_cm.x = buffer[2] / Nm;
-	v_cm.y = buffer[3] / Nm;
-	xx = (buffer[4] / Nm) - r_cm.x*r_cm.x;
-	yy = (buffer[5] / Nm) - r_cm.x*r_cm.y;
-	xy = (buffer[6] / Nm) - r_cm.y*r_cm.y;
-	l = (buffer[7] / Nm) - r_cm.x*v_cm.y + r_cm.y*r_cm.x;
+	r_cm.x = buffer_sum[0] / Nm;
+	r_cm.y = buffer_sum[1] / Nm;
+	v_cm.x = buffer_sum[2] / Nm;
+	v_cm.y = buffer_sum[3] / Nm;
+	xx = (buffer_sum[4] / Nm) - r_cm.x*r_cm.x;
+	yy = (buffer_sum[5] / Nm) - r_cm.x*r_cm.y;
+	xy = (buffer_sum[6] / Nm) - r_cm.y*r_cm.y;
+	l = (buffer_sum[7] / Nm) - r_cm.x*v_cm.y + r_cm.y*v_cm.x;
 
 	Real lambda1, lambda2;
 	lambda1 = 0.5*(xx+yy) + 0.5*sqrt((xx-yy)*(xx-yy) + 4*xy*xy);

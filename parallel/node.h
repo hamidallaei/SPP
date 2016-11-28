@@ -996,6 +996,10 @@ void Node::Send_To_Root()
 					data_buffer[dof*counter] = particle[index].r.x;
 					data_buffer[dof*counter+1] = particle[index].r.y;
 					data_buffer[dof*counter+2] = particle[index].theta;
+					#ifdef NonPeriodicCompute
+						data_buffer[dof*counter+3] = particle[index].r_original.x;
+						data_buffer[dof*counter+4] = particle[index].r_original.y;
+					#endif
 					#ifdef ejtehadi
 						data_buffer[dof*counter+3] = particle[index].phi;
 					#endif
@@ -1035,6 +1039,10 @@ void Node::Root_Receive()
 				particle[index_buffer[j]].r.x = data_buffer[dof*j];
 				particle[index_buffer[j]].r.y = data_buffer[dof*j+1];
 				particle[index_buffer[j]].theta = data_buffer[dof*j+2];
+				#ifdef NonPeriodicCompute
+					particle[index_buffer[j]].r_original.x = data_buffer[dof*j+3];
+					particle[index_buffer[j]].r_original.y = data_buffer[dof*j+4];
+				#endif
 				#ifdef ejtehadi
 					particle[index_buffer[j]].phi = data_buffer[dof*j+3];
 				#endif
@@ -1070,6 +1078,10 @@ void Node::Root_Bcast()
 			data_buffer[dof*i] = particle[i].r.x;
 			data_buffer[dof*i+1] = particle[i].r.y;
 			data_buffer[dof*i+2] = particle[i].theta;
+			#ifdef NonPeriodicCompute
+				data_buffer[dof*i+3] = particle[i].r_original.x;
+				data_buffer[dof*i+4] = particle[i].r_original.y;
+			#endif
 			#ifdef ejtehadi
 				data_buffer[dof*i+3] = particle[i].phi;
 			#endif
@@ -1085,9 +1097,13 @@ void Node::Root_Bcast()
 				particle[i].r.x = data_buffer[dof*i];
 				particle[i].r.y = data_buffer[dof*i+1];
 				particle[i].theta = data_buffer[dof*i+2];
-			#ifdef ejtehadi
-				particle[i].phi = data_buffer[dof*i+3];
-			#endif
+				#ifdef NonPeriodicCompute
+					particle[i].r_original.x = data_buffer[dof*i+3];
+					particle[i].r_original.y = data_buffer[dof*i+4];
+				#endif
+				#ifdef ejtehadi
+					particle[i].phi = data_buffer[dof*i+3];
+				#endif
 
 			particle[i].v.x = cos(particle[i].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 			particle[i].v.y = sin(particle[i].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
