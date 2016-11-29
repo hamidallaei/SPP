@@ -14,7 +14,7 @@
 
 class Box{
 public:
-	int N, Nb, Ns, Nm; // N = Nb+Ns is the number of particles, Nb is number of beads, Ns is number of active particles and Nm is the number of 
+	int N, Ns, Nm; // N = Ns+Nm is the number of particles, Nm is number of membrane particles, Ns is number of active particles
 	Particle* particle; // Array of particles that we are going to simulate.
 
 	Real t;
@@ -107,12 +107,6 @@ void Box::Init(Node* input_node, const int input_Ns, const int input_Nm)
 	Ns = input_Ns;
 	Nm = input_Nm;
 	N = Ns + Nm;
-
-	Nb = Nm;
-	for (int i = Nm; i < N; i++)
-	{
-			Nb += particle[i].nb;
-	}
 
 	Init_Topology(); // Adding walls
 
@@ -334,14 +328,15 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 			for (int i = 0; i < thisnode->cell[x][y].pid.size(); i++)
 				if (thisnode->cell[x][y].pid[i] < Nm)
 				{
-					C2DVector v;
-					v = (particle[thisnode->cell[x][y].pid[i]].r_original - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
-					r_cm += particle[thisnode->cell[x][y].pid[i]].r_original;
+					C2DVector r, v;
+					r = particle[thisnode->cell[x][y].pid[i]].r_original;
+					v = (r - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
+					r_cm += r;
 					v_cm += v;
-					l += particle[thisnode->cell[x][y].pid[i]].r_original.x * v.y - particle[thisnode->cell[x][y].pid[i]].r_original.y * v.x;
-					xx += particle[thisnode->cell[x][y].pid[i]].r_original.x*particle[thisnode->cell[x][y].pid[i]].r_original.x;
-					yy += particle[thisnode->cell[x][y].pid[i]].r_original.y*particle[thisnode->cell[x][y].pid[i]].r_original.y;
-					xy += particle[thisnode->cell[x][y].pid[i]].r_original.x*particle[thisnode->cell[x][y].pid[i]].r_original.y;
+					l += r.x * v.y - r.y * v.x;
+					xx += r.x*r.x;
+					yy += r.y*r.y;
+					xy += r.x*r.y;
 				}
 		}
 	double buffer[n_data];
@@ -365,8 +360,8 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 	v_cm.x = buffer_sum[2] / Nm;
 	v_cm.y = buffer_sum[3] / Nm;
 	xx = (buffer_sum[4] / Nm) - r_cm.x*r_cm.x;
-	yy = (buffer_sum[5] / Nm) - r_cm.x*r_cm.y;
-	xy = (buffer_sum[6] / Nm) - r_cm.y*r_cm.y;
+	yy = (buffer_sum[5] / Nm) - r_cm.y*r_cm.y;
+	xy = (buffer_sum[6] / Nm) - r_cm.x*r_cm.y;
 	l = (buffer_sum[7] / Nm) - r_cm.x*v_cm.y + r_cm.y*v_cm.x;
 
 	Real lambda1, lambda2;
@@ -401,8 +396,19 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 
 	if (box->thisnode->node_id == 0)
 	{
-		os.write((char*) &box->Nb, sizeof(box->Nb) / sizeof(char));
-		for (int i = 0; i < box->N; i++)
+		os.write((char*) &(box->t), sizeof(Real) / sizeof(char));
+		os.write((char*) &(Lx), sizeof(Real) / sizeof(char));
+		os.write((char*) &(Ly), sizeof(Real) / sizeof(char));
+		os.write((char*) &(box->particle[box->Nm].nb), sizeof(int) / sizeof(char));
+		os.write((char*) &(box->Ns), sizeof(box->Ns) / sizeof(char));
+		os.write((char*) &(box->Nm), sizeof(box->Nm) / sizeof(char));
+
+		for (int i = 0; i < box->Nm; i++)
+		{
+			box->particle[i].r.write(os);
+		}
+
+		for (int i = box->Nm; i < box->N; i++)
 		{
 			box->particle[i].Write(os);
 //			cout << i << "\t" << setprecision(100) << box->particle[i].theta << endl;

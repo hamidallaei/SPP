@@ -10,7 +10,7 @@
 
 class Field_Cell{
 public:
-	vector<BasicParticle*> particle;
+	vector<BasicParticle0*> particle;
 	vector<Real> dtheta;
 	C2DVector r,v,W;
 	Real density;
@@ -25,7 +25,7 @@ public:
 	~Field_Cell();
 	void Init(Real,Real);
 	void Reset();
-	void Add(BasicParticle* p);
+	void Add(BasicParticle0* p);
 	void Compute_Fields(C2DVector L);
 	void Delta_Theta_Stat();
 	void Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp);
@@ -60,9 +60,9 @@ void Field_Cell::Reset()
 	omega = 0;
 }
 
-void Field_Cell::Add(BasicParticle* p)
+void Field_Cell::Add(BasicParticle0* p)
 {
-	particle.push_back((BasicParticle*) p);
+	particle.push_back((BasicParticle0*) p);
 }
 
 void Field_Cell::Compute_Fields(C2DVector L)
@@ -73,13 +73,13 @@ void Field_Cell::Compute_Fields(C2DVector L)
 	density = particle.size()/(dim.x*dim.y);
 	for (int i = 0; i < particle.size(); i++)
 	{
-		v += particle[i]->v;
-		Real theta_i = atan2(particle[i]->v.y,particle[i]->v.x);
-		dtheta.push_back(theta_i);
-		theta_ave += theta_i;
-		omega += (particle[i]->r - r).x*particle[i]->v.y - (particle[i]->r - r).y*particle[i]->v.x;
-		for (int j = i+1; j < particle.size(); j++)
-			cohesion += (particle[i]->v*particle[j]->v)/sqrt(particle[i]->v.Square()*particle[j]->v.Square());
+		C2DVector particle_v;
+		particle_v.x = cos(particle[i]->theta);
+		particle_v.y = sin(particle[i]->theta);
+		v += particle_v;
+		dtheta.push_back(particle[i]->theta);
+		theta_ave += particle[i]->theta;
+		omega += (particle[i]->r - r).x*particle_v.y - (particle[i]->r - r).y*particle_v.x;
 	}
 	v /= particle.size();
 	theta_ave /= particle.size();
@@ -118,7 +118,7 @@ public:
 	Field(int smaller_grid_dim, C2DVector);
 	~Field();
 	void Init();
-	void Compute(BasicParticle* particle, int N);
+	void Compute(BasicParticle0* particle, int N);
 	void Save(ofstream& data_file);
 	void Save_Theta_Deviation(ofstream& data_file);
 	void Angle_Deviation(ofstream& data_file);
@@ -171,7 +171,7 @@ void Field::Init()
 	Reset();
 }
 
-void Field::Compute(BasicParticle* particle, int N)
+void Field::Compute(BasicParticle0* particle, int N)
 {
 	for (int i = 0; i < N; i++)
 	{

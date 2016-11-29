@@ -63,7 +63,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 32;
+const int Lx_int = 64;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -74,10 +74,10 @@ const Real Ly2 = 2*Ly;
 // Time
 Real dt = 1.0/512;
 Real half_dt = dt/2;
-const int cell_update_period = 512;
-const int saving_period = 1;
+const int cell_update_period = 32;
+const int saving_period = 16;
 const long int equilibrium_step = 0;
-const long int total_step = 1048576;
+const long int total_step = 8388608;
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.

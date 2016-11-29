@@ -42,9 +42,6 @@ void Init()
 	VisualParticle::radius = sigma / 2;
 	VisualParticle::tail = 1;
 	VisualParticle::thickness = 1.5;
-	VisualParticle::color.red = 0.8;
-	VisualParticle::color.green = 0.0;
-	VisualParticle::color.blue = 0.0;
 
 //	r_lense.x = 25;
 //	r_lense.y = 25;
@@ -155,12 +152,18 @@ void Display()
 	C2DVector l(sceneset->L);
 //	l.x -= 0.2;
 //	l.y -= 0.2;
-	
-	r0.y = 0.65*l.y;
-	r0.x = -l.x + 0.35*l.y;
-	r0.x = -r0.x;
+
+	float small_radius, big_radius;
 	float l_small = min(l.x,l.y);
-	Draw_Color_Wheel(r0,l_small/20.0,l_small/3.5);
+
+	small_radius = l_small / 40;
+	big_radius = l_small / 8;
+
+	r0.y = l.y - 1.2*big_radius;
+	r0.x = l.x - 1.2*big_radius;
+//	r0.x = -r0.x;
+
+	Draw_Color_Wheel(r0,small_radius,big_radius);
 
 	glLineWidth(2);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -345,7 +348,6 @@ int main(int argc, char** argv)
 		save = true;
 
 	Welcome();	
-
 	sceneset = new SceneSet(argv[argc-1]);
 	bool read_state = sceneset->Read();
 

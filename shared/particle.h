@@ -7,11 +7,32 @@
 #include <vector>
 
 //###################################################################
+class BasicParticle00{
+public:
+	C2DVector r;
+	virtual void Write(std::ostream&);
+};
+
+void BasicParticle00::Write(std::ostream& os)
+{
+	r.write(os);
+}
+//###################################################################
+
+//###################################################################
 class BasicParticle0{
 public:
 	C2DVector r;
 	Real theta;
+	virtual void Write(std::ostream&);
 };
+
+void BasicParticle0::Write(std::ostream& os)
+{
+	r.write(os);
+	float temp_float = (float) theta;
+	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+}
 //###################################################################
 
 //###################################################################
@@ -21,6 +42,7 @@ public:
 	#ifdef NonPeriodicCompute
 		C2DVector r_original;
 	#endif
+	void Write(std::ostream&);
 };
 //###################################################################
 
@@ -666,6 +688,8 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 	theta += k_perpendicular*half_dt*(torque);
 	theta += dtheta/2;
 
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
 	v.x = cos(theta); // v is the direction of the particle
 	v.y = sin(theta); //  v is the direction of the particle
 	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
@@ -684,6 +708,9 @@ void ActiveBrownianChain::Move_Runge_Kutta_2()
 {
 	theta = theta_old + k_perpendicular*dt*(torque);
 	theta += dtheta;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
 	v.x = cos(theta); // v is the direction of the particle
 	v.y = sin(theta); //  v is the direction of the particle
 	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
@@ -739,18 +766,27 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 
 void ActiveBrownianChain::Write(std::ostream& os)
 {
-	C2DVector v_temp, r_temp;
-	v_temp.x = cos(theta);
-	v_temp.y = sin(theta);
+/*	C2DVector v_temp, r_temp;*/
+/*	v_temp.x = cos(theta);*/
+/*	v_temp.y = sin(theta);*/
 
-	for (int i = 0; i < nb; i++)
+/*	for (int i = 0; i < nb; i++)*/
+/*	{*/
+/*		C2DVector s_i = v_temp*(sigma_p*((1-nb)/2.0 + i));*/
+
+/*		r_temp = r + s_i;*/
+
+/*		r_temp.write(os);*/
+/*		v_temp.write(os);*/
+/*	}*/
+
+	if (nb == 1)
+		r.write(os);
+	else
 	{
-		C2DVector s_i = v_temp*(sigma_p*((1-nb)/2.0 + i));
-
-		r_temp = r + s_i;
-
-		r_temp.write(os);
-		v_temp.write(os);
+		r.write(os);
+		float temp_float = (float) theta;
+		os.write((char*) &temp_float,sizeof(float) / sizeof(char));
 	}
 }
 

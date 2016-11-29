@@ -23,22 +23,35 @@ struct RGB{
 	float red,green,blue;
 };
 
-class VisualParticle : public BasicParticle {
-public:
-	static float radius;
-	static float tail;
-	static float thickness;
-	static RGB color;
-	void Find_Color(RGB&);
-	void Draw(float, float, float);
-	void Draw_Magnified();
-	void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
-};
+void Draw_Circle(C2DVector r, C2DVector tail, float radius, float thickness, RGB color, GLenum mode)
+{
+	glEnableClientState (GL_VERTEX_ARRAY);
 
-float VisualParticle::radius;
-float VisualParticle::tail;
-float VisualParticle::thickness;
-RGB VisualParticle::color;
+	glColor4f(color.red, color.green, color.blue,0.5);
+	glLineWidth(thickness);
+
+	glPolygonMode(GL_FRONT_AND_BACK, mode);
+	glPolygonMode(GL_FRONT_AND_BACK, mode);
+
+	glVertexPointer (2, GL_FLOAT, 0, unitcircle);
+
+	glTranslatef(r.x,r.y,0);
+	glScalef(radius,radius,1);
+
+	glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
+
+	glBegin(GL_LINES);
+		glVertex2f(0, 0);
+		glVertex2f(tail.x,tail.y);
+	glEnd();
+		glColor4f(color.red, color.green, color.blue,1.0);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
+	
+	glDisableClientState( GL_VERTEX_ARRAY );
+	glLoadIdentity();
+	glLineWidth(1);
+}
 
 void HSV_To_RGB(float h, float s, float v,RGB& color)
 {
@@ -92,43 +105,89 @@ void HSV_To_RGB(float h, float s, float v,RGB& color)
 	}
 }
 
+class VisualMembrane : public BasicParticle00 {
+public:
+	static float radius;
+	static float thickness;
+	static GLenum mode; // GL_FILL (filled) or GL_LINE (empty) or GL_POINT
+
+	virtual void Draw(float, float, float);
+	virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+};
+
+float VisualMembrane::radius = 0.5;
+float VisualMembrane::thickness = 1;
+GLenum VisualMembrane::mode = GL_FILL;
+
+void VisualMembrane::Draw(float x0 = 0, float y0 = 0, float scale = 1)
+{
+	C2DVector null(0);
+	null.Null();
+
+	RGB color;
+	color.red = 0.2;
+	color.green = 0.2;
+	color.blue = 0.2;
+
+	Draw_Circle(r, null, radius*scale, thickness, color, mode);
+}
+
+void VisualMembrane::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
+{
+	float scale = d1 / d0;
+	C2DVector p;
+	p.x = r.x - r0.x;
+	p.y = r.y - r0.y;
+	if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
+	{
+		p *= scale;
+		p += r1;
+		const int thickness_factor = 3; // 2000
+
+		C2DVector null(0);
+		null.Null();
+
+		RGB color;
+		color.red = 0.2;
+		color.green = 0.2;
+		color.blue = 0.2;
+
+		Draw_Circle(p, null, radius*scale, scale*thickness / thickness_factor, color, mode);
+	}
+}
+
+
+class VisualParticle : public BasicParticle0 {
+public:
+	C2DVector v;
+	static float radius;
+	static float tail;
+	static float thickness;
+	static GLenum mode; // GL_FILL (filled) or GL_LINE (empty) or GL_POINT
+
+	void Find_Color(RGB&);
+	virtual void Draw(float, float, float);
+	virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+};
+
+float VisualParticle::radius;
+float VisualParticle::tail;
+float VisualParticle::thickness;
+GLenum VisualParticle::mode = GL_FILL;
+
 void VisualParticle::Find_Color(RGB& input_color)
 {
 	float f, p, q, t, s = 1, value = 1;
 
-
-
-	float theta = atan2(v.y,v.x);
-	if (theta < 0)
-		theta += 2*M_PI;
-
+	theta = theta - floor(theta/(2*M_PI))*2*M_PI;
 	HSV_To_RGB(theta,1,1, input_color);
 }
 
 void VisualParticle::Draw(float x0 = 0, float y0 = 0, float scale = 1)
 {
-	glEnableClientState (GL_VERTEX_ARRAY);
-
+	RGB color;
 	Find_Color(color);
-	glColor4f(color.red, color.green, color.blue,0.5);
-	glLineWidth(thickness);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	glVertexPointer (2, GL_FLOAT, 0, unitcircle);
-
-	glTranslatef(r.x+x0,r.y+y0,0);
-	glScalef(scale*radius,scale*radius,1);
-
-	glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
-
-	glBegin(GL_LINES);
-		glVertex2f(0, 0);
-		glVertex2f(-tail*v.x,-tail*v.y);
-	glEnd();
-	
-	glDisableClientState( GL_VERTEX_ARRAY );
-	glLoadIdentity();
-	glLineWidth(1);
+	Draw_Circle(r, v*(-tail), radius*scale, thickness, color, mode);
 }
 
 void VisualParticle::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
@@ -141,27 +200,68 @@ void VisualParticle::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float 
 	{
 		p *= scale;
 		p += r1;
-
 		const int thickness_factor = 3; // 2000
-		glLineWidth(scale*thickness / thickness_factor);
-		glEnableClientState (GL_VERTEX_ARRAY);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		glVertexPointer (2, GL_FLOAT, 0, unitcircle);
+		RGB color;
+		Find_Color(color);
+		Draw_Circle(p, v*(-tail), radius*scale, scale*thickness / thickness_factor, color, mode);
+	}
+}
 
-		glTranslatef(p.x,p.y,0);
-		glScalef(scale*radius,scale*radius,1);
 
-		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
+class VisualChain : public VisualParticle {
+public:
+	static int chain_length;
 
-		glBegin(GL_LINES);
-			glVertex2f(0, 0);
-			glVertex2f(-tail*v.x,-tail*v.y);
-		glEnd();
-	
-		glDisableClientState( GL_VERTEX_ARRAY );
-		glLoadIdentity();
-		glLineWidth(1);
+	void Draw(float, float, float);
+	void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+};
+
+int VisualChain::chain_length = 2;
+
+void VisualChain::Draw(float x0 = 0, float y0 = 0, float scale = 1)
+{
+	C2DVector v_temp, r_temp;
+	v_temp.x = cos(theta);
+	v_temp.y = sin(theta);
+
+	RGB color;
+	Find_Color(color);
+
+	for (int i = 0; i < chain_length; i++)
+	{
+		C2DVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+
+		r_temp = r + s_i;
+
+		Draw_Circle(r_temp, v_temp*(-tail), radius*scale, thickness, color, mode);
+	}
+}
+
+void VisualChain::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
+{
+	float scale = d1 / d0;
+	C2DVector v_temp, p;
+	v_temp.x = cos(theta);
+	v_temp.y = sin(theta);
+
+	RGB color;
+	Find_Color(color);
+
+	for (int i = 0; i < chain_length; i++)
+	{
+		C2DVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+		C2DVector p;
+		p = r - r0 + s_i;
+
+		if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
+		{
+			p *= scale;
+			p += r1;
+			const int thickness_factor = 3; // 2000
+
+			Draw_Circle(p, v*(-tail), radius*scale, scale*thickness / thickness_factor, color, mode);
+		}
 	}
 }
 
