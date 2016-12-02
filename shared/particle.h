@@ -628,7 +628,7 @@ void ActiveBrownianChain::Reset()
 {
 	neighbor_size = 0;
 	torque = torque0;
-	f.Null();
+	f = v*F0; // F0 is self-propullsion force, v is the direction of the particle
 }
 
 void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
@@ -637,18 +637,18 @@ void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
 	F0 = input_F0;
 	noise_amplitude = sqrt(2*Dr*dt);
 	if (nb == 1)
-	{
-		m_parallel = 1;  // Mobility parallel to the direction
+	{	// case of a single spherial particle
+		m_parallel = 1;  	 // Mobility parallel to the direction
 		m_perpendicular = 1; // Mobility perpendicular to the direction
 		k_perpendicular = 1; // Mobility perpendicular to the direction
 	}
 	else
-	{
+	{	// these values are for two-sphere swimmers. TODO one has to import general relations.
 		m_parallel = 1.0;
 		m_perpendicular = 0.87;
 		k_perpendicular = 4.8;
 	}
-	torque0 = F0 / (k_perpendicular*R0);
+	torque0 = m_parallel*F0 / (k_perpendicular*R0);
 }
 
 inline void ActiveBrownianChain::Noise_Gen()
@@ -660,16 +660,13 @@ inline void ActiveBrownianChain::Move()
 {
 	Noise_Gen();
 	theta += k_perpendicular*dt*(torque);
-	theta += dtheta;
+	theta += dtheta;  // add noise
 	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); //  v is the direction of the particle
-	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
-
+	v.y = sin(theta); // v is the direction of the particle
 
 	r_original += f*(dt*m_perpendicular);
 	r_original += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
 	r = r_original;
-
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
 		r.Periodic_Transform();
@@ -678,7 +675,7 @@ inline void ActiveBrownianChain::Move()
 	Reset();
 }
 
-void ActiveBrownianChain::Move_Runge_Kutta_1()
+void ActiveBrownianChain::Move_Runge_Kutta_1() // half step forward
 {
 	Noise_Gen();
 
@@ -688,11 +685,10 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 	theta += k_perpendicular*half_dt*(torque);
 	theta += dtheta/2;
 
-	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI; // -PI < theta < PI
 
 	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); //  v is the direction of the particle
-	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
 
 	r += f*(half_dt*m_perpendicular);
 	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
@@ -704,7 +700,7 @@ void ActiveBrownianChain::Move_Runge_Kutta_1()
 	Reset();
 }
 
-void ActiveBrownianChain::Move_Runge_Kutta_2()
+void ActiveBrownianChain::Move_Runge_Kutta_2() // one step forward
 {
 	theta = theta_old + k_perpendicular*dt*(torque);
 	theta += dtheta;
@@ -712,8 +708,7 @@ void ActiveBrownianChain::Move_Runge_Kutta_2()
 	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
 
 	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); //  v is the direction of the particle
-	f += v*F0; // F0 is self-propullsion force v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
 
 	r_original = r_old + f*(half_dt*m_perpendicular);
 	r_original += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
@@ -737,8 +732,8 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 	for (int i = 0; i < nb; i++)
 		for (int j = 0; j < ac.nb; j++)
 		{
-			C2DVector s_this, s_that;
-			s_this = v*(sigma_p*((1-nb)/2.0+i)); //  v is the direction of the particle
+			C2DVector s_this, s_that;	// s is position of the beads on each swimmer wrt swimmer middle point
+			s_this = v*(sigma_p*((1-nb)/2.0+i)); 	   //  v is the direction of the particle
 			s_that = ac.v*(sigma_p*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
 
 			dr = dr0 + s_this - s_that;
