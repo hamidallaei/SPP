@@ -72,7 +72,7 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/512;
+Real dt = 1.0/512/2;
 Real half_dt = dt/2;
 const int cell_update_period = 32;
 const int saving_period = 16;

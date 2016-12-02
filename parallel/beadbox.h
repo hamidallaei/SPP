@@ -30,7 +30,7 @@ public:
 	Real omega; // Angular velocity
 	Real lambda1, lambda2; // Eigenvalues of Q tensor
 	Real Rg; // Gyration radius
-	Real Delta; // Aspherisity
+	Real Delta; // Asphericity
 
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
@@ -382,7 +382,7 @@ void Box::Save_All_Variables(std::ostream& os) // Save center of mass position a
 	if (thisnode->node_id == 0)
 	{
 		if (first_time)
-			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAspherisity" << endl;	
+			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity" << endl;	
 		os << t << "\t" << r_cm << "\t" << v_cm << "\t" << l << "\t" << omega << "\t" << Rg << "\t" << Delta << endl;
 		first_time = false;
 	}
