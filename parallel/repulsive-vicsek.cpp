@@ -80,8 +80,10 @@ void Change_Noise(Box& box, int argc, char *argv[])
 			cout << "arguments are: \n" << "density,\tg,\tepsilon" << endl;
 		exit(0);
 	}
-	Real input_rho = atof(argv[1]);
+	Real input_packing_fraction = atof(argv[1]);
 	Real input_g = atof(argv[2]);
+
+	Real input_rho = 4*input_packing_fraction / (M_PI*Particle::sigma_p*Particle::sigma_p);
 
 	vector<Real> noise_list;
 	for (int i = 3; i < argc; i++)
@@ -93,15 +95,27 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	Particle::g = input_g;
 
 	box.Init(box.thisnode, input_rho);
+	box.packing_fraction = input_packing_fraction;
 
 	ofstream out_file;
+
+	if (box.thisnode->node_id == 0)
+	{
+		Triangle_Lattice_Formation(box.particle,box.N,0);
+		for (int i = 0; i < box.N; i++)
+			box.particle[i].r_original = box.particle[i].r;
+	}
+	box.Sync();
+	for (int i = 0; i < box.N; i++)
+		box.particle[i].r_original = box.particle[i].r;
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
 		Particle::Dr = noise_list[i];
-		Particle::noise_amplitude = sqrt(2*Particle::Dr/dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		Particle::noise_amplitude = sqrt(2*Particle::Dr*dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+
 		box.info.str("");
-		box.info << "rho=" << box.density <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-cooling";
+		box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-cooling";
 
 		if (box.thisnode->node_id == 0)
 		{
@@ -114,12 +128,12 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		if (box.thisnode->node_id == 0)
 			cout << " Box information is: " << box.info.str() << endl;
 
-		MPI_Barrier(MPI_COMM_WORLD);
-		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
-		MPI_Barrier(MPI_COMM_WORLD);
+//		MPI_Barrier(MPI_COMM_WORLD);
+//		t_eq = equilibrium(&box, equilibrium_step, saving_period, out_file);
+//		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (box.thisnode->node_id == 0)
-			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
+//		if (box.thisnode->node_id == 0)
+//			cout << " Done in " << (t_eq / 60.0) << " minutes" << endl;
 
 		t_sim = data_gathering(&box, total_step, saving_period, out_file);
 		MPI_Barrier(MPI_COMM_WORLD);

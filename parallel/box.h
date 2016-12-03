@@ -19,7 +19,7 @@ public:
 	Wall wall[8]; // Array of walls in our system.
 
 	Real t;
-	Real density;
+	Real density, packing_fraction;
 	Real polarization;
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
@@ -37,6 +37,8 @@ public:
 
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
+	void Move_Runge_Kutta_1(); // Do the first step of Runge Kutta
+	void Move_Runge_Kutta_2(); // Do the second step of Runge Kutta
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
@@ -262,11 +264,36 @@ void Box::Move()
 	thisnode->Move();
 }
 
+// Do the first step of Runge Kutta
+void Box::Move_Runge_Kutta_1()
+{
+	thisnode->Move_Runge_Kutta_1();
+}
+
+// Do the second step of Runge Kutta
+void Box::Move_Runge_Kutta_2()
+{
+	thisnode->Move_Runge_Kutta_2();
+}
+
 // One full step, composed of interaction computation and move.
 void Box::One_Step()
 {
-	Interact();
-	Move();
+	#ifndef RUNGE_KUTTA
+		Interact();
+		Move();
+		MPI_Barrier(MPI_COMM_WORLD);
+	#else
+		Interact();
+		Move_Runge_Kutta_1();
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		Interact();
+		Move_Runge_Kutta_2();
+		MPI_Barrier(MPI_COMM_WORLD);
+	#endif
+
 	t += dt;
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -274,12 +301,25 @@ void Box::One_Step()
 // Several steps befor a cell upgrade.
 void Box::Multi_Step(int steps)
 {
-	for (int i = 0; i < steps; i++)
-	{
-		Interact();
-		Move();
-		MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
-	}
+	#ifndef RUNGE_KUTTA
+		for (int i = 0; i < steps; i++)
+		{
+			Interact();
+			Move();
+			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+		}
+	#else
+			Interact();
+			Move_Runge_Kutta_1();
+
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			Interact();
+			Move_Runge_Kutta_2();
+
+			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+	#endif
+
 	t += dt*steps;
 //	cout << "Updating cells" << endl;
 	thisnode->Quick_Update_Cells();

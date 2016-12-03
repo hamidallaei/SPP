@@ -65,8 +65,10 @@ class C2DVector
 
 		void Periodic_Transform()
 		{
-			x -= Lx2*((int) (x / Lx));
-			y -= Ly2*((int) (y / Ly));
+//			x -= Lx2*((int) (x / Lx));
+//			y -= Ly2*((int) (y / Ly));
+			x -= Lx2*((int) floor(x / Lx2 + 0.5));
+			y -= Ly2*((int) floor(y / Ly2 + 0.5));
 		}
 
 		Real Square() const// returns the magnitude of the vector

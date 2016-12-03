@@ -449,109 +449,33 @@ Real MarkusParticle::kisi = 1;
 //###################################################################
 class RepulsiveParticle: public BasicDynamicParticle {
 public:
-	Real torque;
-	C2DVector f;
+	C2DVector f, r_old; // force, old position
+	Real torque; // tourque acting on the chain
+	Real theta_old; // self propullsion angle
+	Real dtheta; // amount of noise added to theta
+	static Real Dr; // rotational diffusion of self propullsion angle
+	static Real sigma_p;
+	static Real repulsion_radius;
+	static Real A_p;
 	static Real g;
-	static Real kesi;
-	static Real Dr;
-	static Real A_p;		// interaction strength
-	static Real sigma_p;		// sigma in Yukawa Potential
-	static Real r_f_p;		// flocking radius with particles
-	static Real r_c_p;		// repulsive cutoff radius with particles
-
-	static Real A_w;
+	static Real aliagnment_radius;		// flocking radius with particles
+	static Real r_c_w;
+	static Real r_f_w;
 	static Real sigma_w;
-	static Real r_f_w;		// aligning radius with walls
-	static Real r_c_w;		// repulsive cutoff radius with walls
+	static Real A_w;
+	static Real g_w;
+	static int nb;
+
 
 	RepulsiveParticle();
-	void Move()
-	{
-		#ifdef COMPARE
-			torque = round(digits*torque)/digits;
-		#endif
-		torque = torque + gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
-		theta += torque*dt;
-		C2DVector old_v = v;
-		#ifdef COMPARE
-			theta = round(digits*theta)/digits;
-		#endif
-		v.x = cos(theta);
-		v.y = sin(theta);
-		#ifdef COMPARE
-			v.x = round(digits*v.x)/digits;
-			v.y = round(digits*v.y)/digits;
-			f.x = round(digits*f.x)/digits;
-			f.y = round(digits*f.y)/digits;
-		#endif
-		v *= speed;
-		v += f;
-		r += v*dt;
-		#ifdef PERIODIC_BOUNDARY_CONDITION
-			r.Periodic_Transform();
-		#endif
-		#ifdef TRACK_PARTICLE
-			if (this == track_p && flag)
-			{
-				cout << "Particle:         " << setprecision(50)  << v.y << endl << flush;
-			}
-		#endif
-		Reset();
-	}
 
-	virtual void Reset();
-
-	void Interact(RepulsiveParticle& p)
-	{
-		C2DVector dr = r - p.r;
-		#ifdef PERIODIC_BOUNDARY_CONDITION
-			dr.Periodic_Transform();
-		#endif
-		Real d2 = dr.Square();
-		Real d = sqrt(d2);
-
-		C2DVector interaction_force;
-		if (d < r_c_p)
-		{
-			dr /= d;
-			Real r_c_p2 = r_c_p*r_c_p; 
-//			interaction_force = dr * A_p * ( exp(- d / sigma_p ) * ( 1. / d2 + 1. / (sigma_p * d)) - exp(- r_c_p / sigma_p ) * ( 1. / r_c_p2 + 1. / (sigma_p * r_c_p)) );
-			interaction_force = dr * A_p * ((r_c_p - d)*(r_c_p - d) / ((d-sigma_p)*(d-sigma_p)));
-
-			f += interaction_force;
-			p.f -= interaction_force;
-		}
-
-		Real torque_interaction;
-		if (d < r_f_p)
-		{
-			neighbor_size++;
-			p.neighbor_size++;
-
-			torque_interaction = g*sin(p.theta - theta)/(PI);
-
-			torque += torque_interaction;
-			p.torque -= torque_interaction;
-
-			#ifdef TRACK_PARTICLE
-				if (this == track_p && flag)
-				{
-//					if (abs(torque) > 0.1)
-//						cout << "Intthis:     " << setprecision(100) << d2 << "\t" << torque_interaction << endl << flush;
-//						cout << "Intthis:     " << setprecision(100) << r << "\t" << d2 << endl << flush;
-				}
-			#endif
-
-			#ifdef TRACK_PARTICLE
-				if (&p == track_p && flag)
-				{
-//						cout << "Intthat:     " << setprecision(100) <<  d2 << "\t" << torque_interaction << endl << flush;
-//					if (abs(p.torque) > 0.1)
-//						cout << "Intthat:     " << setprecision(100) << p.r << "\t" << d2 << "\t" << p.theta << "\t" << torque_interaction << endl << flush;
-				}
-			#endif
-		}
-	}
+	void Reset();
+	void Move();
+	void Move_Runge_Kutta_1();
+	void Move_Runge_Kutta_2();
+	virtual void Noise_Gen();
+	void Interact(RepulsiveParticle& ac);
+	void Write(std::ostream& os);
 };
 
 RepulsiveParticle::RepulsiveParticle()
@@ -563,23 +487,128 @@ void RepulsiveParticle::Reset()
 {
 	neighbor_size = 1;
 	torque = 0;
-	f.Null();
+	f = v;
 }
 
-Real RepulsiveParticle::g = .5;
-Real RepulsiveParticle::kesi = .5;
+inline void RepulsiveParticle::Noise_Gen()
+{
+	dtheta =  gsl_ran_gaussian(C2DVector::gsl_r,noise_amplitude);
+}
+
+inline void RepulsiveParticle::Move()
+{
+	Noise_Gen();
+	theta += dt*(torque);
+	theta += dtheta;  // add noise
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r_original += f*dt;
+	r = r_original;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	Reset();
+}
+
+void RepulsiveParticle::Move_Runge_Kutta_1() // half step forward
+{
+	Noise_Gen();
+
+	theta_old = theta;
+	r_old = r_original;
+
+	theta += half_dt*torque;
+	theta += dtheta/2;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI; // -PI < theta < PI
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r += f*half_dt;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	Reset();
+}
+
+void RepulsiveParticle::Move_Runge_Kutta_2() // one step forward
+{
+	theta = theta_old + dt*torque;
+	theta += dtheta;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r_original = r_old + f*half_dt;
+	r = r_original;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	Reset();
+}
+
+void RepulsiveParticle::Interact(RepulsiveParticle& p)
+{
+	C2DVector dr = r - p.r;
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		dr.Periodic_Transform();
+	#endif
+	Real d2 = dr.Square();
+	Real d = sqrt(d2);
+
+	C2DVector interaction_force;
+	if (d < repulsion_radius)
+	{
+		interaction_force = R12_Repulsive_Truncated(dr,d,repulsion_radius,sigma_p,A_p);
+
+		f += interaction_force;
+		p.f -= interaction_force;
+	}
+
+	Real torque_interaction;
+	if (d < aliagnment_radius)
+	{
+		neighbor_size++;
+		p.neighbor_size++;
+
+		torque_interaction = g*sin(p.theta - theta) / (PI*aliagnment_radius*aliagnment_radius);
+
+		torque += torque_interaction;
+		p.torque -= torque_interaction;
+	}
+}
+
+/*void RepulsiveParticle Write(std::ostream& os)*/
+/*{*/
+/*		r.write(os);*/
+/*		float temp_float = (float) theta;*/
+/*		os.write((char*) &temp_float,sizeof(float) / sizeof(char));*/
+/*}*/
+
 Real RepulsiveParticle::Dr = 0;
-
+Real RepulsiveParticle::g = 1.0;
 // Interactions for repulsive particles
-Real RepulsiveParticle::A_p = 10.;		// interaction strength
-Real RepulsiveParticle::sigma_p = 0.9;		// sigma in Yukawa Potential
-Real RepulsiveParticle::r_f_p = 1.;		// flocking radius with particles
-Real RepulsiveParticle::r_c_p = 1.1;		// repulsive cutoff radius with particles
+Real RepulsiveParticle::A_p = 2.;		// interaction strength
+Real RepulsiveParticle::sigma_p = 1.0;		// sigma in Potential
+Real RepulsiveParticle::aliagnment_radius = 1.1;		// flocking radius with particles
+Real RepulsiveParticle::repulsion_radius = 1.2;	// repulsive cutoff radius with particles
+Real RepulsiveParticle::r_c_w;
+Real RepulsiveParticle::r_f_w;
+Real RepulsiveParticle::A_w;
+Real RepulsiveParticle::sigma_w;
+Real RepulsiveParticle::g_w;
+int RepulsiveParticle::nb;
 
-Real RepulsiveParticle::A_w = 50.;		// interaction strength with walls
-Real RepulsiveParticle::sigma_w = 1.;
-Real RepulsiveParticle::r_f_w = 1.;		// aligning radius with walls
-Real RepulsiveParticle::r_c_w = 1.; 		// repulsive cutoff radius with walls
 //###################################################################
 
 
@@ -744,8 +773,6 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 			C2DVector interaction_force;
 			if (d < cut_off_radius)
 			{
-				dr /= d;
-
 				interaction_force = R12_Repulsive_Truncated(dr,d,cut_off_radius,sigma_p,A_p);
 
 				f += interaction_force;

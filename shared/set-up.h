@@ -115,8 +115,8 @@ void Triangle_Lattice_Formation(Particle* particle, int N, double sigma)
 	int Nx = (int) sqrt((Lx*N*sqrt(3))/(2*Ly)) + 1;
 	int Ny = N / Nx + 1;
 
-	basis_1 = basis_1*((Lx2 - 2*sigma) / Nx);
-	basis_2 = basis_2*((Lx2 - 2*sigma) / Nx);
+	basis_1 = basis_1*((Lx2 - sigma) / Nx);
+	basis_2 = basis_2*((Lx2 - sigma) / Nx);
 
 //	basis_1 = basis_1*(sigma*1.15);
 //	basis_2 = basis_2*(sigma*1.15);
@@ -129,7 +129,7 @@ void Triangle_Lattice_Formation(Particle* particle, int N, double sigma)
 		r.y -= (Ly - sigma);
 		if ((r.y > Ly) || (r.y < -Ly) || (r.x > Lx) || (r.x < -Lx))
 			cout << r.x/Lx << "\t" << r.y/Ly << endl;
-//		r.Periodic_Transform();
+		r.Periodic_Transform();
 		particle[i].Init(r);
 		v_cm += (particle[i].v / N);
 	}

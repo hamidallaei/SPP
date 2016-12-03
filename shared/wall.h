@@ -245,7 +245,7 @@ void Wall::Interact(RepulsiveParticle* p)
 		if (dr*self_propulsion_direction < 0.)
 		{
 			Real dtheta = p->theta - theta;
-			torque_interaction = p->kesi*sin(dtheta)/PI;
+			torque_interaction = p->g_w*sin(dtheta)/PI;
 			dtheta -= 2*PI * ((int) (dtheta / (2*PI)));
 			if (dtheta < 0.)
 				dtheta += 2*PI; 		// 0 < dtheta < 2*PI
