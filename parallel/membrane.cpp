@@ -82,8 +82,10 @@ void Run(Box& box, int argc, char *argv[])
 	Real input_chiral_radius = atof(argv[3+input_file]);
 	Real input_packing_fraction = atof(argv[4+input_file]);
 
-	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
-	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
+//	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
+//	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
+	int input_Nm = (int) round(M_PI/asin(0.5*Particle::sigma_p/input_membrane_radius));
+	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
 
 	Real t_eq,t_sim;
 

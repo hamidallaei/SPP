@@ -42,10 +42,10 @@ typedef double Real;
 	const int dof = 4; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
 #else
 //	typedef ContinuousParticle Particle;
-//typedef VicsekParticle2 Particle;
-//typedef MarkusParticle Particle;
-typedef RepulsiveParticle Particle;
-//	typedef ActiveBrownianChain Particle;
+//	typedef VicsekParticle2 Particle;
+//	typedef MarkusParticle Particle;
+//	typedef RepulsiveParticle Particle;
+	typedef ActiveBrownianChain Particle;
 //	typedef RTPChain Particle;
 	#ifdef NonPeriodicCompute
 		const int dof = 5;
@@ -63,7 +63,7 @@ const int max_wall_num = 8;
 const int max_N = 64000;
 
 // Box
-const int Lx_int = 16;
+const int Lx_int = 64;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -74,16 +74,16 @@ const Real Ly2 = 2*Ly;
 // Time
 Real dt = 1.0/512/2;
 Real half_dt = dt/2;
-const int cell_update_period = 4;
+const int cell_update_period = 32;
 const int saving_period = 16;
 const long int equilibrium_step = 0;
-const long int total_step = 8388608;
+const long int total_step = 33554432; // 2^23 = 8388608 ,  2^25 = 33554432
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
 const Real K = 0;
 
-const Real lx_min = (1 + 1*speed*cell_update_period*dt);
+const Real lx_min = (2 + 2*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;

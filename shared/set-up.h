@@ -288,7 +288,8 @@ void Ring_Membrane(Particle* particle, int N_m)
 */
 	C2DVector r;
 	Real	bead_diameter = Particle::sigma_p;
-	Real membrane_radius = 0.5*N_m*bead_diameter/M_PI;
+/*	Real membrane_radius = 0.5*N_m*bead_diameter/M_PI;*/
+	Real membrane_radius = 0.5*Particle::sigma_p/sin(M_PI/N_m);
 	Real theta =  0;
 
 	cout << "Membrane Radius:\t" << membrane_radius << "\tBox dim:\t" << 2*Lx << endl;
@@ -315,7 +316,8 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 */
 	C2DVector r;
 	Real bead_diameter = Particle::sigma_p - 0.1;
-	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;
+/*	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;*/
+	Real membrane_radius = 0.5*Particle::sigma_p/sin(M_PI/N_m);
 	int chain_length = particle[N_m].nb; // number of beads in each swimmer(chain)
 
 	int i = 0;
@@ -403,44 +405,18 @@ void Confined_In_Square_Membrane(Particle* particle, int N_s, int N_l)
 	int n_x = (int) ceil (sqrt(N_s*chain_length)); //number of columns
 	int n_y = (int) ceil (N_s/n_x);			  //number of rows
 	double b = (N_l-2)/n_x;					  //aspect ratio of unit cell
-	cout << "n_x = " << n_x << "\tn_y = " << n_y << "\tb = " << b << endl;
 	for (int j = 0; j < n_y+1; j+=1) 
 	{
 		for (int i = 0; i < n_x+1; i++)
 		{
-/*			if (j * n_x + i < N_s)*/
-/*			{*/
 				r.x = 0.5*(-N_l + 2 + b) * bead_diameter + i * b * bead_diameter;
 				r.y = 0.5*(-N_l + 2 + chain_length) * bead_diameter + j * b * chain_length * bead_diameter;
 				particle[4*N_l-4 + j * n_x + i].r = r;
 				particle[4*N_l-4 + j * n_x + i].theta = M_PI*(i%2) + M_PI*(j%2) + M_PI/2;
 				particle[4*N_l-4 + j * n_x + i].v.x = cos(particle[4*N_l-4+i].theta);
 				particle[4*N_l-4 + j * n_x + i].v.y = sin(particle[4*N_l-4+i].theta);
-/*			}*/
 		}
 	}
-
-/*	C2DVector r;*/
-/*	Real bead_diameter = Particle::sigma_p;*/
-/*	int n_x = (int) ceil (sqrt(N_s*chain_length)); //number of columns*/
-/*	int n_y = (int) ceil (N_s/n_x);			  //number of rows*/
-/*	double b = (N_l-2)/n_x;					  //aspect ratio of unit cell*/
-/*	cout << "n_x = " << n_x << "\tn_y = " << n_y << "\tb = " << b << endl;*/
-/*	for (int j = 0; j < n_y; j+=1) */
-/*	{*/
-/*		for (int i = 0; i < n_x; i++)*/
-/*		{*/
-/*			if (j * n_x + i < N_s)*/
-/*			{*/
-/*				r.x = 0.5*(-N_l + 3) * bead_diameter + i * b * bead_diameter;*/
-/*				r.y = 0.5*(-N_l + 2 + chain_length) * bead_diameter + j * b * chain_length * bead_diameter;;*/
-/*				particle[4*N_l-4 + j * n_x + i].r = r;*/
-/*				particle[4*N_l-4 + j * n_x + i].theta = M_PI*(i%2) + M_PI/2;*/
-/*				particle[4*N_l-4 + j * n_x + i].v.x = cos(particle[4*N_l-4+i].theta);*/
-/*				particle[4*N_l-4 + j * n_x + i].v.y = sin(particle[4*N_l-4+i].theta);*/
-/*			}*/
-/*		}*/
-/*	}*/
 }
 
 
