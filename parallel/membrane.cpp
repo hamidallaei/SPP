@@ -77,10 +77,10 @@ void Run(Box& box, int argc, char *argv[])
 	}
 
 	int input_chain_length = 2;
-	Real input_membrane_elasticity = atof(argv[1+input_file]);
-	Real input_membrane_radius = atof(argv[2+input_file]);
-	Real input_chiral_radius = atof(argv[3+input_file]);
-	Real input_packing_fraction = atof(argv[4+input_file]);
+	Real input_membrane_elasticity = atof(argv[2+input_file]);
+	Real input_membrane_radius = atof(argv[3+input_file]);
+	Real input_chiral_radius = atof(argv[4+input_file]);
+	Real input_packing_fraction = atof(argv[5+input_file]);
 
 //	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
 //	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
@@ -160,18 +160,15 @@ void Run(Box& box, int argc, char *argv[])
 
 
 
-void Init_Nodes(Node& thisnode)
+void Init_Nodes(Node& thisnode, const int& seed)
 {
-	#ifdef COMPARE
-		thisnode.seed = seed;
-	#else
-		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-		while (!thisnode.Chek_Seeds())
-		{
-			thisnode.seed = time(NULL) + thisnode.node_id*112488;
-			MPI_Barrier(MPI_COMM_WORLD);
-		}
-	#endif
+//	thisnode.seed = time(NULL) + thisnode.node_id*112488;
+//	while (!thisnode.Chek_Seeds())
+//	{
+//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
+//		MPI_Barrier(MPI_COMM_WORLD);
+//	}
+	thisnode.seed = seed +  thisnode.node_id*112488;
 	C2DVector::Init_Rand(thisnode.seed);
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -183,7 +180,9 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 
 	Node thisnode;
-	Init_Nodes(thisnode);
+	input_seed = atoi(argv[1]);
+
+	Init_Nodes(thisnode, input_seed);
 
 	Box box;
 	box.thisnode = &thisnode;
