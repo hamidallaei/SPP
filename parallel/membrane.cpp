@@ -4,6 +4,8 @@
 #include "../shared/cell.h"
 #include "beadbox.h"
 
+int input_seed;
+
 inline void timing_information(Node* node, clock_t start_time, int i_step, int total_step)
 {
 	if (node->node_id == 0)
@@ -77,10 +79,10 @@ void Run(Box& box, int argc, char *argv[])
 	}
 
 	int input_chain_length = 2;
-	Real input_membrane_elasticity = atof(argv[2+input_file]);
-	Real input_membrane_radius = atof(argv[3+input_file]);
-	Real input_chiral_radius = atof(argv[4+input_file]);
-	Real input_packing_fraction = atof(argv[5+input_file]);
+	Real input_membrane_elasticity = atof(argv[1+input_file]);
+	Real input_membrane_radius = atof(argv[2+input_file]);
+	Real input_chiral_radius = atof(argv[3+input_file]);
+	Real input_packing_fraction = atof(argv[4+input_file]);
 
 //	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
 //	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
@@ -126,6 +128,7 @@ void Run(Box& box, int argc, char *argv[])
 	box.info << "-R="<< box.membrane_radius;
 	box.info << "-r=" << Particle::R0;
 	box.info << "-phi=" << box.packing_fraction;
+	box.info << "-seed=" << input_seed;
 	box.info << "-ABP";
 
 	ofstream out_file;
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 
 	Node thisnode;
-	input_seed = atoi(argv[1]);
+	input_seed = atoi(argv[5]);
 
 	Init_Nodes(thisnode, input_seed);
 
