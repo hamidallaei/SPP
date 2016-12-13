@@ -75,7 +75,7 @@ const Real Ly2 = 2*Ly;
 Real dt = 1.0/512/2;
 Real half_dt = dt/2;
 const int cell_update_period = 32;
-const int saving_period = 16;
+const int saving_period = 512;
 const long int equilibrium_step = 0;
 const long int total_step = 33554432; // 2^23 = 8388608 ,  2^25 = 33554432
 
