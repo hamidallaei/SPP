@@ -340,7 +340,11 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 				}
 		}
 	double buffer[n_data];
-	double buffer_sum[n_data] = {0};
+//	double buffer_sum[n_data] = {0};
+	double buffer_sum[n_data];
+
+	for (int i = 0; i < n_data; i++)
+		buffer_sum[i] =  0;
 
 	buffer[0] = r_cm.x;
 	buffer[1] = r_cm.y;

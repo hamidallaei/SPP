@@ -615,7 +615,7 @@ int RepulsiveParticle::nb;
 //###################################################################
 class ActiveBrownianChain : public BasicDynamicParticle {
 public:
-	const int dof = 3; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
+//	const int dof = 3; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
 	int nb; // number of beads
 	Real m_parallel;  // Mobility parallel to the direction
 	Real m_perpendicular; // Mobility perpendicular to the direction
