@@ -45,6 +45,11 @@ inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_
 	}
 	if ((total_step / cell_update_period) % trajectory_saving_period == 0)
 		out_file << box;
+	if ((total_step / cell_update_period) % 16 == 0)
+	{
+	  box->thisnode->Root_Gather();
+	  box->thisnode->Root_Bcast();
+	}
 
 	if (box->thisnode->node_id == 0)
 		cout << "Finished" << endl;
