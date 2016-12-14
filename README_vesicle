@@ -1,0 +1,59 @@
+SPP = source file
+make new directory for saving simulation files, give arbitrary name, e.g. phi0.5
+
+cd phi0.5
+
+//////////////////////////(on laptop)////////////////////////
+compile:
+	mpic++ -lgsl -lcblas -O3 /home/maryam/GitProject/SPP/parallel/membrane.cpp
+
+run:
+	mpirun -np 2 ./a.out 500 5 5 0.4 1
+## these numbers are:
+	2 =  number of parallel nodes we ask for each job
+	k(500) = spring constant(membrane)
+	R(5) = initial radius of membrane
+	r(5) = radius of chiral motion of active beads
+	phi(0.4) = initial packing fraction of active beads
+	seed(1) = random seed
+
+
+//////////////////////(on computer/IPM cluster)//////////////////
+compile:
+	mpic++ ~/membrane/SPP/parallel/membrane.cpp  -I/share/apps/gsl-2.1/ -I/share/apps/boost_1_60_0/ -L/share/apps/gsl-2.1/lib/ -L/share/apps/gsl-2.1/cblas/lib/ -lgsl -lgslcblas -O3 -o a.out
+
+-when compiling, you may face an error like this "./a.out: error while loading shared libraries: libgsl.so.19: cannot open shared object file: No such file or directory". To solve it:
+	cd ~
+	nano .bashrc
+	look for "LD_LIBRARY_PATH"
+	you would see a long sequence of library paths, separated from each other with ":"
+	just add your library path ("/share/apps/gsl-2.1/lib/") to this sequence.
+	you may need to logout and login again and the problem is solved.
+
+run:
+	sh runscript_cluster_SUT_vesicle.sh
+	sh runscript_cluster_IPM_vesicle.sh
+
+
+//////////////////////////(on physics cluster)//////////////////
+compile:
+	mpic++ -L ~/apps/lib/ -I ~/apps/include/ -I ~/boost_1_61_0 -L ~/boost_1_61_0 -lgsl -lgslcblas -O3  ~/membrane/SPP/parallel/membrane.cpp -o a.out
+
+run:
+	sh runscript_cluster_SUT_vesicle.sh 
+
+
+///////////////////////////////////////////////////////////////////
+to find a path, write:
+	pwd
+
+
+///////////////////////////////////////////////////////////////////
+compile the graphic interface:
+	cd phi0.5 (where you find .bin file)
+	g++ -O3 -lboost_system -lboost_iostreams -lGL -lGLU -lglut -lgsl -lcblas -lopencv_core -lopencv_imgproc -lopencv_calib3d -lopencv_video -lopencv_highgui /home/maryam/GitProject/SPP/analyze/opengl.cpp -o show
+
+run:
+	./show FILENAME.bin
+
+
