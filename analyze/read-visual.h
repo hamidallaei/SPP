@@ -144,7 +144,6 @@ void Scene::Skip_File(std::istream& in, int n)
 		for (int j = 0; j < Ns; j++)
 		{
 			in >> temp_r;
-
 			float temp_float;
 			in.read((char*) &temp_float,sizeof(float) / sizeof(char));
 		}
@@ -163,11 +162,17 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	scene.mparticle = new VisualMembrane[scene.Nm];
 	scene.sparticle = new VisualChain[scene.Ns];
 	for (int i = 0; i < scene.Nm; i++)
+	{
 		is >> scene.mparticle[i].r;
+		scene.mparticle[i].r.x -= Lx*2*((int) floor(scene.mparticle[i].r.x / (Lx*2) + 0.5));
+		scene.mparticle[i].r.y -= Ly*2*((int) floor(scene.mparticle[i].r.y / (Ly*2) + 0.5));
+	}
 	for (int i = 0; i < scene.Ns; i++)
 	{
 		is >> scene.sparticle[i].r;
 
+		scene.sparticle[i].r.x -= Lx*2*((int) floor(scene.sparticle[i].r.x / (Lx*2) + 0.5));
+		scene.sparticle[i].r.y -= Ly*2*((int) floor(scene.sparticle[i].r.y / (Ly*2) + 0.5));
 		float temp_float;
 		is.read((char*) &temp_float,sizeof(float) / sizeof(char));
 		scene.sparticle[i].theta = temp_float;

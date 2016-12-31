@@ -590,7 +590,7 @@ void RepulsiveParticle::Interact(RepulsiveParticle& p)
 
 /*void RepulsiveParticle Write(std::ostream& os)*/
 /*{*/
-/*		r.write(os);*/
+/*		r_original.write(os);*/
 /*		float temp_float = (float) theta;*/
 /*		os.write((char*) &temp_float,sizeof(float) / sizeof(char));*/
 /*}*/
@@ -803,10 +803,10 @@ void ActiveBrownianChain::Write(std::ostream& os)
 /*	}*/
 
 	if (nb == 1)
-		r.write(os);
+		r_original.write(os);
 	else
 	{
-		r.write(os);
+		r_original.write(os);
 		float temp_float = (float) theta;
 		os.write((char*) &temp_float,sizeof(float) / sizeof(char));
 	}

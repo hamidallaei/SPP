@@ -156,7 +156,7 @@ void Run(Box& box, int argc, char *argv[])
 	if (box.thisnode->node_id == 0)
 		cout << " Box information is: " << box.info.str() << endl;
 
-		int quantities_saving_period = ( (int) round(1/dt) ) / cell_update_period;
+		int quantities_saving_period = ( (int) round(16/dt) ) / cell_update_period;
 		t_sim = data_gathering(&box, total_step, saving_period, quantities_saving_period, out_file, variables_file);
 		MPI_Barrier(MPI_COMM_WORLD);
 

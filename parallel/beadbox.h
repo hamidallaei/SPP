@@ -386,8 +386,8 @@ void Box::Save_All_Variables(std::ostream& os) // Save center of mass position a
 	if (thisnode->node_id == 0)
 	{
 		if (first_time)
-			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity" << endl;	
-		os << t << "\t" << r_cm << "\t" << v_cm << "\t" << l << "\t" << omega << "\t" << Rg << "\t" << Delta << endl;
+			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity\tQxx\tQxy\tQyy" << endl;
+		os << t << "\t" << r_cm << "\t" << v_cm << "\t" << l << "\t" << omega << "\t" << Rg << "\t" << Delta << "\t" << xx << "\t" << xy << "\t" << yy << endl;
 		first_time = false;
 	}
 }
@@ -409,7 +409,7 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 
 		for (int i = 0; i < box->Nm; i++)
 		{
-			box->particle[i].r.write(os);
+			box->particle[i].r_original.write(os);
 		}
 
 		for (int i = box->Nm; i < box->N; i++)
