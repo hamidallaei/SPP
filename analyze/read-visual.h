@@ -44,6 +44,10 @@ Scene::Scene()
 
 Scene::Scene(const Scene& s)
 {
+	t = s.t;
+	chain_length = s.chain_length;
+	Ns = s.Ns;
+	Nm = s.Nm;
 	sparticle = s.sparticle;
 	mparticle = s.mparticle;
 	L = s.L;
@@ -74,6 +78,8 @@ void Scene::Draw()
 
 	for (int i = 0; i < Nm; i++)
 		mparticle[i].Draw();
+
+	cout << "Time is at:\t" << t << "\tR/v_0" << endl;
 }
 
 void Scene::Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
