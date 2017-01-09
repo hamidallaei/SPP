@@ -280,16 +280,14 @@ void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta)
 }
 
 
-void Ring_Membrane(Particle* particle, int N_m)
+void Ring_Membrane(Particle* particle, const Real bead_diameter, int N_m)
 {/*
 	Put all of the membrane beads on a circular ring
 	N_m = Number of membrane beads
-	bead_diameter = Particle::sigma_p
 */
 	C2DVector r;
-	Real	bead_diameter = Particle::sigma_p;
 /*	Real membrane_radius = 0.5*N_m*bead_diameter/M_PI;*/
-	Real membrane_radius = 0.5*Particle::sigma_p/sin(M_PI/N_m);
+	Real membrane_radius = 0.5*bead_diameter/sin(M_PI/N_m);
 	Real theta =  0;
 
 	cout << "Membrane Radius:\t" << membrane_radius << "\tBox dim:\t" << 2*Lx << endl;
@@ -305,7 +303,7 @@ void Ring_Membrane(Particle* particle, int N_m)
 }
 
 
-void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
+void Confined_In_Ring_Membrane(Particle* particle, const Real bead_diameter, int N_s, int N_m)
 {/*
 	Put all of the active beads inside the circular ring
 	we divide active beads to some parts and then put each part on a ring 
@@ -315,9 +313,8 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 	bead_diameter = Particle::sigma_p
 */
 	C2DVector r;
-	Real bead_diameter = Particle::sigma_p - 0.1;
 /*	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;*/
-	Real membrane_radius = 0.5*Particle::sigma_p/sin(M_PI/N_m);
+	Real membrane_radius = 0.5*bead_diameter/sin(M_PI/N_m);
 	int chain_length = particle[N_m].nb; // number of beads in each swimmer(chain)
 
 	int i = 0;
@@ -329,8 +326,8 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 		n_ring is number of active particles on that ring
 		ring_index renotes the index of each ring
 		*/
-		Real ring_radius = membrane_radius - ring_index * chain_length * bead_diameter;// - bead_diameter/2;
-		Real n_ring = (int) floor(2 * M_PI * ring_radius / bead_diameter);
+		Real ring_radius = membrane_radius - ring_index * chain_length * (bead_diameter - 0.1);// - bead_diameter/2;
+		Real n_ring = (int) floor(2 * M_PI * ring_radius / (bead_diameter - 0.1));
 		for (int i = n_1; i < (n_1 + n_ring) && i < N_s; i++)
 		{
 			r.x = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*cos(ring_theta);
@@ -351,14 +348,13 @@ void Confined_In_Ring_Membrane(Particle* particle, int N_s, int N_m)
 }
 
 
-void Square_Membrane(Particle* particle, int N_l)
+void Square_Membrane(Particle* particle, const Real bead_diameter, int N_l)
 {/*
 	Put all of the membrane beads on a square N_l * N_l
 	N_l = Number of membrane beads on each side of the square
 	bead_diameter = Particle::sigma_p
 */
 	C2DVector r;
-	Real	bead_diameter = Particle::sigma_p;
 
 	for (int i = 0; i < N_l; i++)
 	{
@@ -386,7 +382,7 @@ void Square_Membrane(Particle* particle, int N_l)
 	}
 }
 
-void Confined_In_Square_Membrane(Particle* particle, int N_s, int N_l)
+void Confined_In_Square_Membrane(Particle* particle, const Real bead_diameter,int N_s, int N_l)
 {/*
 	Put all of the active beads inside the square membrane (rows)
 	N_s = Number of swimmers
@@ -401,7 +397,7 @@ void Confined_In_Square_Membrane(Particle* particle, int N_s, int N_l)
 	}
 
 	C2DVector r;
-	Real bead_diameter = Particle::sigma_p;
+
 	int n_x = (int) ceil (sqrt(N_s*chain_length)); //number of columns
 	int n_y = (int) ceil (N_s/n_x);			  //number of rows
 	double b = (N_l-2)/n_x;					  //aspect ratio of unit cell

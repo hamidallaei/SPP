@@ -125,8 +125,8 @@ void Run(Box& box, int argc, char *argv[])
 	{
 		if (box.thisnode->node_id == 0)
 		{
-			Ring_Membrane(box.particle, box.Nm);
-			Confined_In_Ring_Membrane(box.particle, box.Ns, box.Nm);
+			Ring_Membrane(box.particle, Particle::sigma_p, box.Nm);
+			Confined_In_Ring_Membrane(box.particle, Particle::sigma_p, box.Ns, box.Nm);
 		}
 		box.Sync();
 	}
