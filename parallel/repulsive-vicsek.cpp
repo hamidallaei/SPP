@@ -91,6 +91,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	Real t_eq,t_sim;
 
+	Particle::nb = 1;
 	Particle::noise_amplitude = 0;
 	Particle::g = input_g;
 
@@ -101,12 +102,12 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	if (box.thisnode->node_id == 0)
 	{
-		Triangle_Lattice_Formation(box.particle,box.N,0);
-		for (int i = 0; i < box.N; i++)
+		Triangle_Lattice_Formation(box.particle,box.Ns,0);
+		for (int i = 0; i < box.Ns; i++)
 			box.particle[i].r_original = box.particle[i].r;
 	}
 	box.Sync();
-	for (int i = 0; i < box.N; i++)
+	for (int i = 0; i < box.Ns; i++)
 		box.particle[i].r_original = box.particle[i].r;
 
 	for (int i = 0; i < noise_list.size(); i++)

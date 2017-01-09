@@ -14,7 +14,7 @@
 
 class Box{
 public:
-	int N, wall_num; // N is the number of particles and wallnum is the number of walls in the system.
+	int Ns, Nm, wall_num; // N is the number of particles and wallnum is the number of walls in the system.
 	Particle* particle; // Array of particles that we are going to simulate.
 	Wall wall[8]; // Array of walls in our system.
 
@@ -51,7 +51,8 @@ public:
 
 Box::Box()
 {
-	N = 0;
+	Ns = 0;
+	Nm = 0;
 	density = 0;
 	wall_num = 0;
 	particle = new Particle[max_N];
@@ -60,7 +61,7 @@ Box::Box()
 // Initialize the wall positions and numbers.
 void Box::Init_Topology()
 {
-	thisnode->Get_Box_Info(N,particle);
+	thisnode->Get_Box_Info(Ns,particle);
 	thisnode->Init_Topology();
 	#ifndef PERIODIC_BOUNDARY_CONDITION
 		wall_num = 4;
@@ -97,15 +98,16 @@ void Box::Init(Node* input_node, Real input_density)
 	thisnode = input_node;
 
 	density = input_density;
-	N = (int) round(Lx2*Ly2*input_density);
+	Ns = (int) round(Lx2*Ly2*input_density);
+	Nm = 0;
 
 	Init_Topology(); // Adding walls
 
 // Positioning the particles at first time. Note that, the positions can be tunned in the main file as well
 	if (thisnode->node_id == 0)
 	{
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
-//		Triangle_Lattice_Formation(particle, N, 1);
+		cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
+//		Triangle_Lattice_Formation(particle, Ns, 1);
 	}
 	Sync();
 
@@ -133,32 +135,32 @@ bool Box::Positioning_Particles(Node* input_node, const string input_name)
 
 	if (thisnode->node_id == 0)
 	{
-		is.read((char*) &N, sizeof(int) / sizeof(char));
-		if (N < 0 || N > 1000000)
+		is.read((char*) &Ns, sizeof(int) / sizeof(char));
+		if (Ns < 0 || Ns > 1000000)
 			return (false);
 		while (!is.eof())
 		{
-			for (int i = 0; i < N; i++)
+			for (int i = 0; i < Ns; i++)
 			{
 				is >> particle[i].r;
 				is >> particle[i].v;
 			}
-			is.read((char*) &N, sizeof(int) / sizeof(char));
+			is.read((char*) &Ns, sizeof(int) / sizeof(char));
 		}
-		for (int i = 0; i < N; i++)
+		for (int i = 0; i < Ns; i++)
 			particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
-		cout << "number_of_particles = " << N << endl; // Printing number of particles.
+		cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
 	}
 	else
 	{
-		is.read((char*) &N, sizeof(int) / sizeof(char));
-		if (N < 0 || N > 1000000)
+		is.read((char*) &Ns, sizeof(int) / sizeof(char));
+		if (Ns < 0 || Ns > 1000000)
 			return (false);
 	}
 
 	is.close();
 
-	density = N / (Lx2*Ly2);
+	density = Ns / (Lx2*Ly2);
 
 	Init_Topology(); // Adding walls
 
@@ -175,12 +177,12 @@ bool Box::Positioning_Particles(Node* input_node, const string input_name)
 // Loading a state to the box.
 void Box::Load(const State_Hyper_Vector& sv)
 {
-	if (N != sv.N)
+	if (Ns != sv.N)
 	{
 		cout << "Error: Number of particles in state vectors differ from box" << endl;
 		exit(0);
 	}
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < Ns; i++)
 	{
 		particle[i].r = sv.particle[i].r;
 		particle[i].theta = sv.particle[i].theta;
@@ -199,14 +201,14 @@ void Box::Load(const State_Hyper_Vector& sv)
 // Saving state of the box.
 void Box::Save(State_Hyper_Vector& sv) const
 {
-	if (N != sv.N)
+	if (Ns != sv.N)
 	{
 		cout << "Error: Number of particles in state vectors differ from box" << endl;
 		exit(0);
 	}
 	thisnode->Root_Gather();
 	thisnode->Root_Bcast();
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < Ns; i++)
 	{
 		sv.particle[i].r = particle[i].r;
 		sv.particle[i].theta = particle[i].theta;
@@ -342,7 +344,7 @@ void Box::Multi_Step(int steps, int interval)
 void Box::Translate(C2DVector d)
 {
 	thisnode->Root_Gather();
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < Ns; i++)
 	{
 		particle[i].r += d;
 		particle[i].r.Periodic_Transform();
@@ -371,16 +373,16 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 
 	if (box->thisnode->node_id == 0)
 	{
-		os.write((char*) &box->N, sizeof(box->N) / sizeof(char));
-		for (int i = 0; i < box->N; i++)
-		{
-			box->particle[i].r.write(os);
-			C2DVector v;
-			v.x = cos(box->particle[i].theta);
-			v.y = sin(box->particle[i].theta);
-			v.write(os);
+		os.write((char*) &(box->t), sizeof(Real) / sizeof(char));
+		os.write((char*) &(Lx), sizeof(Real) / sizeof(char));
+		os.write((char*) &(Ly), sizeof(Real) / sizeof(char));
+		os.write((char*) &(box->particle[box->Nm].nb), sizeof(int) / sizeof(char));
+		os.write((char*) &(box->Ns), sizeof(box->Ns) / sizeof(char));
+		os.write((char*) &(box->Nm), sizeof(box->Nm) / sizeof(char));
 
-//			cout << i << "\t" << setprecision(100) << box->particle[i].theta << endl;
+		for (int i = box->Nm; i < box->Ns; i++)
+		{
+			box->particle[i].Write(os);
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -391,8 +393,8 @@ std::istream& operator>>(std::istream& is, Box* box)
 {
 	if (box->thisnode->node_id == 0)
 	{
-		is.read((char*) &box->N, sizeof(int) / sizeof(char));
-		for (int i = 0; i < box->N; i++)
+		is.read((char*) &box->Ns, sizeof(int) / sizeof(char));
+		for (int i = 0; i < box->Ns; i++)
 		{
 			is >> box->particle[i].r;
 			is >> box->particle[i].v;

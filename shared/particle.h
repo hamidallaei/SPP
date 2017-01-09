@@ -588,12 +588,12 @@ void RepulsiveParticle::Interact(RepulsiveParticle& p)
 	}
 }
 
-/*void RepulsiveParticle Write(std::ostream& os)*/
-/*{*/
-/*		r_original.write(os);*/
-/*		float temp_float = (float) theta;*/
-/*		os.write((char*) &temp_float,sizeof(float) / sizeof(char));*/
-/*}*/
+void RepulsiveParticle::Write(std::ostream& os)
+{
+	r_original.write(os);
+	float temp_float = (float) theta;
+	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+}
 
 Real RepulsiveParticle::Dr = 0;
 Real RepulsiveParticle::g = 1.0;
@@ -607,7 +607,7 @@ Real RepulsiveParticle::r_f_w;
 Real RepulsiveParticle::A_w;
 Real RepulsiveParticle::sigma_w;
 Real RepulsiveParticle::g_w;
-int RepulsiveParticle::nb;
+int RepulsiveParticle::nb = 1;
 
 //###################################################################
 
