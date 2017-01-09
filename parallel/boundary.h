@@ -67,7 +67,7 @@ void Boundary::Send_Data()
 // Go over all bondary cells:
 	for (int i = 0; i < this_cell.size(); i++)
 		data_size += this_cell[i]->pid.size(); // Summing particles of each neighboring cell
-	data_size *= 3; // each particle has 3 double values (x,y and theta).
+	data_size *= dof; // each particle has 3 double values (x,y and theta).
 	double* data_buffer = new double[data_size]; // Allocating buffer array
 
 	int shift = 0; // We need to have a track of the last element of data_buffer that we wrote.
@@ -78,11 +78,15 @@ void Boundary::Send_Data()
 		{
 			int index = this_cell[i]->pid[j]; // This is just for convinience. Save pid of j'th particle in i'th this_cell to index.
 // save the index'th particle data to data_buffer
-			data_buffer[shift+3*j] = this_cell[i]->particle[index].r.x; // The particles could be accessed through Cell class
-			data_buffer[shift+3*j+1] = this_cell[i]->particle[index].r.y;
-			data_buffer[shift+3*j+2] = this_cell[i]->particle[index].theta;
+			data_buffer[shift+dof*j] = this_cell[i]->particle[index].r.x; // The particles could be accessed through Cell class
+			data_buffer[shift+dof*j+1] = this_cell[i]->particle[index].r.y;
+			data_buffer[shift+dof*j+2] = this_cell[i]->particle[index].theta;
+			#ifdef NonPeriodicCompute
+				data_buffer[shift+dof*j+3] = this_cell[i]->particle[index].r_original.x;
+				data_buffer[shift+dof*j+4] = this_cell[i]->particle[index].r_original.y;
+			#endif
 		}
-		shift += 3*this_cell[i]->pid.size(); // the last element id must be added with amount of data that we added in the for loop.
+		shift += dof*this_cell[i]->pid.size(); // the last element id must be added with amount of data that we added in the for loop.
 	}
 	MPI_Send(data_buffer,data_size,MPI_DOUBLE,that_node_id,tag,MPI_COMM_WORLD);
 	delete [] data_buffer;
@@ -95,7 +99,7 @@ void Boundary::Receive_Data()
 // We go over the cells of neighboring node at the boundary to sum the number of particles.
 	for (int i = 0; i < that_cell.size(); i++)
 		data_size += that_cell[i]->pid.size();
-	data_size *= 3; // each particle has 3 double values (x,y and theta).
+	data_size *= dof; // each particle has 3 double values (x,y and theta).
 	double* data_buffer = new double[data_size]; // Allocating space
 	MPI_Status status; // status is required in MPI_Recv call
 	MPI_Recv(data_buffer,data_size,MPI_DOUBLE,that_node_id,tag,MPI_COMM_WORLD,&status); // receiving data
@@ -105,14 +109,19 @@ void Boundary::Receive_Data()
 		for (int j = 0; j < that_cell[i]->pid.size(); j++)
 		{
 			int index = that_cell[i]->pid[j];
-			that_cell[i]->particle[index].r.x = data_buffer[shift+3*j];
-			that_cell[i]->particle[index].r.y = data_buffer[shift+3*j+1];
-			that_cell[i]->particle[index].theta = data_buffer[shift+3*j+2];
+			that_cell[i]->particle[index].r.x = data_buffer[shift+dof*j];
+			that_cell[i]->particle[index].r.y = data_buffer[shift+dof*j+1];
+			that_cell[i]->particle[index].theta = data_buffer[shift+dof*j+2];
+			#ifdef NonPeriodicCompute
+				that_cell[i]->particle[index].r_original.x = data_buffer[shift+dof*j+3];
+				that_cell[i]->particle[index].r_original.y = data_buffer[shift+dof*j+4];
+			#endif
+
 			that_cell[i]->particle[index].v.x = cos(that_cell[i]->particle[index].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 			that_cell[i]->particle[index].v.y = sin(that_cell[i]->particle[index].theta); // Optimization required, computing every particle velocities is not a good idea. A first step is computing the velocity of particles that are within the node, not the one on the neighboring cells of that node.
 			that_cell[i]->particle[index].Reset(); // eperimental for debug, it seems that this is needed!
 		}
-		shift += 3*that_cell[i]->pid.size();
+		shift += dof*that_cell[i]->pid.size();
 	}
 	delete [] data_buffer;
 }
