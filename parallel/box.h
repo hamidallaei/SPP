@@ -266,6 +266,7 @@ void Box::Move()
 	thisnode->Move();
 }
 
+#ifdef RUNGE_KUTTA
 // Do the first step of Runge Kutta
 void Box::Move_Runge_Kutta_1()
 {
@@ -277,6 +278,7 @@ void Box::Move_Runge_Kutta_2()
 {
 	thisnode->Move_Runge_Kutta_2();
 }
+#endif
 
 // One full step, composed of interaction computation and move.
 void Box::One_Step()
