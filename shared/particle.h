@@ -547,7 +547,7 @@ void RepulsiveParticle::Move_Runge_Kutta_2() // one step forward
 	v.x = cos(theta); // v is the direction of the particle
 	v.y = sin(theta); // v is the direction of the particle
 
-	r_original = r_old + f*half_dt;
+	r_original = r_old + f*dt;
 	r = r_original;
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
@@ -716,11 +716,11 @@ void ActiveBrownianChain::Move_Runge_Kutta_1() // half step forward
 
 	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI; // -PI < theta < PI
 
-	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); // v is the direction of the particle
-
 	r += f*(half_dt*m_perpendicular);
 	r += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
 		r.Periodic_Transform();
@@ -736,13 +736,13 @@ void ActiveBrownianChain::Move_Runge_Kutta_2() // one step forward
 
 	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
 
-	v.x = cos(theta); // v is the direction of the particle
-	v.y = sin(theta); // v is the direction of the particle
-
-	r_original = r_old + f*(half_dt*m_perpendicular);
-	r_original += v*((f*v)*(half_dt*(m_parallel - m_perpendicular)));
+	r_original = r_old + f*(dt*m_perpendicular);
+	r_original += v*((f*v)*(dt*(m_parallel - m_perpendicular)));
 
 	r = r_original;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
 
 	#ifdef PERIODIC_BOUNDARY_CONDITION
 		r.Periodic_Transform();

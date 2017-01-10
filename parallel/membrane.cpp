@@ -43,13 +43,6 @@ inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_
 		box->Multi_Step(cell_update_period);
 		if ((i / cell_update_period) % quantities_saving_period == 0)
 			box->Save_All_Variables(variables_file);
-
-		if ((i / cell_update_period) % 16 == 0)
-		{
-			box->thisnode->Root_Gather();
-			box->thisnode->Root_Bcast();
-			MPI_Barrier(MPI_COMM_WORLD);
-		}
 	}
 	if ((total_step / cell_update_period) % trajectory_saving_period == 0)
 		out_file << box;
