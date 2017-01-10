@@ -268,35 +268,18 @@ bool Run_From_File(LyapunovBox& box, int argc, char *argv[])
 	return true;
 }
 
-void Init_Nodes(int input_seed = seed)
-{
-	C2DVector::Init_Rand(input_seed);
-	MPI_Barrier(MPI_COMM_WORLD);
-}
-
-void Init_Nodes(Node& thisnode)
-{
-	#ifdef COMPARE
-		thisnode.seed = seed;
-	#else
-		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-		while (!thisnode.Chek_Seeds())
-		{
-			thisnode.seed = time(NULL) + thisnode.node_id*112488;
-			MPI_Barrier(MPI_COMM_WORLD);
-		}
-	#endif
-	C2DVector::Init_Rand(thisnode.seed);
-	MPI_Barrier(MPI_COMM_WORLD);
-}
-
 int main(int argc, char *argv[])
 {
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
 	Node thisnode;
-	Init_Nodes(thisnode);
+
+	#ifdef COMPARE
+		thisnode.Init_Rand(seed);
+	#else
+		thisnode.Init_Rand();
+	#endif
 
 	LyapunovBox box;
 	box.node_head = &thisnode;

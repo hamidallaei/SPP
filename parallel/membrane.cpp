@@ -162,21 +162,6 @@ void Run(Box& box, int argc, char *argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
-
-
-void Init_Nodes(Node& thisnode, const int& seed)
-{
-//	thisnode.seed = time(NULL) + thisnode.node_id*112488;
-//	while (!thisnode.Chek_Seeds())
-//	{
-//		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-//		MPI_Barrier(MPI_COMM_WORLD);
-//	}
-	thisnode.seed = seed +  thisnode.node_id*112488;
-	C2DVector::Init_Rand(thisnode.seed);
-	MPI_Barrier(MPI_COMM_WORLD);
-}
-
 int main(int argc, char *argv[])
 {
 	int this_node_id, total_nodes;
@@ -186,7 +171,7 @@ int main(int argc, char *argv[])
 	Node thisnode;
 	input_seed = atoi(argv[5]);
 
-	Init_Nodes(thisnode, input_seed);
+	thisnode.Init_Rand(input_seed);
 
 	Box box;
 	box.thisnode = &thisnode;

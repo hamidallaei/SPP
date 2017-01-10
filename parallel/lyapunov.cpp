@@ -142,22 +142,6 @@ bool Run_From_File(int argc, char *argv[], Node* thisnode)
 	return true;
 }
 
-void Init_Nodes(Node& thisnode, int input_seed = seed)
-{
-	#ifdef COMPARE
-		thisnode.seed = input_seed;
-	#else
-		thisnode.seed = time(NULL) + thisnode.node_id*112488;
-		while (!thisnode.Chek_Seeds())
-		{
-			thisnode.seed = time(NULL) + thisnode.node_id*112488;
-			MPI_Barrier(MPI_COMM_WORLD);
-		}
-	#endif
-	C2DVector::Init_Rand(thisnode.seed);
-	MPI_Barrier(MPI_COMM_WORLD);
-}
-
 int main(int argc, char *argv[])
 {
 	int this_node_id, total_nodes;
@@ -165,7 +149,12 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 
 	Node thisnode;
-	Init_Nodes(thisnode);
+
+	#ifdef COMPARE
+		thisnode.Init_Rand(seed);
+	#else
+		thisnode.Init_Rand();
+	#endif
 
 	if (argc > 2)
 		Run(argc, argv, &thisnode);

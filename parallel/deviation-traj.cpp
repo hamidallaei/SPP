@@ -321,20 +321,17 @@ void Run(int argc, char *argv[])
 	}
 }
 
-
-void Init_Nodes(int input_seed = seed)
-{
-	C2DVector::Init_Rand(input_seed);
-	MPI_Barrier(MPI_COMM_WORLD);
-}
-
 int main(int argc, char *argv[])
 {
 	int this_node_id, total_nodes;
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
-	Init_Nodes(time(NULL));
+	#ifdef COMPARE
+		thisnode.Init_Rand(seed);
+	#else
+		thisnode.Init_Rand();
+	#endif
 
 	Run(argc, argv);
 

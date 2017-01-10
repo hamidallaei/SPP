@@ -15,6 +15,7 @@ struct Node{
 	int head_cell_idx, head_cell_idy, tail_cell_idx, tail_cell_idy;
 	long int seed; // seed number for initialization.
 	int N; // Number of particles in the box. This will be transmitted from the box.
+	Real t; // Time in units of simulation parameters
 	Particle* particle; // This is a pointer to the original particle array pointer of the box. We need this pointer in some subroutins
 	vector<Boundary> boundary; // Boundary list
 
@@ -33,6 +34,9 @@ struct Node{
 	Node();
 
 	void Get_Box_Info(int size, Particle* p);
+	void Init_Rand(); // Initialize the random seed
+	void Init_Rand(long int); // Initialize the random seed
+	void Find_npx_npy(); // Find the npx and npy, according to total number of nodes
 	void Init_Topology();
 	void Send_Receive_Data(); // Send and Receive data of each neighboring cell
 	void Quick_Update_Cells(); // Update particles that are inside each cell
@@ -81,6 +85,8 @@ Node::Node()
 	for (int i = 0; i < divisor_x; i++)
 		for (int j = 0; j < divisor_y; j++)
 			cell[i][j].Init((Real) Lx*(2*i-divisor_x + 0.5)/divisor_x, (Real) Ly*(2*j-divisor_y + 0.5)/divisor_y); // setting the center position of each cell
+
+	t = 0;
 }
 
 void Node::Get_Box_Info(int size, Particle* p)
@@ -90,7 +96,24 @@ void Node::Get_Box_Info(int size, Particle* p)
 	Cell::particle = p; // Each cell has a pointer to partilce array of the box. The cell needs this pointer for sum of its actions.
 }
 
-void Node::Init_Topology() // This function must be called after box definition.
+void Node::Init_Rand(long int input_seed)
+{
+	seed = input_seed + node_id*112488;
+	C2DVector::Init_Rand(seed);
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void Node::Init_Rand()
+{
+	seed = time(NULL) + node_id*112488;
+	while (!Chek_Seeds())
+	{
+		seed = time(NULL) + node_id*112488;
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+}
+
+void Node::Find_npx_npy() // Find the npx and npy, according to total number of nodes
 {
 	switch(total_nodes){
 		case 1:
@@ -221,6 +244,11 @@ void Node::Init_Topology() // This function must be called after box definition.
 		cout << "Error, bad number of processors. Grid dimension is " << npx << " by " << npy << " that needs exactly " << npx*npy << " processors, but you ran the program with " << total_nodes << " processors." << endl;
 		exit(0);
 	}
+}
+
+void Node::Init_Topology() // This function must be called after box definition.
+{
+	Find_npx_npy();
 
 // Computing the typical column and row number of cells in each node
 	int width_x = divisor_x / npx;
@@ -1317,6 +1345,7 @@ void Node::Move()
 	for (int x = head_cell_idx; x < tail_cell_idx; x++)
 		for (int y = head_cell_idy; y < tail_cell_idy; y++)
 				cell[x][y].Move();
+	t += dt;
 }
 
 #ifdef RUNGE_KUTTA
