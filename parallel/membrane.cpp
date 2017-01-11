@@ -31,7 +31,7 @@ inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
 
-	box->Save_Membrane_Position();
+	box->Save_Particles_Positions();
 
 	for (long int i = 0; i < total_step; i+=cell_update_period)
 	{
@@ -92,22 +92,25 @@ void Run(Box& box, int argc, char *argv[])
 
 	Real t_eq,t_sim;
 
-	Particle::Dr = 0.1;
-	Particle::noise_amplitude = sqrt(2*Particle::Dr*dt);
-	Particle::R0 = input_chiral_radius;
-
 //	Particle::lambda = 0.1; // tumbling rate
 //	Particle::t_tumble = 0.1/Particle::lambda; // tumbling duration
 //	Particle::torque_tumble = 0.2; // torque strength of a tumble
 
 
-
+	Particle::Set_Dr(0.1);
 
 // The following must be before box.init
 	for (int i = 0; i < input_Nm; i++)
+	{
 		box.particle[i].Set_Parameters(1,0.0);
+	}
 	for (int i = input_Nm; i < input_Ns+input_Nm; i++)
-		box.particle[i].Set_Parameters(input_chain_length,1.0);
+	{
+		box.particle[i].Set_nb(2);
+		box.particle[i].Set_F0(1.0);
+		box.particle[i].Set_R0(input_chiral_radius);
+//		box.particle[i].Set_Parameters(input_chain_length,1.0);
+	}
 
 	box.Init(box.thisnode, input_Ns, input_Nm);
 	box.membrane_elasticity = input_membrane_elasticity;

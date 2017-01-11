@@ -23,14 +23,15 @@ public:
 	Real membrane_radius;
 
 	Real t_old; // old time, the previous time that coordinates are saved for further analysis
-	C2DVector* rm_old; // old position of membrane beads
-	C2DVector r_cm, v_cm;
-	Real xx,yy,xy; // Qxx, Qyy, Qxy. Q = 1/N sum (\vec{r} - \vec{r}_cm) (\vec{r} - \vec{r}_cm)
-	Real l; // Angular momentum per particle
-	Real omega; // Angular velocity
-	Real lambda1, lambda2; // Eigenvalues of Q tensor
-	Real Rg; // Gyration radius
-	Real Delta; // Asphericity
+	Real* theta_old; // old angle of self-propelsion
+	C2DVector* r_old; // old position of beads
+	C2DVector mb_r_cm, mb_v_cm, sw_r_cm, sw_v_cm;
+	Real mb_xx, mb_yy, mb_xy, sw_xx, sw_yy, sw_xy; // Qxx, Qyy, Qxy. Q = 1/N sum (\vec{r} - \vec{r}_cm) (\vec{r} - \vec{r}_cm)
+	Real mb_l, sw_l; // Angular momentum per particle
+	Real mb_omega, sw_omega, sw_spin; // Angular velocity
+	Real mb_lambda1, mb_lambda2, sw_lambda1, sw_lambda2; // Eigenvalues of Q tensor
+	Real mb_Rg, sw_Rg; // Gyration radius
+	Real mb_Delta, sw_Delta; // Asphericity
 
 	stringstream info; // information stream that contains the simulation information, like noise, density and etc. this will be used for the saving name of the system.
 
@@ -54,7 +55,7 @@ public:
 	void Translate(C2DVector d); // Translate position of all particles with vector d
 
 	void RootGather(); // Gather all needed data for computing variables such as center of mass, angular momentum, angular velocity, and ...
-	void Save_Membrane_Position(); // Save the position of membrane beads to compute their velocities in future.
+	void Save_Particles_Positions(); // Save the position of membrane beads to compute their velocities in future.
 	void Compute_All_Variables(); // Compute center of mass position and speed, I, ...
 	void Save_All_Variables(std::ostream& os); // Save center of mass position and speed, I, ...
 
@@ -66,7 +67,8 @@ Box::Box()
 {
 	N = 0;
 	particle = new Particle[max_N];
-	rm_old = new C2DVector[5000];
+	r_old = new C2DVector[max_N];
+	theta_old = new Real[max_N];
 }
 
 // Initialize the wall positions and numbers.
@@ -310,19 +312,25 @@ void Box::Translate(C2DVector d)
 	#endif
 }
 
-void Box::Save_Membrane_Position()
+void Box::Save_Particles_Positions()
 {
 	t_old = t;
-	for (int i = 0; i < Nm; i++)
-		rm_old[i] = particle[i].r_original;
+	for (int i = 0; i < N; i++)
+	{
+		r_old[i] = particle[i].r_original;
+		theta_old[i] = particle[i].theta;
+	}
 }
 
 void Box::Compute_All_Variables() // Compute center of mass position and speed, I, ...
 {
-	r_cm.Null();
-	v_cm.Null();
-	xx = yy = xy = l = 0;
-	int n_data = 8;
+	mb_r_cm.Null();
+	mb_v_cm.Null();
+	sw_r_cm.Null();
+	sw_v_cm.Null();
+	mb_xx = mb_yy = mb_xy = mb_l = 0;
+	sw_xx = sw_yy = sw_xy = sw_l = 0;
+	int n_data = 17;
 
 	for (int x = thisnode->head_cell_idx; x < thisnode->tail_cell_idx; x++)
 		for (int y = thisnode->head_cell_idy; y < thisnode->tail_cell_idy; y++)
@@ -332,13 +340,31 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 				{
 					C2DVector r, v;
 					r = particle[thisnode->cell[x][y].pid[i]].r_original;
-					v = (r - rm_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
-					r_cm += r;
-					v_cm += v;
-					l += r.x * v.y - r.y * v.x;
-					xx += r.x*r.x;
-					yy += r.y*r.y;
-					xy += r.x*r.y;
+					v = (r - r_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
+					mb_r_cm += r;
+					mb_v_cm += v;
+					mb_l += r.x * v.y - r.y * v.x;
+					mb_xx += r.x*r.x;
+					mb_yy += r.y*r.y;
+					mb_xy += r.x*r.y;
+				}
+				else
+				{
+					C2DVector r, v;
+					Real spin, dtheta;
+					r = particle[thisnode->cell[x][y].pid[i]].r_original;
+					v = (r - r_old[thisnode->cell[x][y].pid[i]]) / (t - t_old);
+					dtheta = particle[thisnode->cell[x][y].pid[i]].theta - theta_old[thisnode->cell[x][y].pid[i]];
+					dtheta -= 2*M_PI*((int) floor(dtheta / (2*M_PI)));
+					dtheta -= 2*M_PI*((int) floor(dtheta / (M_PI)));
+					spin = (dtheta) / (t - t_old);
+					sw_r_cm += r;
+					sw_v_cm += v;
+					sw_spin += spin;
+					sw_l += r.x * v.y - r.y * v.x;
+					sw_xx += r.x*r.x;
+					sw_yy += r.y*r.y;
+					sw_xy += r.x*r.y;
 				}
 		}
 	double buffer[n_data];
@@ -348,37 +374,66 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 	for (int i = 0; i < n_data; i++)
 		buffer_sum[i] =  0;
 
-	buffer[0] = r_cm.x;
-	buffer[1] = r_cm.y;
-	buffer[2] = v_cm.x;
-	buffer[3] = v_cm.y;
-	buffer[4] = xx;
-	buffer[5] = yy;
-	buffer[6] = xy;
-	buffer[7] = l;
+	buffer[0] = mb_r_cm.x;
+	buffer[1] = mb_r_cm.y;
+	buffer[2] = mb_v_cm.x;
+	buffer[3] = mb_v_cm.y;
+	buffer[4] = mb_xx;
+	buffer[5] = mb_yy;
+	buffer[6] = mb_xy;
+	buffer[7] = mb_l;
+
+	buffer[8] = sw_r_cm.x;
+	buffer[9] = sw_r_cm.y;
+	buffer[10] = sw_v_cm.x;
+	buffer[11] = sw_v_cm.y;
+	buffer[12] = sw_xx;
+	buffer[13] = sw_yy;
+	buffer[14] = sw_xy;
+	buffer[15] = sw_l;
+	buffer[16] = sw_spin;
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Reduce(&buffer, &buffer_sum, n_data, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	r_cm.x = buffer_sum[0] / Nm;
-	r_cm.y = buffer_sum[1] / Nm;
-	v_cm.x = buffer_sum[2] / Nm;
-	v_cm.y = buffer_sum[3] / Nm;
-	xx = (buffer_sum[4] / Nm) - r_cm.x*r_cm.x;
-	yy = (buffer_sum[5] / Nm) - r_cm.y*r_cm.y;
-	xy = (buffer_sum[6] / Nm) - r_cm.x*r_cm.y;
-	l = (buffer_sum[7] / Nm) - r_cm.x*v_cm.y + r_cm.y*v_cm.x;
+	mb_r_cm.x = buffer_sum[0] / Nm;
+	mb_r_cm.y = buffer_sum[1] / Nm;
+	mb_v_cm.x = buffer_sum[2] / Nm;
+	mb_v_cm.y = buffer_sum[3] / Nm;
+	mb_xx = (buffer_sum[4] / Nm) - mb_r_cm.x*mb_r_cm.x;
+	mb_yy = (buffer_sum[5] / Nm) - mb_r_cm.y*mb_r_cm.y;
+	mb_xy = (buffer_sum[6] / Nm) - mb_r_cm.x*mb_r_cm.y;
+	mb_l = (buffer_sum[7] / Nm) - mb_r_cm.x*mb_v_cm.y + mb_r_cm.y*mb_v_cm.x;
 
-	Real lambda1, lambda2;
-	lambda1 = 0.5*(xx+yy) + 0.5*sqrt((xx-yy)*(xx-yy) + 4*xy*xy);
-	lambda2 = 0.5*(xx+yy) - 0.5*sqrt((xx-yy)*(xx-yy) + 4*xy*xy);
+	sw_r_cm.x = buffer_sum[8] / Ns;
+	sw_r_cm.y = buffer_sum[9] / Ns;
+	sw_v_cm.x = buffer_sum[10] / Ns;
+	sw_v_cm.y = buffer_sum[11] / Ns;
+	sw_xx = (buffer_sum[12] / Ns) - sw_r_cm.x*sw_r_cm.x;
+	sw_yy = (buffer_sum[13] / Ns) - sw_r_cm.y*sw_r_cm.y;
+	sw_xy = (buffer_sum[14] / Ns) - sw_r_cm.x*sw_r_cm.y;
 
-	Rg = sqrt(xx+yy);
-	Delta = (lambda1 - lambda2) / (lambda1 + lambda2);
-	Delta = Delta*Delta;
-	omega = l / (xx+yy);
-	Save_Membrane_Position();
+	sw_l = (buffer_sum[15] / Ns) - sw_r_cm.x*mb_v_cm.y + sw_r_cm.y*mb_v_cm.x - mb_r_cm.x*sw_v_cm.y + mb_r_cm.y*sw_v_cm.x + mb_r_cm.x*mb_v_cm.y - mb_r_cm.y*mb_v_cm.x;
+	sw_spin = (buffer_sum[16] / Ns);
+
+	mb_lambda1 = 0.5*(mb_xx + mb_yy) + 0.5*sqrt((mb_xx - mb_yy)*(mb_xx - mb_yy) + 4*mb_xy*mb_xy);
+	mb_lambda2 = 0.5*(mb_xx + mb_yy) - 0.5*sqrt((mb_xx - mb_yy)*(mb_xx - mb_yy) + 4*mb_xy*mb_xy);
+
+	mb_Rg = sqrt(mb_xx + mb_yy);
+	mb_Delta = (mb_lambda1 - mb_lambda2) / (mb_lambda1 + mb_lambda2);
+	mb_Delta = mb_Delta*mb_Delta;
+	mb_omega = mb_l / (mb_xx + mb_yy);
+
+	sw_lambda1 = 0.5*(sw_xx + sw_yy) + 0.5*sqrt((sw_xx - sw_yy)*(sw_xx - sw_yy) + 4*sw_xy*sw_xy);
+	sw_lambda2 = 0.5*(sw_xx + sw_yy) - 0.5*sqrt((sw_xx - sw_yy)*(sw_xx - sw_yy) + 4*sw_xy*sw_xy);
+
+	sw_Rg = sqrt(sw_xx + sw_yy);
+	sw_Delta = (sw_lambda1 - sw_lambda2) / (sw_lambda1 + sw_lambda2);
+	sw_Delta = sw_Delta * sw_Delta;
+	sw_omega = sw_l / (sw_xx + sw_yy + (mb_r_cm - sw_r_cm).Square());
+
+	Save_Particles_Positions();
 }
 
 void Box::Save_All_Variables(std::ostream& os) // Save center of mass position and speed, I, ...
@@ -388,8 +443,8 @@ void Box::Save_All_Variables(std::ostream& os) // Save center of mass position a
 	if (thisnode->node_id == 0)
 	{
 		if (first_time)
-			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity\tQxx\tQxy\tQyy" << endl;
-		os << t << "\t" << r_cm << "\t" << v_cm << "\t" << l << "\t" << omega << "\t" << Rg << "\t" << Delta << "\t" << xx << "\t" << xy << "\t" << yy << endl;
+			os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity\tQxx\tQxy\tQyy\tsw. ang. freq." << endl;
+		os << t << "\t" << mb_r_cm << "\t" << mb_v_cm << "\t" << mb_l << "\t" << mb_omega << "\t" << mb_Rg << "\t" << mb_Delta << "\t" << mb_xx << "\t" << mb_xy << "\t" << mb_yy << "\t" << sw_omega << endl;
 		first_time = false;
 	}
 }

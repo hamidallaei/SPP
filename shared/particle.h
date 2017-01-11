@@ -51,6 +51,7 @@ class BasicDynamicParticle: public BasicParticle {  // This is an abstract class
 public:
 	int neighbor_size;
 	Real theta;
+	static Real Dr; // Dr is for continuous time particles. It is not usefull in discreate vicsek particles.
 	static Real noise_amplitude;
 	static Real speed;
 	vector<int> neighbor_id; // id of neighboring particles
@@ -59,6 +60,10 @@ public:
 	void Init(C2DVector);
 	void Init(C2DVector, C2DVector);
 	virtual void Reset();
+
+	static void Set_Dr(const Real input_Dr);
+	void Set_speed(const Real input_speed);
+	void Set_noise_amplitude(const Real input_speed);
 
 	void Move();
 	void Interact();
@@ -105,6 +110,23 @@ void BasicDynamicParticle::Init(C2DVector position, C2DVector velocity)
 
 void BasicDynamicParticle::Reset() {}
 
+void BasicDynamicParticle::Set_Dr(const Real input_Dr)
+{
+	Dr = input_Dr;
+	noise_amplitude = sqrt(2*Dr*dt);
+}
+
+void BasicDynamicParticle::Set_noise_amplitude(const Real input_noise_amplitude)
+{
+	noise_amplitude = input_noise_amplitude;
+	Dr = 0.5*noise_amplitude*noise_amplitude / dt;
+}
+
+void BasicDynamicParticle::Set_speed(const Real input_speed)
+{
+	speed = input_speed;
+}
+
 void BasicDynamicParticle::Write(std::ostream& os)
 {
 	r.write(os);
@@ -114,7 +136,8 @@ void BasicDynamicParticle::Write(std::ostream& os)
 	v_temp.write(os);
 }
 
-Real BasicDynamicParticle::noise_amplitude = .1;
+Real BasicDynamicParticle::noise_amplitude = 0.0;
+Real BasicDynamicParticle::Dr = 0.0;
 Real BasicDynamicParticle::speed = 1;
 //###################################################################
 
@@ -237,6 +260,12 @@ public:
 	static Real Dr,K,Kamp;
 
 	ContinuousParticle();
+
+	void Set_g(const Real);
+	void Set_gw(const Real);
+	void Set_alpha(const Real);
+	void Set_K(const Real);
+
 	void Move()
 	{
 		#ifdef COMPARE
@@ -319,6 +348,27 @@ void ContinuousParticle::Reset()
 {
 	neighbor_size = 1;
 	torque = 0;
+}
+
+void ContinuousParticle::Set_g(const Real input_g)
+{
+	g = input_g;
+}
+
+void ContinuousParticle::Set_gw(const Real input_gw)
+{
+	gw = input_gw;
+}
+
+void ContinuousParticle::Set_alpha(const Real input_alpha)
+{
+	alpha = input_alpha;
+}
+
+void ContinuousParticle::Set_K(const Real input_K)
+{
+	K = input_K;
+	Kamp = sqrt(2*K*dt);
 }
 
 Real ContinuousParticle::g = 4;
@@ -452,13 +502,13 @@ public:
 	C2DVector f, r_old; // force, old position
 	Real torque; // tourque acting on the chain
 	Real theta_old; // self propullsion angle
+	Real F0; // self propullsion strength
 	Real dtheta; // amount of noise added to theta
-	static Real Dr; // rotational diffusion of self propullsion angle
 	static Real sigma_p;
 	static Real repulsion_radius;
+	static Real alignment_radius;		// flocking radius with particles
 	static Real A_p;
 	static Real g;
-	static Real aliagnment_radius;		// flocking radius with particles
 	static Real r_c_w;
 	static Real r_f_w;
 	static Real sigma_w;
@@ -467,7 +517,16 @@ public:
 	static int nb;
 
 
+
 	RepulsiveParticle();
+
+	void Set_F0(const Real);
+	void Set_sigma_p(const Real);
+	void Set_repulsion_radius(const Real);
+	void Set_alignment_radius(const Real);
+	void Set_A_p(const Real);
+	void Set_g(const Real);
+	void Set_nb(const int);
 
 	void Reset();
 	void Move();
@@ -482,6 +541,14 @@ RepulsiveParticle::RepulsiveParticle()
 {
 	Init();
 }
+
+void RepulsiveParticle::Set_F0(const Real input_F0) {F0 = input_F0;}
+void RepulsiveParticle::Set_sigma_p(const Real input_sigma_p)  {sigma_p = input_sigma_p;}
+void RepulsiveParticle::Set_repulsion_radius(const Real input_repulsion_radius) {repulsion_radius = input_repulsion_radius;}
+void RepulsiveParticle::Set_alignment_radius(const Real input_alignment_radius) {alignment_radius = input_alignment_radius;}
+void RepulsiveParticle::Set_A_p(const Real input_A_p) {A_p = input_A_p;}
+void RepulsiveParticle::Set_g(const Real input_g) {g = input_g;}
+void RepulsiveParticle::Set_nb(const int input_nb) {nb = input_nb;}
 
 void RepulsiveParticle::Reset()
 {
@@ -576,12 +643,12 @@ void RepulsiveParticle::Interact(RepulsiveParticle& p)
 	}
 
 	Real torque_interaction;
-	if (d < aliagnment_radius)
+	if (d < alignment_radius)
 	{
 		neighbor_size++;
 		p.neighbor_size++;
 
-		torque_interaction = g*sin(p.theta - theta) / (PI*aliagnment_radius*aliagnment_radius);
+		torque_interaction = g*sin(p.theta - theta) / (PI*alignment_radius*alignment_radius);
 
 		torque += torque_interaction;
 		p.torque -= torque_interaction;
@@ -595,12 +662,11 @@ void RepulsiveParticle::Write(std::ostream& os)
 	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
 }
 
-Real RepulsiveParticle::Dr = 0;
 Real RepulsiveParticle::g = 1.0;
 // Interactions for repulsive particles
 Real RepulsiveParticle::A_p = 2.;		// interaction strength
 Real RepulsiveParticle::sigma_p = 1.0;		// sigma in Potential
-Real RepulsiveParticle::aliagnment_radius = 1.1;		// flocking radius with particles
+Real RepulsiveParticle::alignment_radius = 1.1;		// flocking radius with particles
 Real RepulsiveParticle::repulsion_radius = 1.2;	// repulsive cutoff radius with particles
 Real RepulsiveParticle::r_c_w;
 Real RepulsiveParticle::r_f_w;
@@ -627,15 +693,21 @@ public:
 	Real theta_old; // self propullsion angle
 	Real F0; // self propullsion strength
 	Real dtheta; // amount of noise added to theta
-	static Real Dr; // rotational diffusion of self propullsion angle
-	static Real noise_amplitude; // Sqrt(2*Dr/dt)
 	static Real sigma_p;
-	static Real cut_off_radius;
+	static Real repulsion_radius;
 	static Real A_p;
 	static Real torque0; // The intrinsinc torque in the particle. This make the motion chiral
 	static Real R0; // The intrinsinc radius of motion. This make the motion chiral
 
 	ActiveBrownianChain();
+
+	void Set_F0(const Real);
+	static void Set_sigma_p(const Real);
+	static void Set_repulsion_radius(const Real);
+	static void Set_A_p(const Real);
+	void Set_nb(const int);
+	void Set_R0(const Real); // Sould be called after Set_nb
+	static void Set_torque0(const Real);
 
 	void Reset();
 	void Set_Parameters(int input_nb, Real input_F0);
@@ -653,18 +725,21 @@ ActiveBrownianChain::ActiveBrownianChain()
 	F0 = 0;
 }
 
-void ActiveBrownianChain::Reset()
+void ActiveBrownianChain::Set_F0(const Real input_F0) {F0 = input_F0;}
+void ActiveBrownianChain::Set_sigma_p(const Real input_sigma_p)  {sigma_p = input_sigma_p;}
+void ActiveBrownianChain::Set_repulsion_radius(const Real input_repulsion_radius) {repulsion_radius = input_repulsion_radius;}
+void ActiveBrownianChain::Set_A_p(const Real input_A_p) {A_p = input_A_p;}
+void ActiveBrownianChain::Set_torque0(const Real input_torque0) {torque0 = input_torque0;}
+
+void ActiveBrownianChain::Set_R0(const Real input_R0) // Should be called after set nb
 {
-	neighbor_size = 0;
-	torque = torque0;
-	f = v*F0; // F0 is self-propullsion force, v is the direction of the particle
+	R0 = input_R0;
+	torque0 = m_parallel*F0 / (k_perpendicular*R0);
 }
 
-void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
+void ActiveBrownianChain::Set_nb(const int input_nb)
 {
 	nb = input_nb;
-	F0 = input_F0;
-	noise_amplitude = sqrt(2*Dr*dt);
 	if (nb == 1)
 	{	// case of a single spherial particle
 		m_parallel = 1;  	 // Mobility parallel to the direction
@@ -677,7 +752,21 @@ void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
 		m_perpendicular = 0.87;
 		k_perpendicular = 4.8;
 	}
-	torque0 = m_parallel*F0 / (k_perpendicular*R0);
+}
+
+void ActiveBrownianChain::Reset()
+{
+	neighbor_size = 0;
+	torque = torque0;
+	f = v*F0; // F0 is self-propullsion force, v is the direction of the particle
+}
+
+void ActiveBrownianChain::Set_Parameters(int input_nb, Real input_F0)
+{
+	Set_nb(input_nb);
+	Set_F0(input_F0);
+	Set_R0(R0);
+	Set_Dr(Dr);
 }
 
 inline void ActiveBrownianChain::Noise_Gen()
@@ -771,9 +860,9 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 			Real d = sqrt(d2);
 
 			C2DVector interaction_force;
-			if (d < cut_off_radius)
+			if (d < repulsion_radius)
 			{
-				interaction_force = R12_Repulsive_Truncated(dr,d,cut_off_radius,sigma_p,A_p);
+				interaction_force = R12_Repulsive_Truncated(dr,d,repulsion_radius,sigma_p,A_p);
 
 				f += interaction_force;
 				ac.f -= interaction_force;
@@ -812,13 +901,10 @@ void ActiveBrownianChain::Write(std::ostream& os)
 	}
 }
 
-Real ActiveBrownianChain::Dr = 0;
-
 // Interactions parameters for active chain
 Real ActiveBrownianChain::A_p = 1.;		// interaction strength
 Real ActiveBrownianChain::sigma_p = 1.0;		// sigma in Yukawa Potential
-Real ActiveBrownianChain::cut_off_radius = 1.1;		// repulsive cutoff radius
-Real ActiveBrownianChain::noise_amplitude = 0; // noise amplitude
+Real ActiveBrownianChain::repulsion_radius = 1.1;		// repulsive cutoff radius
 Real ActiveBrownianChain::torque0 = 0; // The intrinsinc torque in the particle. This make the motion chiral
 Real ActiveBrownianChain::R0 = 0; // The intrinsinc radius of motion. This make the motion chiral
 //###################################################################
@@ -835,6 +921,10 @@ public:
 
 	RTPChain();
 
+	void Set_lambda(const Real);
+	void Set_t_tumble(const Real);
+	void Set_torque_tumble(const Real);
+
 	virtual void Noise_Gen();
 };
 
@@ -845,6 +935,10 @@ RTPChain::RTPChain()
 	tumble_flag = 0; // in tumbling state = true
 	tumble_elapesed_time = 0; // The time that the particle stays in tumbling state.
 }
+
+void RTPChain::Set_lambda(const Real input_lambda) {lambda = input_lambda;}
+void RTPChain::Set_t_tumble(const Real input_t_tumble) {t_tumble = input_t_tumble;}
+void RTPChain::Set_torque_tumble(const Real input_torque_tumble) {torque_tumble = input_torque_tumble;}
 
 inline void RTPChain::Noise_Gen()
 {
