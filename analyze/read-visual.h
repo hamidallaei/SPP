@@ -177,7 +177,7 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		is.read((char*) &temp_float,sizeof(float) / sizeof(char));
 		scene.sparticle[i].theta = temp_float;
 	}
-	VisualChain::chain_length = 1;
+	VisualChain::chain_length = scene.chain_length;
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& scene)

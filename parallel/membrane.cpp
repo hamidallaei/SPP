@@ -87,7 +87,9 @@ void Run(Box& box, int argc, char *argv[])
 
 //	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
 //	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
-	int input_Nm = (int) round(M_PI/asin(0.5*Particle::sigma_p/input_membrane_radius));
+	Real membrane_l_eq = Particle::sigma_p + 13*Particle::A_p*(Particle::repulsion_radius - Particle::sigma_p)/(input_membrane_elasticity*Particle::sigma_p + 13*Particle::A_p);
+	membrane_l_eq = Particle::sigma_p;
+	int input_Nm = (int) round(M_PI/asin(0.5*membrane_l_eq/input_membrane_radius));
 	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
 
 	Real t_eq,t_sim;
@@ -102,7 +104,9 @@ void Run(Box& box, int argc, char *argv[])
 // The following must be before box.init
 	for (int i = 0; i < input_Nm; i++)
 	{
-		box.particle[i].Set_Parameters(1,0.0);
+		box.particle[i].Set_nb(1);
+		box.particle[i].Set_F0(0.0);
+		box.particle[i].Set_R0(input_chiral_radius);
 	}
 	for (int i = input_Nm; i < input_Ns+input_Nm; i++)
 	{
