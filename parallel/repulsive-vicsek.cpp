@@ -91,9 +91,15 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	Real t_eq,t_sim;
 
-	Particle::nb = 1;
-	Particle::noise_amplitude = 0;
-	Particle::g = input_g;
+
+	Particle::Set_nb(1);
+	Particle::Set_F0(1);
+	Particle::Set_sigma_p(1);
+	Particle::Set_repulsion_radius(1.2);
+	Particle::Set_alignment_radius(1.1);
+	Particle::Set_A_p(2.0);
+
+	Particle::Set_g(input_g);
 
 	box.Init(box.thisnode, input_rho);
 	box.packing_fraction = input_packing_fraction;
@@ -112,11 +118,10 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	for (int i = 0; i < noise_list.size(); i++)
 	{
-		Particle::Dr = noise_list[i];
-		Particle::noise_amplitude = sqrt(2*Particle::Dr*dt); // noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+		Particle::Set_Dr(noise_list[i]); // This will set the noise amplitude as well. Noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 
 		box.info.str("");
-		box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-cooling";
+		box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-L=" << Lx << "-N=" << box.Ns;
 
 		if (box.thisnode->node_id == 0)
 		{

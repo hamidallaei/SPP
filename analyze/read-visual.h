@@ -161,6 +161,9 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 
 	scene.mparticle = new VisualMembrane[scene.Nm];
 	scene.sparticle = new VisualChain[scene.Ns];
+
+	Real Lx = scene.L.x;
+	Real Ly = scene.L.y;
 	for (int i = 0; i < scene.Nm; i++)
 	{
 		is >> scene.mparticle[i].r;
@@ -170,7 +173,6 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	for (int i = 0; i < scene.Ns; i++)
 	{
 		is >> scene.sparticle[i].r;
-
 		scene.sparticle[i].r.x -= Lx*2*((int) floor(scene.sparticle[i].r.x / (Lx*2) + 0.5));
 		scene.sparticle[i].r.y -= Ly*2*((int) floor(scene.sparticle[i].r.y / (Ly*2) + 0.5));
 		float temp_float;

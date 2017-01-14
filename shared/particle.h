@@ -261,10 +261,10 @@ public:
 
 	ContinuousParticle();
 
-	void Set_g(const Real);
-	void Set_gw(const Real);
-	void Set_alpha(const Real);
-	void Set_K(const Real);
+	static void Set_g(const Real);
+	static void Set_gw(const Real);
+	static void Set_alpha(const Real);
+	static void Set_K(const Real);
 
 	void Move()
 	{
@@ -502,7 +502,7 @@ public:
 	C2DVector f, r_old; // force, old position
 	Real torque; // tourque acting on the chain
 	Real theta_old; // self propullsion angle
-	Real F0; // self propullsion strength
+	static Real F0; // self propullsion strength
 	Real dtheta; // amount of noise added to theta
 	static Real sigma_p;
 	static Real repulsion_radius;
@@ -516,17 +516,15 @@ public:
 	static Real g_w;
 	static int nb;
 
-
-
 	RepulsiveParticle();
 
-	void Set_F0(const Real);
-	void Set_sigma_p(const Real);
-	void Set_repulsion_radius(const Real);
-	void Set_alignment_radius(const Real);
-	void Set_A_p(const Real);
-	void Set_g(const Real);
-	void Set_nb(const int);
+	static void Set_F0(const Real);
+	static void Set_sigma_p(const Real);
+	static void Set_repulsion_radius(const Real);
+	static void Set_alignment_radius(const Real);
+	static void Set_A_p(const Real);
+	static void Set_g(const Real);
+	static void Set_nb(const int);
 
 	void Reset();
 	void Move();
@@ -662,6 +660,7 @@ void RepulsiveParticle::Write(std::ostream& os)
 	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
 }
 
+Real RepulsiveParticle::F0 = 1.0;
 Real RepulsiveParticle::g = 1.0;
 // Interactions for repulsive particles
 Real RepulsiveParticle::A_p = 2.;		// interaction strength

@@ -111,6 +111,7 @@ void Node::Init_Rand()
 		seed = time(NULL) + node_id*112488;
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
+	C2DVector::Init_Rand(seed);
 }
 
 void Node::Find_npx_npy() // Find the npx and npy, according to total number of nodes
