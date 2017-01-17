@@ -37,8 +37,14 @@ public:
 
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
-	void Move_Runge_Kutta_1(); // Do the first step of Runge Kutta
-	void Move_Runge_Kutta_2(); // Do the second step of Runge Kutta
+	void Move_Runge_Kutta2_1(); // Do the first step of second order Runge Kutta
+	void Move_Runge_Kutta2_2(); // Do the second step of second order Runge Kutta
+
+	void Move_Runge_Kutta4_1(); // Do the first step of forth order Runge Kutta
+	void Move_Runge_Kutta4_2(); // Do the second step of forth order Runge Kutta
+	void Move_Runge_Kutta4_3(); // Do the third step of forth order Runge Kutta
+	void Move_Runge_Kutta4_4(); // Do the forth step of forth order Runge Kutta
+
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
@@ -266,36 +272,80 @@ void Box::Move()
 	thisnode->Move();
 }
 
-#ifdef RUNGE_KUTTA
-// Do the first step of Runge Kutta
-void Box::Move_Runge_Kutta_1()
+#ifdef RUNGE_KUTTA2
+// Do the first step of second order Runge Kutta
+void Box::Move_Runge_Kutta2_1()
 {
-	thisnode->Move_Runge_Kutta_1();
+	thisnode->Move_Runge_Kutta2_1();
 }
 
-// Do the second step of Runge Kutta
-void Box::Move_Runge_Kutta_2()
+// Do the second step of second order Runge Kutta
+void Box::Move_Runge_Kutta2_2()
 {
-	thisnode->Move_Runge_Kutta_2();
+	thisnode->Move_Runge_Kutta2_2();
+}
+#endif
+
+#ifdef RUNGE_KUTTA4
+// Do the first step of forth order Runge Kutta
+void Box::Move_Runge_Kutta4_1()
+{
+	thisnode->Move_Runge_Kutta4_1();
+}
+
+// Do the second step of forth Runge Kutta
+void Box::Move_Runge_Kutta4_2()
+{
+	thisnode->Move_Runge_Kutta4_2();
+}
+
+// Do the third step of forth Runge Kutta
+void Box::Move_Runge_Kutta4_3()
+{
+	thisnode->Move_Runge_Kutta4_3();
+}
+
+// Do the forth step of forth Runge Kutta
+void Box::Move_Runge_Kutta4_4()
+{
+	thisnode->Move_Runge_Kutta4_4();
 }
 #endif
 
 // One full step, composed of interaction computation and move.
 void Box::One_Step()
 {
-	#ifndef RUNGE_KUTTA
+	#ifdef RUNGE_KUTTA2
 		Interact();
-		Move();
+		Move_Runge_Kutta2_1();
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		Interact();
+		Move_Runge_Kutta2_2();
 		MPI_Barrier(MPI_COMM_WORLD);
 	#else
-		Interact();
-		Move_Runge_Kutta_1();
+		#ifdef RUNGE_KUTTA4
+			Interact();
+			Move_Runge_Kutta4_1();
+			MPI_Barrier(MPI_COMM_WORLD);
 
-		MPI_Barrier(MPI_COMM_WORLD);
+			Interact();
+			Move_Runge_Kutta4_2();
+			MPI_Barrier(MPI_COMM_WORLD);
 
-		Interact();
-		Move_Runge_Kutta_2();
-		MPI_Barrier(MPI_COMM_WORLD);
+			Interact();
+			Move_Runge_Kutta4_3();
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			Interact();
+			Move_Runge_Kutta4_4();
+			MPI_Barrier(MPI_COMM_WORLD);
+		#else
+			Interact();
+			Move();
+			MPI_Barrier(MPI_COMM_WORLD);
+		#endif
 	#endif
 
 	t += dt;
@@ -305,24 +355,41 @@ void Box::One_Step()
 // Several steps befor a cell upgrade.
 void Box::Multi_Step(int steps)
 {
-	#ifndef RUNGE_KUTTA
-		for (int i = 0; i < steps; i++)
-		{
+	for (int i = 0; i < steps; i++)
+	{
+		#ifdef RUNGE_KUTTA2
 			Interact();
-			Move();
-			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
-		}
-	#else
-			Interact();
-			Move_Runge_Kutta_1();
+			Move_Runge_Kutta2_1();
 
 			MPI_Barrier(MPI_COMM_WORLD);
 
 			Interact();
-			Move_Runge_Kutta_2();
+			Move_Runge_Kutta2_2();
+			MPI_Barrier(MPI_COMM_WORLD);
+		#else
+			#ifdef RUNGE_KUTTA4
+				Interact();
+				Move_Runge_Kutta4_1();
+				MPI_Barrier(MPI_COMM_WORLD);
 
-			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
-	#endif
+				Interact();
+				Move_Runge_Kutta4_2();
+				MPI_Barrier(MPI_COMM_WORLD);
+
+				Interact();
+				Move_Runge_Kutta4_3();
+				MPI_Barrier(MPI_COMM_WORLD);
+
+				Interact();
+				Move_Runge_Kutta4_4();
+				MPI_Barrier(MPI_COMM_WORLD);
+			#else
+				Interact();
+				Move();
+				MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
+			#endif
+		#endif
+	}
 
 	t += dt*steps;
 //	cout << "Updating cells" << endl;

@@ -26,9 +26,15 @@ public:
 	void Self_Interact(); // Interact all particles within this cell with themselve
 	void Move();
 
-	#ifdef RUNGE_KUTTA
-	void Move_Runge_Kutta_1();
-	void Move_Runge_Kutta_2();
+	#ifdef RUNGE_KUTTA2
+		void Move_Runge_Kutta2_1();
+		void Move_Runge_Kutta2_2();
+	#endif
+	#ifdef RUNGE_KUTTA4
+		void Move_Runge_Kutta4_1();
+		void Move_Runge_Kutta4_2();
+		void Move_Runge_Kutta4_3();
+		void Move_Runge_Kutta4_4();
 	#endif
 
 	C2DVector Compute_Polarization_Sum(); // Compute polarization of the particles inside the cell
@@ -127,17 +133,43 @@ void Cell::Move()
 		particle[pid[i]].Move();
 }
 
-#ifdef RUNGE_KUTTA
-void Cell::Move_Runge_Kutta_1()
+#ifdef RUNGE_KUTTA2
+void Cell::Move_Runge_Kutta2_1()
 {
 	for (int i = 0; i < pid.size(); i++)
-		particle[pid[i]].Move_Runge_Kutta_1();
+		particle[pid[i]].Move_Runge_Kutta2_1();
 }
 
-void Cell::Move_Runge_Kutta_2()
+void Cell::Move_Runge_Kutta2_2()
 {
 	for (int i = 0; i < pid.size(); i++)
-		particle[pid[i]].Move_Runge_Kutta_2();
+		particle[pid[i]].Move_Runge_Kutta2_2();
+}
+#endif
+
+#ifdef RUNGE_KUTTA4
+void Cell::Move_Runge_Kutta4_1()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta4_1();
+}
+
+void Cell::Move_Runge_Kutta4_2()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta4_2();
+}
+
+void Cell::Move_Runge_Kutta4_3()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta4_3();
+}
+
+void Cell::Move_Runge_Kutta4_4()
+{
+	for (int i = 0; i < pid.size(); i++)
+		particle[pid[i]].Move_Runge_Kutta4_4();
 }
 #endif
 

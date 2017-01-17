@@ -515,6 +515,10 @@ public:
 	static Real A_w;
 	static Real g_w;
 	static int nb;
+	#ifdef RUNGE_KUTTA4
+		C2DVector k1_f,k2_f,k3_f,k4_f;
+		Real k1_torque, k2_torque, k3_torque, k4_torque;
+	#endif
 
 	RepulsiveParticle();
 
@@ -528,8 +532,12 @@ public:
 
 	void Reset();
 	void Move();
-	void Move_Runge_Kutta_1();
-	void Move_Runge_Kutta_2();
+	void Move_Runge_Kutta2_1();
+	void Move_Runge_Kutta2_2();
+	void Move_Runge_Kutta4_1();
+	void Move_Runge_Kutta4_2();
+	void Move_Runge_Kutta4_3();
+	void Move_Runge_Kutta4_4();
 	virtual void Noise_Gen();
 	void Interact(RepulsiveParticle& ac);
 	void Write(std::ostream& os);
@@ -578,7 +586,7 @@ inline void RepulsiveParticle::Move()
 	Reset();
 }
 
-void RepulsiveParticle::Move_Runge_Kutta_1() // half step forward
+void RepulsiveParticle::Move_Runge_Kutta2_1() // half step forward
 {
 	Noise_Gen();
 
@@ -602,7 +610,7 @@ void RepulsiveParticle::Move_Runge_Kutta_1() // half step forward
 	Reset();
 }
 
-void RepulsiveParticle::Move_Runge_Kutta_2() // one step forward
+void RepulsiveParticle::Move_Runge_Kutta2_2() // one step forward
 {
 	theta = theta_old + dt*torque;
 	theta += dtheta;
@@ -621,6 +629,101 @@ void RepulsiveParticle::Move_Runge_Kutta_2() // one step forward
 
 	Reset();
 }
+
+#ifdef RUNGE_KUTTA4
+void RepulsiveParticle::Move_Runge_Kutta4_1() // half step forward
+{
+	Noise_Gen();
+
+	theta_old = theta;
+	r_old = r_original;
+
+	theta += half_dt*torque;
+	theta += dtheta/2;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI; // -PI < theta < PI
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r += f*half_dt;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	k1_f = f;
+	k1_torque = torque;
+
+	Reset();
+}
+
+void RepulsiveParticle::Move_Runge_Kutta4_2() // half step forward correction
+{
+	theta = theta_old + half_dt*torque;
+	theta += dtheta/2;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r_original = r_old + f*half_dt;
+	r = r_original;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	k2_f = f;
+	k2_torque = torque;
+
+	Reset();
+}
+
+void RepulsiveParticle::Move_Runge_Kutta4_3() // full step forward
+{
+	theta = theta_old + dt*torque;
+	theta += dtheta;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r_original = r_old + f*dt;
+	r = r_original;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	k3_f = f;
+	k3_torque = torque;
+
+	Reset();
+}
+
+void RepulsiveParticle::Move_Runge_Kutta4_4() // full step forward corrected
+{
+	theta = theta_old + (k1_torque + k2_torque*2 + k3_torque*2 + torque)*dt_over_6;
+	theta += dtheta;
+
+	theta = theta - floor(theta/(2*M_PI) + 0.5)*2*M_PI;
+
+	v.x = cos(theta); // v is the direction of the particle
+	v.y = sin(theta); // v is the direction of the particle
+
+	r_original = r_old + (k1_f + k2_f*2 + k3_f*2 + f)*dt_over_6;
+	r = r_original;
+
+	#ifdef PERIODIC_BOUNDARY_CONDITION
+		r.Periodic_Transform();
+	#endif
+
+	Reset();
+}
+#endif
 
 void RepulsiveParticle::Interact(RepulsiveParticle& p)
 {
@@ -711,8 +814,8 @@ public:
 	void Reset();
 	void Set_Parameters(int input_nb, Real input_F0);
 	void Move();
-	void Move_Runge_Kutta_1();
-	void Move_Runge_Kutta_2();
+	void Move_Runge_Kutta2_1();
+	void Move_Runge_Kutta2_2();
 	virtual void Noise_Gen();
 	void Interact(ActiveBrownianChain& ac);
 	void Write(std::ostream& os);
@@ -792,7 +895,7 @@ inline void ActiveBrownianChain::Move()
 	Reset();
 }
 
-void ActiveBrownianChain::Move_Runge_Kutta_1() // half step forward
+void ActiveBrownianChain::Move_Runge_Kutta2_1() // half step forward
 {
 	Noise_Gen();
 
@@ -817,7 +920,7 @@ void ActiveBrownianChain::Move_Runge_Kutta_1() // half step forward
 	Reset();
 }
 
-void ActiveBrownianChain::Move_Runge_Kutta_2() // one step forward
+void ActiveBrownianChain::Move_Runge_Kutta2_2() // one step forward
 {
 	theta = theta_old + k_perpendicular*dt*(torque);
 	theta += dtheta;

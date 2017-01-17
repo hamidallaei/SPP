@@ -47,8 +47,8 @@ public:
 	void Interact_Membrane_Beads(); // Here the wall particles interact via a spring
 	void Interact(); // Here the intractio of particles are computed that is the applied tourque to each particle.
 	void Move(); // Move all particles of this node.
-	void Move_Runge_Kutta_1(); // Do the first step of Runge Kutta
-	void Move_Runge_Kutta_2(); // Do the second step of Runge Kutta
+	void Move_Runge_Kutta2_1(); // Do the first step of Runge Kutta
+	void Move_Runge_Kutta2_2(); // Do the second step of Runge Kutta
 	void One_Step(); // One full step, composed of interaction computation and move.
 	void Multi_Step(int steps); // Several steps befor a cell upgrade.
 	void Multi_Step(int steps, int interval); // Several steps with a cell upgrade call after each interval.
@@ -217,24 +217,24 @@ void Box::Move()
 	thisnode->Move();
 }
 
-#ifdef RUNGE_KUTTA
+#ifdef RUNGE_KUTTA2
 // Do the first step of Runge Kutta
-void Box::Move_Runge_Kutta_1()
+void Box::Move_Runge_Kutta2_1()
 {
-	thisnode->Move_Runge_Kutta_1();
+	thisnode->Move_Runge_Kutta2_1();
 }
 
 // Do the second step of Runge Kutta
-void Box::Move_Runge_Kutta_2()
+void Box::Move_Runge_Kutta2_2()
 {
-	thisnode->Move_Runge_Kutta_2();
+	thisnode->Move_Runge_Kutta2_2();
 }
 #endif
 
 // One full step, composed of interaction computation and move.
 void Box::One_Step()
 {
-	#ifndef RUNGE_KUTTA
+	#ifndef RUNGE_KUTTA2
 		Interact_Membrane_Beads();
 		Interact();
 		Move();
@@ -242,13 +242,13 @@ void Box::One_Step()
 	#else
 		Interact_Membrane_Beads();
 		Interact();
-		Move_Runge_Kutta_1();
+		Move_Runge_Kutta2_1();
 
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		Interact_Membrane_Beads();
 		Interact();
-		Move_Runge_Kutta_2();
+		Move_Runge_Kutta2_2();
 		MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 	t += dt;
@@ -259,7 +259,7 @@ void Box::Multi_Step(int steps)
 {
 	for (int i = 0; i < steps; i++)
 	{
-		#ifndef RUNGE_KUTTA
+		#ifndef RUNGE_KUTTA2
 			Interact_Membrane_Beads();
 			Interact();
 			Move();
@@ -267,13 +267,13 @@ void Box::Multi_Step(int steps)
 		#else		
 			Interact_Membrane_Beads();
 			Interact();
-			Move_Runge_Kutta_1();
+			Move_Runge_Kutta2_1();
 
 			MPI_Barrier(MPI_COMM_WORLD);
 
 			Interact_Membrane_Beads();
 			Interact();
-			Move_Runge_Kutta_2();
+			Move_Runge_Kutta2_2();
 
 			MPI_Barrier(MPI_COMM_WORLD); // Barier guranty that the move step of all particles is done. Therefor in interact function we are using updated particles.
 		#endif

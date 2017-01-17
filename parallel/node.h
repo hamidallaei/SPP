@@ -54,9 +54,15 @@ struct Node{
 	void Boundary_Interact(); // Compute interaction of particles of thisnode at the boundaries with the particles of neighboring node at the sam boundary.
 	void Move(); // Move all particles within thisnode
 
-	#ifdef RUNGE_KUTTA
-	void Move_Runge_Kutta_1(); // The first update of Runge Kutta algorithm
-	void Move_Runge_Kutta_2(); // The second update of Runge Kutta algorithm
+	#ifdef RUNGE_KUTTA2
+		void Move_Runge_Kutta2_1(); // The first update of Runge Kutta algorithm
+		void Move_Runge_Kutta2_2(); // The second update of Runge Kutta algorithm
+	#endif
+	#ifdef RUNGE_KUTTA4
+		void Move_Runge_Kutta4_1();
+		void Move_Runge_Kutta4_2();
+		void Move_Runge_Kutta4_3();
+		void Move_Runge_Kutta4_4();
 	#endif
 
 	bool Chek_Seeds(); // Check if all nodes have seed number different from one another.
@@ -1349,21 +1355,55 @@ void Node::Move()
 	t += dt;
 }
 
-#ifdef RUNGE_KUTTA
+#ifdef RUNGE_KUTTA2
 // The first update of Runge Kutta algorithm
-void Node::Move_Runge_Kutta_1()
+void Node::Move_Runge_Kutta2_1()
 {
 	for (int x = head_cell_idx; x < tail_cell_idx; x++)
 		for (int y = head_cell_idy; y < tail_cell_idy; y++)
-				cell[x][y].Move_Runge_Kutta_1();
+				cell[x][y].Move_Runge_Kutta2_1();
 }
 
 // The second update of Runge Kutta algorithm
-void Node::Move_Runge_Kutta_2()
+void Node::Move_Runge_Kutta2_2()
 {
 	for (int x = head_cell_idx; x < tail_cell_idx; x++)
 		for (int y = head_cell_idy; y < tail_cell_idy; y++)
-				cell[x][y].Move_Runge_Kutta_2();
+				cell[x][y].Move_Runge_Kutta2_2();
+}
+#endif
+
+#ifdef RUNGE_KUTTA4
+// The first update of forth order Runge Kutta algorithm
+void Node::Move_Runge_Kutta4_1()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta4_1();
+}
+
+// The second update of forth order Runge Kutta algorithm
+void Node::Move_Runge_Kutta4_2()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta4_2();
+}
+
+// The third update of forth order Runge Kutta algorithm
+void Node::Move_Runge_Kutta4_3()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta4_3();
+}
+
+// The forth update of forth order Runge Kutta algorithm
+void Node::Move_Runge_Kutta4_4()
+{
+	for (int x = head_cell_idx; x < tail_cell_idx; x++)
+		for (int y = head_cell_idy; y < tail_cell_idy; y++)
+				cell[x][y].Move_Runge_Kutta4_4();
 }
 #endif
 
