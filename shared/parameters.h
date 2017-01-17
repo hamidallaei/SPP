@@ -1,7 +1,8 @@
 #ifndef _PARAMETERS_
 #define _PARAMETERS_
 
-#define RUNGE_KUTTA
+#define RUNGE_KUTTA2
+//#define RUNGE_KUTTA4
 #define PERIODIC_BOUNDARY_CONDITION
 #define NonPeriodicCompute
 //#define CIRCULAR_BOX
@@ -74,6 +75,7 @@ const Real Ly2 = 2*Ly;
 // Time
 Real dt = 1.0/1024;
 Real half_dt = dt/2;
+Real dt_over_6 = dt/6;
 const int cell_update_period = 32;
 const int saving_period = 512;
 const long int equilibrium_step = 0;
