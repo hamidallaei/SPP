@@ -10,7 +10,10 @@
 #include <sstream>
 #include <fstream>
 #include <cmath>
-#include "read-visual.h"
+
+#define VISUAL
+#define Periodic_Show
+#include "read.h"
 #include "../shared/c2dvector.h"
 
 unsigned int window_width = 680;

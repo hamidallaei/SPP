@@ -199,8 +199,7 @@ std::ostream& operator<<(std::ostream& os, Scene& scene)
 class SceneSet{
 public:
 	vector<Scene> scene;
-	C2DVector L;
-	C2DVector L_min;
+	C2DVector L, L_min;
 	stringstream address;
 	string info;
 	ifstream input_file;
@@ -211,6 +210,8 @@ public:
 	~SceneSet();
 	bool Read(int skip = 0);
 	void Write(int, int); // write from a time to the end
+	void Write(int start, int end, int limit); // write from start to the end if end-start > limit
+	void Write_Every(int interval); // write every interval
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int smaller_grid_dim, string name);
@@ -310,6 +311,29 @@ void SceneSet::Write(int start, int limit)
 		cout << "I will not cut the file because it is short enough!" << endl;
 }
 
+void SceneSet::Write(int start, int end, int limit)
+{
+	if ((end - start) > limit)
+	{
+		output_file.open(address.str().c_str());
+		for (int i = start; i < end; i++)
+			output_file << scene[i];
+		output_file.close();
+	}
+	else
+		cout << "I will not cut the file because it is short enough!" << endl;
+}
+
+void SceneSet::Write_Every(int interval)
+{
+	output_file.open(address.str().c_str());
+	for (int i = 0; i < scene.size(); i += interval)
+	{
+		output_file << scene[i];
+	}
+	output_file.close();
+}
+
 void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t, string info)
 {
 	Field averaged_field(smaller_grid_dim, L);
@@ -381,18 +405,25 @@ void SceneSet::Accumulate_Theta(int smaller_grid_dim, const int num_bins, const 
 {
 	Field f(smaller_grid_dim, L);
 	Stat<double> dtheta;
-	for (int i = 0; i < scene.size(); i++)
+	int step = (scene.size()/500);
+	if (step == 0)
+		step = 1;
+	for (int i = 0; i < scene.size(); i+=step)
 	{
 		f.Compute(scene[i].sparticle, Scene::Ns);
 		f.Add_Theta(dtheta,p_c,dp);
 		f.Reset();
 	}
+	stringstream address;
+	address.str("");
+	address << info << "-p-" << p_c << "-dp-" << dp << ".dat";
 	dtheta.Periodic_Transform(M_PI);
 	dtheta.Shift_Average();
 	dtheta.Periodic_Transform(M_PI);
 	dtheta.Shift_Average();
 	dtheta.Compute();
-	dtheta.Histogram(num_bins,info);
+	dtheta.Histogram(num_bins,address.str().c_str());
+	cout << "Number of date: " << dtheta.data.size() << endl;
 	dtheta.Reset();
 }
 

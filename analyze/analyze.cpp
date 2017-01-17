@@ -17,10 +17,14 @@ int main(int argc, char** argv)
 		bool read_state = sceneset->Read();
 		if (read_state)
 		{
-			sceneset->L -= 0.5-0.1;
+//			sceneset->L -= 0.5-0.1;
 			C2DVector box_dim(sceneset->L);
 
 			boost::replace_all(name, "-r-v.bin", "");
+			stringstream ss("");
+			ss << "quantities-" << name << ".dat";
+			ofstream out_file;
+			out_file.open(ss.str().c_str());
 
 //			sceneset->Save_Theta_Deviation(120, 0, sceneset->scene.size(), "theta-stat.dat");
 //			sceneset->Plot_Fields(21, 40, name);
@@ -33,54 +37,59 @@ int main(int argc, char** argv)
 //			sceneset->Plot_Averaged_Fields_Section(41, 20, name);
 //			sceneset->Plot_Density_Contour(61, 0.1, name);
 
-			std::size_t pos = name.find("Dr=");
-			std::string str = name.substr (pos);
-			pos = str.find("-");
-			str = str.substr(3,pos-3);
-			stringstream ss;
-			ss.str("");
-			ss << "theta_stat-Dr-" << str;
+//			std::size_t pos = name.find("Dr=");
+//			std::string str = name.substr (pos);
+//			pos = str.find("-");
+//			str = str.substr(3,pos-3);
+//			stringstream ss;
+//			ss.str("");
+//			ss << "theta_stat-Dr-" << str;
 
-			double p_c = atof(argv[2]);
-			double dp = atof(argv[3]);
+//			double p_c = atof(argv[2]);
+//			double dp = atof(argv[3]);
 //			sceneset->Accumulate_Theta(16, 30, p_c, dp, ss.str().c_str());
 //			sceneset->Accumulate_Theta(16, 30, 0.01, dp, ss.str().c_str());
 //			sceneset->Accumulate_Theta(16, 30, 0.05, dp, ss.str().c_str());
 //			sceneset->Accumulate_Theta(16, 30, 0.1, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.2, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.3, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.4, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.5, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.6, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.7, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.8, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.9, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.95, dp, ss.str().c_str());
-			sceneset->Accumulate_Theta(16, 30, 0.99, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.2, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.3, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.4, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.5, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.6, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.7, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.8, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.9, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.95, dp, ss.str().c_str());
+//			sceneset->Accumulate_Theta(16, 30, 0.99, dp, ss.str().c_str());
 
 
+//			size_t pos1,pos2;
+//			pos1 = name.find("-Lx");
+//			if (pos1 > 0 && pos1 < name.length())
+//				name.erase(name.begin() + pos1,name.end());
+//			pos1 = name.find("-2Lx");
+//			if (pos1 > 0 && pos1 < name.length())
+//				name.erase(name.begin() + pos1,name.end());\
+//			pos1 = name.find("-2L");
+//			if (pos1 > 0 && pos1 < name.length())
+//				name.erase(name.begin() + pos1,name.end());
+//			pos1 = name.find("-v=");
+//			pos2 = name.find("-noise=");
+//			if (pos1 > 0 && pos1 < name.length())
+//				name.erase(name.begin() + pos1 + 3,name.begin() + pos2);
 
-			size_t pos1,pos2;
-			pos1 = name.find("-Lx");
-			if (pos1 > 0 && pos1 < name.length())
-				name.erase(name.begin() + pos1,name.end());
-			pos1 = name.find("-2Lx");
-			if (pos1 > 0 && pos1 < name.length())
-				name.erase(name.begin() + pos1,name.end());
-			pos1 = name.find("-v=");
-			pos2 = name.find("-noise=");
-			if (pos1 > 0 && pos1 < name.length())
-				name.erase(name.begin() + pos1 + 3,name.begin() + pos2);
-
-			boost::replace_all(name, "rho=", "");
-			boost::replace_all(name, "-noise=", "\t");
-			boost::replace_all(name, "-cooling", "\t");
-			boost::replace_all(name, "-g=", "\t");
-			boost::replace_all(name, "-v=", "\t");
-			boost::replace_all(name, "-alpha=", "\t");
+//			boost::replace_all(name, "rho=", "");
+//			boost::replace_all(name, "-noise=", "\t");
+//			boost::replace_all(name, "-cooling", "\t");
+//			boost::replace_all(name, "-g=", "\t");
+//			boost::replace_all(name, "-v=", "\t");
+//			boost::replace_all(name, "-alpha=", "\t");
 
 //			Polarization_AutoCorr(sceneset);
 //			Polarization_Time(sceneset);
+
+			cout << name << endl;
+			Quantities_Time(sceneset, 0*sceneset->scene.size()/2, out_file);
 
 //			Stat<double> p;
 //			Compute_Polarization(sceneset,&p);
@@ -115,6 +124,8 @@ int main(int argc, char** argv)
 //			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);
+
+
 
 			delete sceneset;
 		}

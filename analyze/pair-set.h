@@ -100,10 +100,10 @@ bool Pair_Set::Find_Particle(Real input_r_min, Real input_r_max, int t)
 	for (int i = 0; i < grid_dim_x; i++)
 		c[i] = new Cell[grid_dim_y];
 	
-	for (int i = 0; i < Scene::number_of_particles; i++)
+	for (int i = 0; i < Scene::Ns; i++)
 	{
-		int x = (int) floor((sceneset->scene[step].particle[i].r.x + sceneset->L_min.x)*grid_dim_x / (2*sceneset->L_min.x));
-		int y = (int) floor((sceneset->scene[step].particle[i].r.y + sceneset->L_min.y)*grid_dim_y / (2*sceneset->L_min.y));
+		int x = (int) floor((sceneset->scene[step].sparticle[i].r.x + sceneset->L_min.x)*grid_dim_x / (2*sceneset->L_min.x));
+		int y = (int) floor((sceneset->scene[step].sparticle[i].r.y + sceneset->L_min.y)*grid_dim_y / (2*sceneset->L_min.y));
 		c[x][y].Add(i);
 	}
 
@@ -135,7 +135,7 @@ Real Pair_Set::Find_Mean_Square_Distance(int tau)
 	Real sum_d2 = 0;
 	for (int n = 0; n < pid1.size(); n++)
 	{
-		C2DVector dr = sceneset->scene[tau+step].particle[pid1[n]].r - sceneset->scene[tau+step].particle[pid2[n]].r;
+		C2DVector dr = sceneset->scene[tau+step].sparticle[pid1[n]].r - sceneset->scene[tau+step].sparticle[pid2[n]].r;
 		dr.x -= 2*sceneset->L.x*((int) (dr.x / sceneset->L_min.x));
 		dr.y -= 2*sceneset->L.y*((int) (dr.y / sceneset->L_min.y));
 		Real d2 = dr.Square();
@@ -155,10 +155,10 @@ Real Pair_Set::Find_Short_Lyapunov_Exponent(int tau)
 	Real sum_lambda = 0;
 	for (int n = 0; n < pid1.size(); n++)
 	{
-		C2DVector dr_tau = sceneset->scene[tau+step].particle[pid1[n]].r - sceneset->scene[tau+step].particle[pid2[n]].r;
+		C2DVector dr_tau = sceneset->scene[tau+step].sparticle[pid1[n]].r - sceneset->scene[tau+step].sparticle[pid2[n]].r;
 		dr_tau.x -= 2*sceneset->L.x*((int) (dr_tau.x / sceneset->L_min.y));
 		dr_tau.y -= 2*sceneset->L.y*((int) (dr_tau.y / sceneset->L_min.y));
-		C2DVector dr0 = sceneset->scene[step].particle[pid1[n]].r - sceneset->scene[step].particle[pid2[n]].r;
+		C2DVector dr0 = sceneset->scene[step].sparticle[pid1[n]].r - sceneset->scene[step].sparticle[pid2[n]].r;
 		dr0.x -= 2*sceneset->L.x*((int) (dr0.x / sceneset->L_min.x));
 		dr0.y -= 2*sceneset->L.y*((int) (dr0.y / sceneset->L_min.y));
 		Real lambda = dr_tau.Square() / dr0.Square();
@@ -192,7 +192,7 @@ void Cell::Add_Pairs_Self(Pair_Set* ps)
 	for (int i = 0; i < pid.size(); i++)
 		for (int j = i+1; j < pid.size(); j++)
 		{
-			C2DVector dr = ps->sceneset->scene[ps->step].particle[pid[i]].r - ps->sceneset->scene[ps->step].particle[pid[j]].r;
+			C2DVector dr = ps->sceneset->scene[ps->step].sparticle[pid[i]].r - ps->sceneset->scene[ps->step].sparticle[pid[j]].r;
 			dr.x -= 2*ps->sceneset->L.x*((int) (dr.x / ps->sceneset->L_min.y));
 			dr.y -= 2*ps->sceneset->L.y*((int) (dr.y / ps->sceneset->L_min.y));
 			Real d2 = dr.Square();
@@ -209,7 +209,7 @@ void Cell::Add_Pairs(Cell* c, Pair_Set* ps)
 	for (int i = 0; i < pid.size(); i++)
 		for (int j = 0; j < c->pid.size(); j++)
 		{
-			C2DVector dr = ps->sceneset->scene[ps->step].particle[pid[i]].r - ps->sceneset->scene[ps->step].particle[c->pid[j]].r;
+			C2DVector dr = ps->sceneset->scene[ps->step].sparticle[pid[i]].r - ps->sceneset->scene[ps->step].sparticle[c->pid[j]].r;
 			dr.x -= 2*ps->sceneset->L_min.x*((int) (dr.x / ps->sceneset->L_min.x));
 			dr.y -= 2*ps->sceneset->L_min.y*((int) (dr.y / ps->sceneset->L_min.y));
 			Real d2 = dr.Square();
