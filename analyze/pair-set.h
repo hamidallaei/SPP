@@ -100,7 +100,7 @@ bool Pair_Set::Find_Particle(Real input_r_min, Real input_r_max, int t)
 	for (int i = 0; i < grid_dim_x; i++)
 		c[i] = new Cell[grid_dim_y];
 	
-	for (int i = 0; i < Scene::Ns; i++)
+	for (int i = 0; i < sceneset->scene[step].Ns; i++)
 	{
 		int x = (int) floor((sceneset->scene[step].sparticle[i].r.x + sceneset->L_min.x)*grid_dim_x / (2*sceneset->L_min.x));
 		int y = (int) floor((sceneset->scene[step].sparticle[i].r.y + sceneset->L_min.y)*grid_dim_y / (2*sceneset->L_min.y));

@@ -13,8 +13,8 @@ public:
 	Real t;
 	static Real density;
 	static Real noise;
-	static int Ns;
-	static int Nm;
+	int Ns;
+	int Nm;
 	static int chain_length;
 	C2DVector L;
 	Scene();
@@ -32,12 +32,11 @@ public:
 
 Real Scene::density;
 Real Scene::noise;
-int Scene::Ns;
-int Scene::Nm;
 int Scene::chain_length;
 
 Scene::Scene()
 {
+	Ns = Nm = 0;
 	sparticle = NULL;
 	mparticle = NULL;
 }
@@ -46,15 +45,17 @@ Scene::Scene(const Scene& s)
 {
 	t = s.t;
 	chain_length = s.chain_length;
-	Ns = s.Ns;
-	Nm = s.Nm;
-	sparticle = s.sparticle;
-	mparticle = s.mparticle;
+	Init(s.Ns, s.Nm);
+	for (int i = 0; i < Ns; i++)
+		sparticle[i] = s.sparticle[i];
+	for (int i = 0; i < Nm; i++)
+		mparticle[i] = s.mparticle[i];
 	L = s.L;
 }
 
 Scene::~Scene()
 {
+	Reset();
 }
 
 void Scene::Init(int input_Ns, int input_Nm)
@@ -67,8 +68,11 @@ void Scene::Init(int input_Ns, int input_Nm)
 
 void Scene::Reset()
 {
-	delete [] sparticle;
-	delete [] mparticle;
+	if (Ns != 0)
+		delete [] sparticle;
+	if (Nm != 0)
+		delete [] mparticle;
+	Ns = Nm = 0;
 }
 
 #ifdef VISUAL
@@ -262,28 +266,32 @@ bool SceneSet::Read(int skip)
 	{
 		if (skip > 0)
 			temp_scene.Skip_File(input_file, skip);
+		temp_scene.Reset();
 
 		while (!input_file.eof())
 		{
-			counter++;
-			input_file >> temp_scene;
 			scene.push_back(temp_scene);
-			for (int i = 0; i < Scene::Nm; i++)
+			int index = scene.size()-1;
+			input_file >> scene[index];
+			for (int i = 0; i < scene[index].Nm; i++)
 			{
-				if (abs(temp_scene.mparticle[i].r.x) > L.x)
-					L.x = abs(temp_scene.mparticle[i].r.x);
-				if (abs(temp_scene.mparticle[i].r.y) > L.y)
-					L.y = abs(temp_scene.mparticle[i].r.y);
+				if (abs(scene[index].mparticle[i].r.x) > L.x)
+					L.x = abs(scene[index].mparticle[i].r.x);
+				if (abs(scene[index].mparticle[i].r.y) > L.y)
+					L.y = abs(scene[index].mparticle[i].r.y);
 			}
-			for (int i = 0; i < Scene::Ns; i++)
+			for (int i = 0; i < scene[index].Ns; i++)
 			{
-				if (abs(temp_scene.sparticle[i].r.x) > L.x)
-					L.x = abs(temp_scene.sparticle[i].r.x);
-				if (abs(temp_scene.sparticle[i].r.y) > L.y)
-					L.y = abs(temp_scene.sparticle[i].r.y);
+				if (abs(scene[index].sparticle[i].r.x) > L.x)
+					L.x = abs(scene[index].sparticle[i].r.x);
+				if (abs(scene[index].sparticle[i].r.y) > L.y)
+					L.y = abs(scene[index].sparticle[i].r.y);
 			}
-			if (counter*sizeof(temp_scene) > (3000000))
+			if (counter*sizeof(scene[index]) > (3000000))
 				return(false);
+			if (counter % 1 != 0)
+				scene.pop_back();
+			counter++;
 		}
 	}
 	else
@@ -346,7 +354,7 @@ void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t
 	for (int i = start_t; i < scene.size() && i < end_t; i++)
 	{
 		Field f(smaller_grid_dim, L);
-		f.Compute(scene[i].sparticle, Scene::Ns);
+		f.Compute(scene[i].sparticle, scene[i].Ns);
 		averaged_field.Add(&f);
 	}
 	averaged_field.Average();
@@ -361,7 +369,7 @@ void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t
 void SceneSet::Plot_Fields(int smaller_grid_dim, int t, string name)
 {
 	field = new Field(smaller_grid_dim,L);
-	field->Compute((BasicParticle0*) scene[t].sparticle, Scene::Ns);
+	field->Compute((BasicParticle0*) scene[t].sparticle, scene[t].Ns);
 	field->Draw(name);
 }
 
@@ -371,7 +379,7 @@ void SceneSet::Plot_Averaged_Fields(int smaller_grid_dim, string info)
 	for (int i = 0; i < scene.size(); i++)
 	{
 		Field f(smaller_grid_dim, L);
-		f.Compute(scene[i].sparticle, Scene::Ns);
+		f.Compute(scene[i].sparticle, scene[i].Ns);
 		averaged_field.Add(&f);
 	}
 	averaged_field.Average();
@@ -385,7 +393,7 @@ void SceneSet::Plot_Averaged_Fields_Section(int smaller_grid_dim, int y, string 
 	for (int i = 0; i < scene.size(); i++)
 	{
 		Field f(smaller_grid_dim, L);
-		f.Compute(scene[i].sparticle, Scene::Ns);
+		f.Compute(scene[i].sparticle, scene[i].Ns);
 		averaged_field.Add(&f);
 	}
 	averaged_field.Average();
@@ -399,7 +407,7 @@ void SceneSet::Plot_Density_Contour(int smaller_grid_dim, double rho, string inf
 	Field f(smaller_grid_dim, L);
 	for (int i = 0; i < scene.size(); i++)
 	{
-		f.Compute(scene[i].sparticle, Scene::Ns);
+		f.Compute(scene[i].sparticle, scene[i].Ns);
 		averaged_field.Add(&f);
 		f.Reset();
 	}
@@ -416,7 +424,7 @@ void SceneSet::Accumulate_Theta(int smaller_grid_dim, const int num_bins, const 
 		step = 1;
 	for (int i = 0; i < scene.size(); i+=step)
 	{
-		f.Compute(scene[i].sparticle, Scene::Ns);
+		f.Compute(scene[i].sparticle, scene[i].Ns);
 		f.Add_Theta(dtheta,p_c,dp);
 		f.Reset();
 	}
