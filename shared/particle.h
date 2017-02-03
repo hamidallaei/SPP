@@ -993,7 +993,7 @@ void ActiveBrownianChain::Write(std::ostream& os)
 /*		v_temp.write(os);*/
 /*	}*/
 
-	if (nb == 1)
+	if (F0 == 0)
 		r_original.write(os);
 	else
 	{

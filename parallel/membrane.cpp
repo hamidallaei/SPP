@@ -110,7 +110,7 @@ void Run(Box& box, int argc, char *argv[])
 	}
 	for (int i = input_Nm; i < input_Ns+input_Nm; i++)
 	{
-		box.particle[i].Set_nb(2);
+		box.particle[i].Set_nb(input_chain_length);
 		box.particle[i].Set_F0(1.0);
 		box.particle[i].Set_R0(input_chiral_radius);
 //		box.particle[i].Set_Parameters(input_chain_length,1.0);
