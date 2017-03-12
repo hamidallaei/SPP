@@ -114,8 +114,10 @@ public:
 		static float thickness;
 		static GLenum mode; // GL_FILL (filled) or GL_LINE (empty) or GL_POINT
 
-		virtual void Draw(float, float, float);
+//		virtual void Draw(float, float, float);
+		virtual void Draw(float, float, float, bool);
 		virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+		virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1, bool flag);
 	#endif
 };
 
@@ -124,7 +126,7 @@ public:
 	float VisualMembrane::thickness = 1;
 	GLenum VisualMembrane::mode = GL_FILL;
 
-	void VisualMembrane::Draw(float x0 = 0, float y0 = 0, float scale = 1)
+	void VisualMembrane::Draw(float x0 = 0, float y0 = 0, float scale = 1, bool flag = false)
 	{
 		C2DVector null(0);
 		null.Null();
@@ -133,6 +135,12 @@ public:
 		color.red = 0.2;
 		color.green = 0.2;
 		color.blue = 0.2;
+		if (flag)
+		{
+			color.red = 0.0;
+			color.green = 0.0;
+			color.blue = 0.0;
+		}
 
 		Draw_Circle(r, null, radius*scale, thickness, color, mode);
 	}
@@ -156,6 +164,37 @@ public:
 			color.red = 0.2;
 			color.green = 0.2;
 			color.blue = 0.2;
+
+			Draw_Circle(p, null, radius*scale, scale*thickness / thickness_factor, color, mode);
+		}
+	}
+
+	void VisualMembrane::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1, bool flag)
+	{
+		float scale = d1 / d0;
+		C2DVector p;
+		p.x = r.x - r0.x;
+		p.y = r.y - r0.y;
+		if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
+		{
+			p *= scale;
+			p += r1;
+			const int thickness_factor = 3; // 2000
+
+			C2DVector null(0);
+			null.Null();
+
+			RGB color;
+			color.red = 0.2;
+			color.green = 0.2;
+			color.blue = 0.2;
+			if (flag)
+			{
+				color.red = 0.0;
+				color.green = 0.0;
+				color.blue = 0.0;
+			}
+
 
 			Draw_Circle(p, null, radius*scale, scale*thickness / thickness_factor, color, mode);
 		}

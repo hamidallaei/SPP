@@ -84,6 +84,8 @@ void Scene::Draw()
 	for (int i = 0; i < Nm; i++)
 		mparticle[i].Draw();
 
+	mparticle[0].Draw(0,0,1,true);
+
 	cout << "Time is at:\t" << t << "\tR/v_0" << endl;
 }
 
