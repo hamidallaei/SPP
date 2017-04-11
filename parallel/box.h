@@ -18,6 +18,7 @@ public:
 	Particle* particle; // Array of particles that we are going to simulate.
 	Wall wall[8]; // Array of walls in our system.
 
+	Real Lbx, Lby;
 	Real t;
 	Real density, packing_fraction;
 	Real polarization;
@@ -29,7 +30,7 @@ public:
 	// I believe that it is better to move these init functions to main files
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
-	bool Positioning_Particles(Node* input_node, const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
+	bool Positioning_Particles(const string name); // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes.
 	void Sync();
 
 	void Load(const State_Hyper_Vector&); // Load new position and angles of particles and a gsl random generator from a state hyper vector
@@ -83,6 +84,7 @@ void Box::Sync()
 {
 	MPI_Barrier(MPI_COMM_WORLD);
 	thisnode->Root_Bcast();
+	MPI_Barrier(MPI_COMM_WORLD);
 // Any node update cells, knowing particles and their cell that they are inside.
 	thisnode->Full_Update_Cells();
 
@@ -102,6 +104,9 @@ void Box::Init(Node* input_node, Real input_density)
 	#endif
 
 	thisnode = input_node;
+
+	Lbx = Lx;
+	Lby = Ly;
 
 	density = input_density;
 	Ns = (int) round(Lx2*Ly2*input_density);
@@ -124,57 +129,71 @@ void Box::Init(Node* input_node, Real input_density)
 
 
 // Intialize the box from a file, this includes reading particles information, updating cells and sending information to all nodes. 
-bool Box::Positioning_Particles(Node* input_node, const string input_name)
+bool Box::Positioning_Particles(const string input_name)
 {
 	#ifdef TRACK_PARTICLE
 		track_p = &particle[track];
 	#endif
 
-	thisnode = input_node;
-
 	string name = input_name;
 	stringstream address(name);
-	ifstream is;
-	is.open(address.str().c_str());
-	if (!is.is_open())
-		return false;
 
 	if (thisnode->node_id == 0)
 	{
-		is.read((char*) &Ns, sizeof(int) / sizeof(char));
-		if (Ns < 0 || Ns > 1000000)
-			return (false);
-		while (!is.eof())
-		{
-			for (int i = 0; i < Ns; i++)
-			{
-				is >> particle[i].r;
-				is >> particle[i].v;
-			}
-			is.read((char*) &Ns, sizeof(int) / sizeof(char));
-		}
-		for (int i = 0; i < Ns; i++)
-			particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
-		cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
+		stringstream command("");
+		command << "./fix-file.out ";
+		command << name;
+		system(command.str().c_str());
 	}
-	else
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	ifstream is;
+	is.open(address.str().c_str(), fstream::in);
+	if (!is.is_open())
+		return false;
+
+	is >> this;
+
+	if (Ns < 0 || Ns > 1000000)
+		return (false);
+
+	is.seekg(0,ios_base::end);
+	int end_of_is = is.tellg();
+	is.seekg(0,ios_base::beg);
+	while (is.tellg() < end_of_is)
 	{
-		is.read((char*) &Ns, sizeof(int) / sizeof(char));
-		if (Ns < 0 || Ns > 1000000)
-			return (false);
+		static int counter = 0;
+		is >> this;
+		MPI_Barrier(MPI_COMM_WORLD);
+		counter++;
+	}
+/*	while (is.tellg() != end_of_is)*/
+/*	{*/
+/*		is >> this;*/
+/*		MPI_Barrier(MPI_COMM_WORLD);*/
+/*	}*/
+
+	for (int i = 0; i < Nm; i++)
+	{
+		particle[i].r = particle[i].r_original;
+		particle[i].r.Periodic_Transform();
 	}
 
+	for (int i = Nm; i < Nm+Ns; i++)
+	{
+		particle[i].r = particle[i].r_original;
+		particle[i].r.Periodic_Transform();
+		particle[i].v.x = cos(particle[i].theta);
+		particle[i].v.y = sin(particle[i].theta);
+		particle[i].Reset();
+	}
+
+	cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
 	is.close();
 
-	density = Ns / (Lx2*Ly2);
+//	density = Ns / (Lx2*Ly2);
 
-	Init_Topology(); // Adding walls
-
-	Sync();
-
-// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-	info.str("");
-	MPI_Barrier(MPI_COMM_WORLD);
+	thisnode->Full_Update_Cells();
 
 	return (true);
 }
@@ -449,10 +468,16 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 		os.write((char*) &(box->Ns), sizeof(box->Ns) / sizeof(char));
 		os.write((char*) &(box->Nm), sizeof(box->Nm) / sizeof(char));
 
-		for (int i = box->Nm; i < box->Ns; i++)
+		for (int i = 0; i < box->Nm; i++)
+		{
+			box->particle[i].r_original.write(os);
+		}
+
+		for (int i = box->Nm; i < (box->Nm+box->Ns); i++)
 		{
 			box->particle[i].Write(os);
 		}
+
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -460,16 +485,23 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 // Reading the particle information (position and velocities) from a standard input stream (probably a file).
 std::istream& operator>>(std::istream& is, Box* box)
 {
-	if (box->thisnode->node_id == 0)
+// This function runs for all MPI processors. Otherwise, we face problems when we read the file as an input for the initial condition of the all processors. In the positioning function, all nodes have to read the file to have the same information. There are some information that can not be updated by sync function, e.g. time or Lbx.
+	is.read((char*) &(box->t), sizeof(Real) / sizeof(char));
+	is.read((char*) &(box->Lbx), sizeof(Real) / sizeof(char));
+	is.read((char*) &(box->Lby), sizeof(Real) / sizeof(char));
+	is.read((char*) &(Particle::nb), sizeof(int) / sizeof(char));
+	is.read((char*) &(box->Ns), sizeof(box->Ns) / sizeof(char));
+	is.read((char*) &(box->Nm), sizeof(box->Nm) / sizeof(char));
+
+	for (int i = 0; i < box->Nm; i++)
 	{
-		is.read((char*) &box->Ns, sizeof(int) / sizeof(char));
-		for (int i = 0; i < box->Ns; i++)
-		{
-			is >> box->particle[i].r;
-			is >> box->particle[i].v;
-		}
+		is >> box->particle[i].r_original;
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
+
+	for (int i = box->Nm; i < (box->Nm + box->Ns); i++)
+	{
+		box->particle[i].Read(is);
+	}
 }
 
 #endif

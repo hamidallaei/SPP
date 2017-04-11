@@ -11,6 +11,7 @@ public:
 	VisualChain* sparticle;
 	VisualMembrane* mparticle;
 	Real t;
+	bool health_status;
 	static Real density;
 	static Real noise;
 	int Ns;
@@ -43,6 +44,7 @@ Scene::Scene()
 
 Scene::Scene(const Scene& s)
 {
+	health_status = s.health_status;
 	t = s.t;
 	chain_length = s.chain_length;
 	Init(s.Ns, s.Nm);
@@ -84,7 +86,8 @@ void Scene::Draw()
 	for (int i = 0; i < Nm; i++)
 		mparticle[i].Draw();
 
-	mparticle[0].Draw(0,0,1,true);
+	if (Nm > 0)
+		mparticle[0].Draw(0,0,1,true);
 
 	cout << "Time is at:\t" << t << "\tR/v_0" << endl;
 }
@@ -152,20 +155,26 @@ void Scene::Skip_File(std::istream& in, int n)
 		for (int j = 0; j < Ns; j++)
 		{
 			in >> temp_r;
-			float temp_float;
-			in.read((char*) &temp_float,sizeof(float) / sizeof(char));
+			Saving_Real temp_float;
+			in.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 		}
 	}
 }
 
 std::istream& operator>>(std::istream& is, Scene& scene)
 {
+	scene.health_status = true;
 	is.read((char*) &(scene.t), sizeof(double) / sizeof(char));
 	is.read((char*) &(scene.L.x), sizeof(double) / sizeof(char));
 	is.read((char*) &(scene.L.y), sizeof(double) / sizeof(char));
 	is.read((char*) &(scene.chain_length), sizeof(int) / sizeof(char));
 	is.read((char*) &(scene.Ns), sizeof(int) / sizeof(char));
 	is.read((char*) &(scene.Nm), sizeof(int) / sizeof(char));
+
+	if (is.eof())
+	{
+		scene.health_status = false;
+	}
 
 	scene.mparticle = new VisualMembrane[scene.Nm];
 	scene.sparticle = new VisualChain[scene.Ns];
@@ -179,6 +188,11 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 			scene.mparticle[i].r.x -= Lx*2*((int) floor(scene.mparticle[i].r.x / (Lx*2) + 0.5));
 			scene.mparticle[i].r.y -= Ly*2*((int) floor(scene.mparticle[i].r.y / (Ly*2) + 0.5));
 		#endif
+
+		if (i == scene.Nm - 1 && is.eof())
+		{
+			scene.health_status = false;
+		}
 	}
 	for (int i = 0; i < scene.Ns; i++)
 	{
@@ -187,11 +201,18 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 			scene.sparticle[i].r.x -= Lx*2*((int) floor(scene.sparticle[i].r.x / (Lx*2) + 0.5));
 			scene.sparticle[i].r.y -= Ly*2*((int) floor(scene.sparticle[i].r.y / (Ly*2) + 0.5));
 		#endif
-		float temp_float;
-		is.read((char*) &temp_float,sizeof(float) / sizeof(char));
+		Saving_Real temp_float;
+		is.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 		scene.sparticle[i].theta = temp_float;
+
+		if (i == scene.Ns - 1 && is.eof())
+		{
+			scene.health_status = false;
+		}
 	}
-	VisualChain::chain_length = scene.chain_length;
+
+	if (scene.health_status)
+		VisualChain::chain_length = scene.chain_length;
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& scene)
@@ -320,7 +341,8 @@ void SceneSet::Write(int start, int limit)
 	{
 		output_file.open(address.str().c_str());
 		for (int i = start; i < scene.size(); i++)
-			output_file << scene[i];
+			if (scene[i].health_status)
+				output_file << scene[i];
 		output_file.close();
 	}
 	else
@@ -333,7 +355,8 @@ void SceneSet::Write(int start, int end, int limit)
 	{
 		output_file.open(address.str().c_str());
 		for (int i = start; i < end; i++)
-			output_file << scene[i];
+			if (scene[i].health_status)
+				output_file << scene[i];
 		output_file.close();
 	}
 	else
@@ -345,7 +368,10 @@ void SceneSet::Write_Every(int interval)
 	output_file.open(address.str().c_str());
 	for (int i = 0; i < scene.size(); i += interval)
 	{
-		output_file << scene[i];
+		if (scene[i].health_status)
+		{
+			output_file << scene[i];
+		}
 	}
 	output_file.close();
 }

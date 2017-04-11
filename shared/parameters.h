@@ -37,6 +37,7 @@ class EjtehadiParticle;
 //#define ejtehadi
 
 typedef double Real;
+typedef float Saving_Real;
 
 #ifdef ejtehadi
 	typedef EjtehadiParticle Particle;
@@ -45,8 +46,8 @@ typedef double Real;
 //	typedef ContinuousParticle Particle;
 //	typedef VicsekParticle2 Particle;
 //	typedef MarkusParticle Particle;
-//	typedef RepulsiveParticle Particle;
-	typedef ActiveBrownianChain Particle;
+	typedef RepulsiveParticle Particle;
+//	typedef ActiveBrownianChain Particle;
 //	typedef RTPChain Particle;
 	#ifdef NonPeriodicCompute
 		const int dof = 5;
@@ -73,13 +74,15 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/1024;
+Real dt = 1.0/1024/4;
 Real half_dt = dt/2;
 Real dt_over_6 = dt/6;
 const int cell_update_period = 32;
 const int saving_period = 512;
-const long int equilibrium_step = 0;
-const long int total_step = 33554432; // 2^23 = 8388608 ,  2^25 = 33554432
+Real eq_time = 0;
+Real sim_time = 16384;  // 2^14 = 16384
+long int equilibrium_step = (int) eq_time / dt;
+long int total_step = (int) sim_time / dt;
 
 const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.

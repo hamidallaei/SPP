@@ -173,13 +173,13 @@ class C2DVector
 		// for binary output only (comment this function for txt output)
 		void write(std::ostream& os)
 		{
-			float temp_float;
+			Saving_Real temp_float;
 
-			temp_float = (float) x;
-			os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+			temp_float = (Saving_Real) x;
+			os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 
-			temp_float = (float) y;
-			os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+			temp_float = (Saving_Real) y;
+			os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 		}
 
 		// for either binary or txt output
@@ -192,12 +192,12 @@ class C2DVector
 		friend std::istream& operator>>(std::istream& is, C2DVector& t)
 		{
 			// for binary input 
-			float temp_float;
+			Saving_Real temp_float;
 
-			is.read((char*) &temp_float,sizeof(float) / sizeof(char));
+			is.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 			t.x = temp_float;
 
-			is.read((char*) &temp_float,sizeof(float) / sizeof(char));
+			is.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 			t.y = temp_float;
 			return is;
 

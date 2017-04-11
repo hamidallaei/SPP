@@ -16,6 +16,13 @@ inline void timing_information(Node* node, clock_t start_time, int i_step, int t
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
+bool does_file_exist(const char *fileName)
+{
+	std::ifstream infile(fileName);
+	bool result = infile.good();
+	infile.close();
+	return result;
+}
 
 inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, ofstream& out_file)
 {
@@ -55,12 +62,17 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 		cout << "gathering data:" << endl;
 	int saving_time = 0;
 
-	for (long int i = 0; i < total_step; i+=cell_update_period)
+	if (box->t < dt)
+			out_file << box;
+
+	int i = 0;
+	while (box->t < sim_time)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,total_step);
+		i += cell_update_period;
 		if ((i / cell_update_period) % saving_period == 0)
 			out_file << box;
+		timing_information(box->thisnode,start_time,i,total_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -70,6 +82,94 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 
 	Real t = (Real) (end_time - start_time) / CLOCKS_PER_SEC;
 	return(t);
+}
+
+void Single_Run(Box& box, int argc, char *argv[])
+{
+	if (argc < 4)
+	{
+		if (box.thisnode->node_id == 0)
+			cout << "arguments are: \n" << "packingfraction,\tg,\tDr" << endl;
+		exit(0);
+	}
+	Real input_packing_fraction = atof(argv[1]);
+	Real input_g = atof(argv[2]);
+
+	Real input_rho = 4*input_packing_fraction / (M_PI*Particle::sigma_p*Particle::sigma_p);
+
+	Real input_noise = atof(argv[3]);
+
+	bool FROM_FILE = false;
+	string name;
+	if (argc == 5)
+	{
+		name = argv[4];
+		FROM_FILE = true;
+	}
+
+	Real t_eq,t_sim;
+
+	Particle::Set_nb(1);
+	Particle::Set_F0(1);
+	Particle::Set_sigma_p(1);
+	Particle::Set_repulsion_radius(1.2);
+	Particle::Set_alignment_radius(1.1);
+	Particle::Set_A_p(2.0);
+	Particle::Set_g(1.0);
+
+	box.Init(box.thisnode, input_rho);
+	box.packing_fraction = input_packing_fraction;
+
+	Particle::Set_Dr(input_noise); // This will set the noise amplitude as well. Noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
+
+	box.info.str("");
+	box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << input_noise << "-L=" << Lx << "-N=" << box.Ns;
+
+	ofstream out_file;
+
+	stringstream address;
+	address.str("");
+	address << box.info.str() << "-r-v.bin";
+
+	if (FROM_FILE)
+	{
+		box.Positioning_Particles(name);
+		if (box.thisnode->node_id == 0)
+			out_file.open(address.str(), ios::out | ios::app | ios::binary);
+	}
+	else
+	{
+		if (does_file_exist(address.str().c_str()))
+		{
+			box.Positioning_Particles(address.str());
+			if (box.thisnode->node_id == 0)
+				out_file.open(address.str(), ios::out | ios::app | ios::binary);
+		}
+		else
+		{
+			if (box.thisnode->node_id == 0)
+			{
+				Triangle_Lattice_Formation(box.particle,box.Ns,0);
+				for (int i = 0; i < box.Ns; i++)
+					box.particle[i].r_original = box.particle[i].r;
+				out_file.open(address.str().c_str());
+			}
+			box.Sync();
+		}
+	}
+
+	if (box.thisnode->node_id == 0)
+		cout << " Box information is: " << box.info.str() << endl;
+
+		t_sim = data_gathering(&box, total_step, saving_period, out_file);
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (box.thisnode->node_id == 0)
+		{
+			cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;
+			out_file.close();
+		}
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Change_Noise(Box& box, int argc, char *argv[])
@@ -98,7 +198,6 @@ void Change_Noise(Box& box, int argc, char *argv[])
 	Particle::Set_repulsion_radius(1.2);
 	Particle::Set_alignment_radius(1.1);
 	Particle::Set_A_p(2.0);
-
 	Particle::Set_g(input_g);
 
 	box.Init(box.thisnode, input_rho);
@@ -170,7 +269,8 @@ int main(int argc, char *argv[])
 	Box box;
 	box.thisnode = &thisnode;
 
-	Change_Noise(box, argc, argv);
+	//Change_Noise(box, argc, argv);
+	Single_Run(box, argc, argv);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

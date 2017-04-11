@@ -392,7 +392,7 @@ int main(int argc, char** argv)
 		glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
 		glutInitWindowSize (window_width, window_height);
 		glutInitWindowPosition (100, 100);
-		glutCreateWindow ("Created By Hamid!");
+		glutCreateWindow ("SPP Visualizer");
 		Init ();
 		glutDisplayFunc(Display);
 		glutReshapeFunc(Reshape);

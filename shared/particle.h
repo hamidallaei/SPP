@@ -30,8 +30,8 @@ public:
 void BasicParticle0::Write(std::ostream& os)
 {
 	r.write(os);
-	float temp_float = (float) theta;
-	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+	Saving_Real temp_float = (Saving_Real) theta;
+	os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 }
 //###################################################################
 
@@ -42,7 +42,6 @@ public:
 	#ifdef NonPeriodicCompute
 		C2DVector r_original;
 	#endif
-	void Write(std::ostream&);
 };
 //###################################################################
 
@@ -68,6 +67,7 @@ public:
 	void Move();
 	void Interact();
 	void Write(std::ostream&);
+	void Read(std::istream&);
 };
 
 void BasicDynamicParticle::Init()
@@ -130,10 +130,16 @@ void BasicDynamicParticle::Set_speed(const Real input_speed)
 void BasicDynamicParticle::Write(std::ostream& os)
 {
 	r.write(os);
-	C2DVector v_temp;
-	v_temp.x = cos(theta);
-	v_temp.y = sin(theta);
-	v_temp.write(os);
+	Saving_Real temp_float = (Saving_Real) theta;
+	os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
+}
+
+void BasicDynamicParticle::Read(std::istream& is)
+{
+	is >> r;
+	Saving_Real temp_theta;
+	is.read((char*) &(temp_theta), sizeof(Saving_Real) / sizeof(char));
+	theta = temp_theta;
 }
 
 Real BasicDynamicParticle::noise_amplitude = 0.0;
@@ -541,6 +547,7 @@ public:
 	virtual void Noise_Gen();
 	void Interact(RepulsiveParticle& ac);
 	void Write(std::ostream& os);
+	void Read(std::istream& is);
 };
 
 RepulsiveParticle::RepulsiveParticle()
@@ -759,8 +766,16 @@ void RepulsiveParticle::Interact(RepulsiveParticle& p)
 void RepulsiveParticle::Write(std::ostream& os)
 {
 	r_original.write(os);
-	float temp_float = (float) theta;
-	os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+	Saving_Real temp_float = (Saving_Real) theta;
+	os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
+}
+
+void RepulsiveParticle::Read(std::istream& is)
+{
+	is >> r_original;
+	Saving_Real temp_theta;
+	is.read((char*) &(temp_theta), sizeof(Saving_Real) / sizeof(char));
+	theta = temp_theta;
 }
 
 Real RepulsiveParticle::F0 = 1.0;
@@ -998,8 +1013,8 @@ void ActiveBrownianChain::Write(std::ostream& os)
 	else
 	{
 		r_original.write(os);
-		float temp_float = (float) theta;
-		os.write((char*) &temp_float,sizeof(float) / sizeof(char));
+		Saving_Real temp_float = (Saving_Real) theta;
+		os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 	}
 }
 
