@@ -6,7 +6,7 @@
 #define PERIODIC_BOUNDARY_CONDITION
 #define NonPeriodicCompute
 //#define CIRCULAR_BOX
-//#define verlet_list
+#define verlet_list
 // This is for checking particles outside of the box
 #define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
@@ -62,10 +62,10 @@ long int seed = 10;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 64000;
+const int max_N = 128000;
 
 // Box
-const int Lx_int = 64;
+const int Lx_int = 128;
 const int Ly_int = Lx_int;
 const int L_int = Lx_int;
 const Real Lx = Lx_int;
@@ -74,10 +74,10 @@ const Real Lx2 = 2*Lx;
 const Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/1024/4;
+Real dt = 1.0/1024/64;
 Real half_dt = dt/2;
 Real dt_over_6 = dt/6;
-const int cell_update_period = 32;
+const int cell_update_period = 512;
 const int saving_period = 512;
 Real eq_time = 0;
 Real sim_time = 16384;  // 2^14 = 16384
@@ -88,7 +88,7 @@ const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
 const Real K = 0;
 
-const Real lx_min = (2 + 2*speed*cell_update_period*dt);
+const Real lx_min = (1 + 1*speed*cell_update_period*dt);
 const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 const int divisor_x = max_divisor_x;

@@ -112,9 +112,9 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_nb(1);
 	Particle::Set_F0(1);
 	Particle::Set_sigma_p(1);
-	Particle::Set_repulsion_radius(1.2);
+	Particle::Set_repulsion_radius(1.05);
 	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(2.0);
+	Particle::Set_A_p(200.0);
 	Particle::Set_g(1.0);
 
 	box.Init(box.thisnode, input_rho);
@@ -135,7 +135,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	{
 		box.Positioning_Particles(name);
 		if (box.thisnode->node_id == 0)
-			out_file.open(address.str(), ios::out | ios::app | ios::binary);
+			out_file.open(address.str().c_str(), ios::out | ios::app | ios::binary);
 	}
 	else
 	{
@@ -143,7 +143,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 		{
 			box.Positioning_Particles(address.str());
 			if (box.thisnode->node_id == 0)
-				out_file.open(address.str(), ios::out | ios::app | ios::binary);
+				out_file.open(address.str().c_str(), ios::out | ios::app | ios::binary);
 		}
 		else
 		{
@@ -194,10 +194,10 @@ void Change_Noise(Box& box, int argc, char *argv[])
 
 	Particle::Set_nb(1);
 	Particle::Set_F0(1);
-	Particle::Set_sigma_p(1);
-	Particle::Set_repulsion_radius(1.2);
-	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(2.0);
+	Particle::Set_sigma_p(0.95);
+	Particle::Set_repulsion_radius(1.0);
+	Particle::Set_alignment_radius(1.5);
+	Particle::Set_A_p(200.0);
 	Particle::Set_g(input_g);
 
 	box.Init(box.thisnode, input_rho);

@@ -195,6 +195,10 @@ bool Box::Positioning_Particles(const string input_name)
 
 	thisnode->Full_Update_Cells();
 
+	#ifdef verlet_list
+	thisnode->Update_Neighbor_List();
+	#endif
+
 	return (true);
 }
 
