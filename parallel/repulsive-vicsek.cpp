@@ -4,14 +4,14 @@
 #include "../shared/cell.h"
 #include "box.h"
 
-inline void timing_information(Node* node, clock_t start_time, int i_step, int total_step)
+inline void timing_information(Box* box, clock_t start_time, int i_step, int total_step)
 {
-	if (node->node_id == 0)
+	if (box->thisnode->node_id == 0)
 	{
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
 		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+		cout << "\r" << box->t << "\t" << round(100.0*box->t / sim_time) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -35,7 +35,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box->thisnode,start_time,i,equilibrium_step);
+		timing_information(box,start_time,i,equilibrium_step);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -71,8 +71,10 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 		box->Multi_Step(cell_update_period);
 		i += cell_update_period;
 		if ((i / cell_update_period) % saving_period == 0)
+		{
 			out_file << box;
-		timing_information(box->thisnode,start_time,i,total_step);
+			timing_information(box,start_time,i,total_step);
+		}
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -114,7 +116,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_sigma_p(1);
 	Particle::Set_repulsion_radius(1.05);
 	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(200.0);
+	Particle::Set_A_p(50.0);
 	Particle::Set_g(1.0);
 
 	box.Init(box.thisnode, input_rho);

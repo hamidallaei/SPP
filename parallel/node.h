@@ -598,6 +598,25 @@ void Node::Send_Receive_Data()
 			MPI_Barrier(MPI_COMM_WORLD);
 		}
 	}
+
+// Check if the structrue of nodes and their cells is not making trubble.
+
+	if (npx == 1 && npy == 2)
+	{
+		if (size_y  == 1)
+		{
+			cout << "some cells are counted twice as neighbors" << endl;
+			MPI_Abort(MPI_COMM_WORLD, 1388);
+		}
+	}
+	if (npx == 2 && npy == 1)
+	{
+		if (size_x  == 1)
+		{
+			cout << "some cells are counted twice as neighbors" << endl;
+			MPI_Abort(MPI_COMM_WORLD, 1388);
+		}
+	}
 }
 
 // Quick_Update_Cells will update cells of each node (their particle) with the local information that means we have only information about particle position of thisnode and the boundary cells. This must be quicker than usage of the global information with a gather and bcast. Here neighobr list of each particle is computed as well.

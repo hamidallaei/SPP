@@ -160,7 +160,7 @@ bool Box::Positioning_Particles(const string input_name)
 	is.seekg(0,ios_base::end);
 	int end_of_is = is.tellg();
 	is.seekg(0,ios_base::beg);
-	while (is.tellg() < end_of_is)
+	while (is.tellg() < end_of_is && is.tellg() >= 0)
 	{
 		static int counter = 0;
 		is >> this;

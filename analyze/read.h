@@ -64,8 +64,10 @@ void Scene::Init(int input_Ns, int input_Nm)
 {
 	Ns = input_Ns;
 	Nm = input_Nm;
-	sparticle = new VisualChain[Ns];
-	mparticle = new VisualMembrane[Nm];
+	if (Ns > 0)
+		sparticle = new VisualChain[Ns];
+	if (Nm > 0)
+		mparticle = new VisualMembrane[Nm];
 }
 
 void Scene::Reset()
@@ -171,9 +173,11 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	is.read((char*) &(scene.Ns), sizeof(int) / sizeof(char));
 	is.read((char*) &(scene.Nm), sizeof(int) / sizeof(char));
 
-	if (is.eof())
+	if (is.eof() || is.tellg() < 0)
 	{
 		scene.health_status = false;
+		is.seekg(0,ios_base::end);
+		return is;
 	}
 
 	scene.mparticle = new VisualMembrane[scene.Nm];
@@ -189,9 +193,11 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 			scene.mparticle[i].r.y -= Ly*2*((int) floor(scene.mparticle[i].r.y / (Ly*2) + 0.5));
 		#endif
 
-		if (i == scene.Nm - 1 && is.eof())
+		if (i == scene.Nm - 1 && (is.eof() || is.tellg() < 0))
 		{
 			scene.health_status = false;
+			is.seekg(0,ios_base::end);
+			return is;
 		}
 	}
 	for (int i = 0; i < scene.Ns; i++)
@@ -205,9 +211,11 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		is.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 		scene.sparticle[i].theta = temp_float;
 
-		if (i == scene.Ns - 1 && is.eof())
+		if (i == scene.Ns - 1 && (is.eof() || is.tellg() < 0))
 		{
 			scene.health_status = false;
+			is.seekg(0,ios_base::end);
+			return is;
 		}
 	}
 
@@ -287,15 +295,20 @@ bool SceneSet::Read(int skip)
 	input_file.open(address.str().c_str());
 	if (input_file.is_open())
 	{
+		input_file.seekg(0,ios_base::end);
+		int end_of_file = input_file.tellg();
+		input_file.seekg(0,ios_base::beg);
+
 		if (skip > 0)
 			temp_scene.Skip_File(input_file, skip);
 		temp_scene.Reset();
 
-		while (!input_file.eof())
+		while (input_file.tellg() < end_of_file && input_file.tellg() >= 0)
 		{
 			scene.push_back(temp_scene);
 			int index = scene.size()-1;
 			input_file >> scene[index];
+
 			for (int i = 0; i < scene[index].Nm; i++)
 			{
 				if (abs(scene[index].mparticle[i].r.x) > L.x)
@@ -310,8 +323,11 @@ bool SceneSet::Read(int skip)
 				if (abs(scene[index].sparticle[i].r.y) > L.y)
 					L.y = abs(scene[index].sparticle[i].r.y);
 			}
-			if (counter*sizeof(scene[index]) > (3000000))
+			if (0.000001*counter*( scene[index].Ns*sizeof(VisualChain) + scene[index].Nm*sizeof(VisualMembrane) + sizeof(scene[index]) ) > (600))
+			{
+				cout << "File is too big" << endl;
 				return(false);
+			}
 			if (counter % 1 != 0)
 				scene.pop_back();
 			counter++;
@@ -321,7 +337,8 @@ bool SceneSet::Read(int skip)
 		return (false);
 	input_file.close();
 
-	scene.pop_back();
+	if (!scene[scene.size()-1].health_status)
+		scene.pop_back();
 
 	L.x = round(L.x+0.1);
 	L.y = round(L.y+0.1);
