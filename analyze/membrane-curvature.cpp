@@ -11,7 +11,7 @@ This code reads position data of the membrane's particles from -r-v.bin files an
 */
 
 
-bool negative_sign(C2DVector r1, C2DVector r2, C2DVector r3){
+bool negative_sign(SavingVector r1, SavingVector r2, SavingVector r3){
 	double sign_value = (r2.x - r1.x)*(r3.y - r1.y) - (r3.x - r1.x)*(r2.y - r1.y);
 
 	bool sign;
@@ -27,7 +27,7 @@ bool negative_sign(C2DVector r1, C2DVector r2, C2DVector r3){
 
 int main(int argc, char** argv)
 {
-	C2DVector::Init_Rand(321);
+	SavingVector::Init_Rand(321);
 	srand(time(NULL));
 
 	stringstream ss("");
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 		bool read_state = sceneset->Read();
 		if (read_state)
 		{
-			C2DVector box_dim(sceneset->L);
+			SavingVector box_dim(sceneset->L);
 
 //			boost::replace_all(name, "-r-v.bin", "");
 //			stringstream ss("");

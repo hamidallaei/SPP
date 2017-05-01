@@ -10,7 +10,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	C2DVector::Init_Rand(321);
+	SavingVector::Init_Rand(321);
 
 	for (int i = 1; i < argc; i++)
 	{

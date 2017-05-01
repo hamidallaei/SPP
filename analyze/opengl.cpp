@@ -29,9 +29,9 @@ int t = 0;
 bool save = false;
 bool frame_maker = false;
 bool magnify = false;
-C2DVector box_dim;
-C2DVector r_lense;
-C2DVector r_image;
+SavingVector box_dim;
+SavingVector r_lense;
+SavingVector r_image;
 float d0, d1;
 
 void Init()
@@ -96,13 +96,13 @@ void Save_Frame()
 		num++;
 }
 
-void Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
+void Magnify(SavingVector r0, float d0, SavingVector r1, float d1)
 {
 	sceneset->scene[t].Magnify(r0,d0,r1,d1);
 	cout << (d1 / d0)*VisualParticle::thickness << endl;
 }
 
-void Draw_Color_Wheel(C2DVector r, float R0, float R1)
+void Draw_Color_Wheel(SavingVector r, float R0, float R1)
 {
 	float width = R1 - R0;
 
@@ -145,14 +145,13 @@ void Display()
 	glClear(GL_COLOR_BUFFER_BIT);
 	//glPushMatrix();
 	//glPopMatrix();
-	C2DVector r0,r1;
-
+	SavingVector r0,r1;
 
 	sceneset->scene[t].Draw();
 	if (magnify)
 		Magnify(r_lense,d0,r_image,d1);
 
-	C2DVector l(sceneset->L);
+	SavingVector l(sceneset->L);
 //	l.x -= 0.2;
 //	l.y -= 0.2;
 
@@ -180,12 +179,12 @@ void Display()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glLineWidth(1);
 
-	if (save && (t < (sceneset->scene.size()-1)))
+	if (save && (t < (sceneset->Nf-1)))
 	{
 		Save_Movie();
 	}
 
-	if (frame_maker && (t < (sceneset->scene.size()-1)))
+	if (frame_maker && (t < (sceneset->Nf-1)))
 	{
 		Save_Frame();
 	}
@@ -199,8 +198,8 @@ void Next_Frame(void)
 	t++;
 	if (t < 0)
 		t = 0;
-	if (t >= sceneset->scene.size())
-		t = sceneset->scene.size() - 1;
+	if (t >= sceneset->Nf)
+		t = sceneset->Nf - 1;
 	glutPostRedisplay();
 }
 
@@ -342,7 +341,7 @@ void Welcome()
 
 int main(int argc, char** argv)
 {
-	C2DVector::Init_Rand(321);
+	SavingVector::Init_Rand(321);
 
 	int glargc = 0;
 	char** glargv;
@@ -353,7 +352,6 @@ int main(int argc, char** argv)
 	Welcome();	
 	sceneset = new SceneSet(argv[argc-1]);
 	bool read_state = sceneset->Read();
-
 //	sceneset->L = 60;
 
 	if (read_state)

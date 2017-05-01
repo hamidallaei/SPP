@@ -15,7 +15,7 @@ double Local_Cohesion(SceneSet* s, double rc)
 {
 	long double phi = 0;
 	long int counter = 0;
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
 		for (int j = 0; j < s->scene[i].Ns; j++)
 			for (int k = j+1; k < s->scene[i].Ns; k++)
@@ -32,13 +32,13 @@ double Local_Cohesion(SceneSet* s, double rc)
 void Polarization_AutoCorr(SceneSet* s)
 {
 	Stat<double> p;
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
-		C2DVector vp;
+		SavingVector vp;
 		vp.Null();
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			vp += temp_vec;
@@ -52,13 +52,13 @@ void Polarization_AutoCorr(SceneSet* s)
 
 void Polarization_Time(SceneSet* s)
 {
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
-		C2DVector p;
+		SavingVector p;
 		p.Null();
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			p += temp_vec;
@@ -71,17 +71,17 @@ void Polarization_Time(SceneSet* s)
 void Quantities_Time(SceneSet* s, const int start_number, ostream& os)
 {
 	cout << "time\tp\tS\tdr2" << endl;
-	for (int i = start_number; i < s->scene.size(); i++)
+	for (int i = start_number; i < s->Nf; i++)
 	{
-		C2DVector p;
-		C2DVector dr;
+		SavingVector p;
+		SavingVector dr;
 		p.Null();
 		double c2 = 0;
 		double s2 = 0;
 		double dr2 = 0;
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			dr = s->scene[i].sparticle[j].r - s->scene[start_number].sparticle[j].r;
@@ -101,13 +101,13 @@ void Quantities_Time(SceneSet* s, const int start_number, ostream& os)
 
 void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 {
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
-		C2DVector p;
+		SavingVector p;
 		p.Null();
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			p += temp_vec;
@@ -121,13 +121,13 @@ void Compute_Polarization(SceneSet* s, Stat<double>* polarization)
 void Compute_Order_Parameters(SceneSet* s, double& polarization, double& error_polarization, double& sigma2, double& G)
 {
 	Stat<double> p,p4;
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
-		C2DVector vp;
+		SavingVector vp;
 		vp.Null();
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			vp += temp_vec;
@@ -147,12 +147,12 @@ void Compute_Order_Parameters(SceneSet* s, double& polarization, double& error_p
 
 void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
 {
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
 		double M = 0;
 		for (int j = 0; j < s->scene[i].Ns; j++)
 		{
-			C2DVector temp_vec;
+			SavingVector temp_vec;
 			temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 			temp_vec.y = sin(s->scene[i].sparticle[j].theta);
 			M += (s->scene[i].sparticle[j].r.x * temp_vec.y - s->scene[i].sparticle[j].r.y * temp_vec.x);
@@ -166,16 +166,16 @@ void Compute_Angular_Momentum(SceneSet* s, Stat<double>* angular_momentum)
 double Time_AutoCorrelationPoint(SceneSet* s, int tau)
 {
 	double result = 0;
-		for (int i = 0; i < s->scene.size() - tau; i++)
+		for (int i = 0; i < s->Nf - tau; i++)
 			for (int j = 0; j < s->scene[i].Ns; j++)
 				result += cos(s->scene[i].sparticle[j].theta - s->scene[i+tau].sparticle[j].theta);
-	result /= (s->scene[0].Ns * (s->scene.size() - tau));
+	result /= (s->scene[0].Ns * (s->Nf - tau));
 	return result;
 }
 
 void Time_AutoCorrelation(SceneSet* s, int step)
 {
-	for (int i = 0; i < (s->scene.size() - 5); i+=step)
+	for (int i = 0; i < (s->Nf - 5); i+=step)
 		cout << i << "\t" << Time_AutoCorrelationPoint(s, i) << endl;
 }
 
@@ -190,12 +190,12 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 		num[x] = 0;
 	}
 
-	for (int i = s->scene.size()/2; i < s->scene.size(); i+=100)
+	for (int i = s->Nf/2; i < s->Nf; i+=100)
 	{
 		for (int j = 0; j < s->scene[i].Ns; j++)
 			for (int k = j+1; k < s->scene[i].Ns; k++)
 			{
-				C2DVector dr = s->scene[i].sparticle[j].r - s->scene[i].sparticle[k].r;
+				SavingVector dr = s->scene[i].sparticle[j].r - s->scene[i].sparticle[k].r;
 				double r = sqrt(dr.Square());
 				if (r < rc)
 				{
@@ -209,7 +209,7 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 	for (int x = 1; x < size; x++)
 	{
 		double r = (x*rc)/size;
-//		bin[x] /= s->scene[0].Ns*((s->scene.size() - s->scene.size()/2)/100);
+//		bin[x] /= s->scene[0].Ns*((s->Nf - s->Nf/2)/100);
 //		bin[x] /= 3.1415*((r+rc/ size)*(r+rc/ size) - r*r)/2;
 //		bin[x] -= s->scene[0].Ns / (4*s->L.x*s->L.y);
 		if (num[x] != 0)
@@ -223,11 +223,11 @@ void Spatial_AutoCorrelation(SceneSet* s, int size, double rc)
 
 void Trajectory(SceneSet* s, int index)
 {
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 		cout << s->scene[i].sparticle[index].r << endl;
 }
 
-double Find_Angle(C2DVector r)
+double Find_Angle(SavingVector r)
 {
 	double angle = atan2(r.x , r.y);
 //	if (r.x < 0)
@@ -237,14 +237,14 @@ double Find_Angle(C2DVector r)
 
 void Angle_Time(SceneSet* s, int index)
 {
-	for (int i = 0; i < (s->scene.size() - 1); i++)
+	for (int i = 0; i < (s->Nf - 1); i++)
 		cout << 4*i << "\t" << Find_Angle(s->scene[i].sparticle[index].r) << endl;
 }
 
 double Find_Angular_Velocity(SceneSet* s, int index, int t)
 {
 	float dt = 1.0;
-	if ((t < s->scene.size()) && (t > 0))
+	if ((t < s->Nf) && (t > 0))
 	{
 		double dtheta = Find_Angle(s->scene[t].sparticle[index].r);
 		dtheta = dtheta - Find_Angle(s->scene[t-1].sparticle[index].r);
@@ -265,7 +265,7 @@ void Angular_Velocity_Time(SceneSet* s, int index)
 		cout << "rho	noise	x	y	r	omega" << endl;
 		b = false;
 	}
-	for (int i = 1; i < (s->scene.size() - 1); i+=100)
+	for (int i = 1; i < (s->Nf - 1); i+=100)
 		cout << Scene::density << "\t" << Scene::noise << "\t" << s->scene[i].sparticle[index].r << "\t" << sqrt(s->scene[i].sparticle[index].r.Square()) << "\t" << Find_Angular_Velocity(s, index, i) << endl;
 }
 
@@ -283,7 +283,7 @@ void Window_Fluctuation(SceneSet* s, int smaller_number_of_windows, double& mean
 		number_of_windows_y = (int) round(s->L.y*smaller_number_of_windows / s->L.x);
 	}
 	Stat<int> window[number_of_windows_x][number_of_windows_y];
-	for (int i = s->scene.size()/2; i < s->scene.size(); i++)
+	for (int i = s->Nf/2; i < s->Nf; i++)
 	{
 		int Np[number_of_windows_x][number_of_windows_y];
 		for (int x = 0; x < number_of_windows_x; x++)
@@ -340,7 +340,7 @@ void Radial_Density(SceneSet* s, int number_of_points)
 	double factor = pow(((s->L.x+1)/radius[0]-0),1.0/number_of_points);
 	for (int i = 1; i < number_of_points; i++)
 		radius[i] = factor*radius[i-1];
-	for (int i = 0; i < s->scene.size(); i++)
+	for (int i = 0; i < s->Nf; i++)
 	{
 		counter++;
 		for (int j = 0; j < s->scene[i].Ns; j++)
@@ -354,7 +354,7 @@ void Radial_Density(SceneSet* s, int number_of_points)
 	for (int i = 1; i < number_of_points; i++)
 	{
 		rho[i] /= M_PI*(radius[i]*radius[i] - radius[i-1]*radius[i-1]);
-		rho[i] /= s->scene.size();
+		rho[i] /= s->Nf;
 		cout << sqrt(radius[i-1]*radius[i]) << "\t" << rho[i] << endl;
 	}
 
@@ -385,18 +385,18 @@ void Pair_Distribution(SceneSet* s, Real lx, Real ly,int smaller_grid_size)
 			bin[x][y] = 0;
 		}
 
-	for (int i = s->scene.size()/2; i < s->scene.size(); i+=100)
+	for (int i = s->Nf/2; i < s->Nf; i+=100)
 	{
 		for (int j = 0; j < s->scene[i].Ns; j++)
 			for (int k = 0; k < s->scene[i].Ns; k++)
 			{
 				if (j != k)
 				{
-					C2DVector temp_vec;
+					SavingVector temp_vec;
 					temp_vec.x = cos(s->scene[i].sparticle[j].theta);
 					temp_vec.y = sin(s->scene[i].sparticle[j].theta);
-					C2DVector dr = s->scene[i].sparticle[k].r - s->scene[i].sparticle[j].r;
-					C2DVector tdr = dr;
+					SavingVector dr = s->scene[i].sparticle[k].r - s->scene[i].sparticle[j].r;
+					SavingVector tdr = dr;
 					tdr.y = temp_vec * dr;
 					tdr.x = (temp_vec.y * dr.x) - (temp_vec.x * dr.y);
 					if (fabs(tdr.x) < lx && fabs(tdr.y) < ly)
@@ -425,7 +425,7 @@ void Pair_Distribution(SceneSet* s, Real lx, Real ly,int smaller_grid_size)
 // Find distance growth in time (Diffusion)
 void Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 {
-	int interval = (s->scene.size() - frames) / number_of_pair_sets;
+	int interval = (s->Nf - frames) / number_of_pair_sets;
 	Pair_Set ps[number_of_pair_sets];
 	Pair_Set::sceneset = s;
 	for (int i = 0; i < number_of_pair_sets; i++)
@@ -471,7 +471,7 @@ void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_poi
 // Find distance growth in time (Lyapanov)
 bool Lyapunov_Exponent(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_min, Real r_max)
 {
-	int total_frame = s->scene.size();
+	int total_frame = s->Nf;
 	int interval = (total_frame - frames) / number_of_pair_sets;
 	Pair_Set ps[number_of_pair_sets];
 	Pair_Set::sceneset = s;

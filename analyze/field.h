@@ -2,7 +2,6 @@
 #define _FIELD_
 
 #include "../shared/c2dvector.h"
-#include "../shared/particle.h"
 #include <boost/tuple/tuple.hpp>
 #include "gnuplot-iostream.h"
 #include "statistics.h"
@@ -12,26 +11,26 @@ class Field_Cell{
 public:
 	vector<BasicParticle0*> particle;
 	vector<Real> dtheta;
-	C2DVector r,v,W;
+	SavingVector r,v,W;
 	Real density;
 	Real cohesion; // cohesion shows the amount of velocity cohesion
 	Real polarization;
 	Real omega;
 	Real curl;
 	Real theta_ave;
-	static C2DVector dim; // dimension of a single cell
+	static SavingVector dim; // dimension of a single cell
 
 	Field_Cell();
 	~Field_Cell();
 	void Init(Real,Real);
 	void Reset();
 	void Add(BasicParticle0* p);
-	void Compute_Fields(C2DVector L);
+	void Compute_Fields(SavingVector L);
 	void Delta_Theta_Stat();
 	void Add_Theta(Stat<double>& stat_dtheta, const double& p_c, const double& dp);
 };
 
-C2DVector Field_Cell::dim;
+SavingVector Field_Cell::dim;
 
 Field_Cell::Field_Cell()
 {
@@ -65,7 +64,7 @@ void Field_Cell::Add(BasicParticle0* p)
 	particle.push_back((BasicParticle0*) p);
 }
 
-void Field_Cell::Compute_Fields(C2DVector L)
+void Field_Cell::Compute_Fields(SavingVector L)
 {
 	v.Null();
 	dtheta.clear();
@@ -73,7 +72,7 @@ void Field_Cell::Compute_Fields(C2DVector L)
 	density = particle.size()/(dim.x*dim.y);
 	for (int i = 0; i < particle.size(); i++)
 	{
-		C2DVector particle_v;
+		SavingVector particle_v;
 		particle_v.x = cos(particle[i]->theta);
 		particle_v.y = sin(particle[i]->theta);
 		v += particle_v;
@@ -114,8 +113,8 @@ class Field{
 public:
 	Field_Cell** cell;
 	int grid_dim_y, grid_dim_x, sample; // sample is number of sampled field that we average. we need it to compute the average by dividing the summation of fields
-	C2DVector L;
-	Field(int smaller_grid_dim, C2DVector);
+	SavingVector L;
+	Field(int smaller_grid_dim, SavingVector);
 	~Field();
 	void Init();
 	void Compute(BasicParticle0* particle, int N);
@@ -131,7 +130,7 @@ public:
 	void Reset();
 };
 
-Field::Field(int smaller_grid_dim, C2DVector input_L): L(input_L)
+Field::Field(int smaller_grid_dim, SavingVector input_L): L(input_L)
 {
 	if (L.y < L.x)
 	{
@@ -397,7 +396,7 @@ void Field::Draw_Section(string info, int y)
 void Field::Draw_Density_Contour(string info, Real rho)
 {
 
-	C2DVector r[grid_dim_x];
+	SavingVector r[grid_dim_x];
 	for (int x = 0; x < grid_dim_x; x++)
 		for (int y = (grid_dim_y-3); y > 1; y--)
 		{

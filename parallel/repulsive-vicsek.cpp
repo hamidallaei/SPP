@@ -116,7 +116,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_sigma_p(1);
 	Particle::Set_repulsion_radius(1.05);
 	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(50.0);
+	Particle::Set_A_p(10.0);
 	Particle::Set_g(1.0);
 
 	box.Init(box.thisnode, input_rho);

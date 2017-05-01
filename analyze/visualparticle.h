@@ -1,8 +1,6 @@
 #ifndef _VISUALPARTICLE_
 #define _VISUALPARTICLE_
 
-#include "../shared/particle.h"
-
 #ifdef VISUAL
 	const int circle_points_num = 100;
 
@@ -24,7 +22,7 @@
 		float red,green,blue;
 	};
 
-	void Draw_Circle(C2DVector r, C2DVector tail, float radius, float thickness, RGB color, GLenum mode)
+	void Draw_Circle(SavingVector r, float theta, float radius, float thickness, RGB color, GLenum mode)
 	{
 		glEnableClientState (GL_VERTEX_ARRAY);
 
@@ -43,11 +41,37 @@
 
 		glBegin(GL_LINES);
 			glVertex2f(0, 0);
-			glVertex2f(tail.x,tail.y);
+			glVertex2f(-cos(theta),-sin(theta));
 		glEnd();
 			glColor4f(color.red, color.green, color.blue,1.0);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
+	
+		glDisableClientState( GL_VERTEX_ARRAY );
+		glLoadIdentity();
+		glLineWidth(1);
+	}
+
+	void Draw_Circle(SavingVector r, float radius, float thickness, RGB color, GLenum mode)
+	{
+		glEnableClientState (GL_VERTEX_ARRAY);
+
+		glColor4f(color.red, color.green, color.blue,0.5);
+		glLineWidth(thickness);
+
+		glPolygonMode(GL_FRONT_AND_BACK, mode);
+		glPolygonMode(GL_FRONT_AND_BACK, mode);
+
+		glVertexPointer (2, GL_FLOAT, 0, unitcircle);
+
+		glTranslatef(r.x,r.y,0);
+		glScalef(radius,radius,1);
+
+		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
+
+		glColor4f(color.red, color.green, color.blue,1.0);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
 	
 		glDisableClientState( GL_VERTEX_ARRAY );
 		glLoadIdentity();
@@ -107,6 +131,31 @@
 	}
 #endif
 
+class BasicParticle00{
+public:
+	SavingVector r;
+	void Write(std::ostream&);
+};
+
+void BasicParticle00::Write(std::ostream& os)
+{
+	r.write(os);
+}
+
+class BasicParticle0{
+public:
+	SavingVector r;
+	Saving_Real theta;
+	void Write(std::ostream&);
+};
+
+void BasicParticle0::Write(std::ostream& os)
+{
+	r.write(os);
+	Saving_Real temp_float = (Saving_Real) theta;
+	os.write((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
+}
+
 class VisualMembrane : public BasicParticle00 {
 public:
 	#ifdef VISUAL
@@ -115,9 +164,9 @@ public:
 		static GLenum mode; // GL_FILL (filled) or GL_LINE (empty) or GL_POINT
 
 //		virtual void Draw(float, float, float);
-		virtual void Draw(float, float, float, bool);
-		virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
-		virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1, bool flag);
+		void Draw(float, float, float, bool);
+		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
+		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1, bool flag);
 	#endif
 };
 
@@ -128,9 +177,6 @@ public:
 
 	void VisualMembrane::Draw(float x0 = 0, float y0 = 0, float scale = 1, bool flag = false)
 	{
-		C2DVector null(0);
-		null.Null();
-
 		RGB color;
 		color.red = 0.2;
 		color.green = 0.2;
@@ -142,13 +188,13 @@ public:
 			color.blue = 0.0;
 		}
 
-		Draw_Circle(r, null, radius*scale, thickness, color, mode);
+		Draw_Circle(r, radius*scale, thickness, color, mode);
 	}
 
-	void VisualMembrane::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
+	void VisualMembrane::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
 		float scale = d1 / d0;
-		C2DVector p;
+		SavingVector p;
 		p.x = r.x - r0.x;
 		p.y = r.y - r0.y;
 		if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
@@ -157,7 +203,7 @@ public:
 			p += r1;
 			const int thickness_factor = 3; // 2000
 
-			C2DVector null(0);
+			SavingVector null(0);
 			null.Null();
 
 			RGB color;
@@ -165,14 +211,14 @@ public:
 			color.green = 0.2;
 			color.blue = 0.2;
 
-			Draw_Circle(p, null, radius*scale, scale*thickness / thickness_factor, color, mode);
+			Draw_Circle(p, radius*scale, scale*thickness / thickness_factor, color, mode);
 		}
 	}
 
-	void VisualMembrane::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1, bool flag)
+	void VisualMembrane::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1, bool flag)
 	{
 		float scale = d1 / d0;
-		C2DVector p;
+		SavingVector p;
 		p.x = r.x - r0.x;
 		p.y = r.y - r0.y;
 		if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
@@ -181,7 +227,7 @@ public:
 			p += r1;
 			const int thickness_factor = 3; // 2000
 
-			C2DVector null(0);
+			SavingVector null(0);
 			null.Null();
 
 			RGB color;
@@ -196,7 +242,7 @@ public:
 			}
 
 
-			Draw_Circle(p, null, radius*scale, scale*thickness / thickness_factor, color, mode);
+			Draw_Circle(p, radius*scale, scale*thickness / thickness_factor, color, mode);
 		}
 	}
 #endif
@@ -204,7 +250,6 @@ public:
 
 class VisualParticle : public BasicParticle0 {
 public:
-	C2DVector v;
 	#ifdef VISUAL
 		static float radius;
 		static float tail;
@@ -212,8 +257,8 @@ public:
 		static GLenum mode; // GL_FILL (filled) or GL_LINE (empty) or GL_POINT
 
 		void Find_Color(RGB&);
-		virtual void Draw(float, float, float);
-		virtual void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+		void Draw(float, float, float);
+		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
 	#endif
 };
 
@@ -235,13 +280,13 @@ public:
 	{
 		RGB color;
 		Find_Color(color);
-		Draw_Circle(r, v*(-tail), radius*scale, thickness, color, mode);
+		Draw_Circle(r, theta, radius*scale, thickness, color, mode);
 	}
 
-	void VisualParticle::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
+	void VisualParticle::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
 		float scale = d1 / d0;
-		C2DVector p;
+		SavingVector p;
 		p.x = r.x - r0.x;
 		p.y = r.y - r0.y;
 		if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
@@ -252,7 +297,7 @@ public:
 
 			RGB color;
 			Find_Color(color);
-			Draw_Circle(p, v*(-tail), radius*scale, scale*thickness / thickness_factor, color, mode);
+			Draw_Circle(p, theta, radius*scale, scale*thickness / thickness_factor, color, mode);
 		}
 	}
 #endif
@@ -264,7 +309,7 @@ public:
 
 	#ifdef VISUAL
 		void Draw(float, float, float);
-		void Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1);
+		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
 	#endif
 };
 
@@ -273,7 +318,7 @@ int VisualChain::chain_length = 2;
 #ifdef VISUAL
 	void VisualChain::Draw(float x0 = 0, float y0 = 0, float scale = 1)
 	{
-		C2DVector v_temp, r_temp;
+		SavingVector v_temp, r_temp;
 		v_temp.x = cos(theta);
 		v_temp.y = sin(theta);
 
@@ -282,18 +327,18 @@ int VisualChain::chain_length = 2;
 
 		for (int i = 0; i < chain_length; i++)
 		{
-			C2DVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i));
 
 			r_temp = r + s_i;
 
-			Draw_Circle(r_temp, v_temp*(-tail), radius*scale, thickness, color, mode);
+			Draw_Circle(r_temp, theta, radius*scale, thickness, color, mode);
 		}
 	}
 
-	void VisualChain::Draw_Magnified(C2DVector r0, float d0, C2DVector r1, float d1)
+	void VisualChain::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
 		float scale = d1 / d0;
-		C2DVector v_temp, p;
+		SavingVector v_temp, p;
 		v_temp.x = cos(theta);
 		v_temp.y = sin(theta);
 
@@ -302,8 +347,8 @@ int VisualChain::chain_length = 2;
 
 		for (int i = 0; i < chain_length; i++)
 		{
-			C2DVector s_i = v_temp*(((1-chain_length)/2.0 + i));
-			C2DVector p;
+			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+			SavingVector p;
 			p = r - r0 + s_i;
 
 			if (fabs(p.x) < (d0-radius) && fabs(p.y) < (d0-radius))
@@ -312,7 +357,7 @@ int VisualChain::chain_length = 2;
 				p += r1;
 				const int thickness_factor = 3; // 2000
 
-				Draw_Circle(p, v*(-tail), radius*scale, scale*thickness / thickness_factor, color, mode);
+				Draw_Circle(p, theta, radius*scale, scale*thickness / thickness_factor, color, mode);
 			}
 		}
 	}

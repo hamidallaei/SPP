@@ -53,7 +53,7 @@ int compare_position (const void * a, const void * b)
 
 int main(int argc, char** argv)
 {
-	C2DVector::Init_Rand(321);
+	SavingVector::Init_Rand(321);
 	srand(time(NULL));
 
 	stringstream ss("");
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 		bool read_state = sceneset->Read();
 		if (read_state)
 		{
-			C2DVector box_dim(sceneset->L);
+			SavingVector box_dim(sceneset->L);
 
 			Angle angles[sceneset->scene[0].Ns];
 
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 //			int j = 35;
 
 				//// sort particles according to their angular positions and compute number of jumps(clusters)
-				C2DVector rcm;
+				SavingVector rcm;
 				rcm.Null();
 
 				//// membrane's center of mass
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 				{
 					angles[k].id = k;
 					angles[k].theta = sceneset->scene[j].sparticle[k].theta;
-					C2DVector dr = (sceneset->scene[j].sparticle[k].r - rcm);
+					SavingVector dr = (sceneset->scene[j].sparticle[k].r - rcm);
 					angles[k].theta_position = atan2(dr.y,dr.x);
 				}
 				qsort (angles, sceneset->scene[j].Ns, sizeof(Angle), compare_position);

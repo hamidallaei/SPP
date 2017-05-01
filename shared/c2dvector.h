@@ -1,5 +1,5 @@
-#ifndef _C2DVECTOR_H_
-#define _C2DVECTOR_H_
+#ifndef _VEC_TEMPLATE_H_
+#define _VEC_TEMPLATE_H_
 
 #include <cmath>
 #include <iostream>
@@ -8,12 +8,13 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-class C2DVector
+template<typename Type = Real>
+class Vec_template
 {
 	public :
 		static const gsl_rng_type * T;
 		static gsl_rng * gsl_r;
-		Real x,y;
+		Type x,y;
 
 		static void Init_Rand (long int seed)
 		{
@@ -23,11 +24,11 @@ class C2DVector
 			gsl_rng_set(gsl_r, seed);
 		}
 
-		C2DVector () // This constructor will generate a null vector
+		Vec_template () // This constructor will generate a null vector
 		{
 			x = y = 0;
 		}
-		C2DVector (const Real amplitude) // This constructor will initialize the vector as random vector with given magnitude (amplitude)
+		Vec_template (const Type amplitude) // This constructor will initialize the vector as random vector with given magnitude (amplitude)
 		{
 			x = gsl_ran_flat (gsl_r, -amplitude, amplitude);
 			y = gsl_ran_flat (gsl_r, -amplitude, amplitude);
@@ -44,13 +45,13 @@ class C2DVector
 			y = gsl_ran_flat (gsl_r, -Ly, Ly);
 		}
 
-		void Rand(const Real amplitude) // Choose random numbers for components of the vector in [-L, L]
+		void Rand(const Type amplitude) // Choose random numbers for components of the vector in [-L, L]
 		{
 			x = gsl_ran_flat (gsl_r, -amplitude, amplitude);
 			y = gsl_ran_flat (gsl_r, -amplitude, amplitude);
 		}
 
-		void Rand(const Real amplitude_x, const Real amplitude_y) // Choose random numbers for components of the vector in [-Lx, Lx] for x and [-Ly, Ly] for y
+		void Rand(const Type amplitude_x, const Type amplitude_y) // Choose random numbers for components of the vector in [-Lx, Lx] for x and [-Ly, Ly] for y
 		{
 			x = gsl_ran_flat (gsl_r, -amplitude_x, amplitude_x);
 			y = gsl_ran_flat (gsl_r, -amplitude_y, amplitude_y);
@@ -58,8 +59,8 @@ class C2DVector
 
 		void Rand_Lattice()
 		{
-			x = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*Lx) - Lx;
-			y = (Real) gsl_rng_uniform_int(gsl_r, (int) 2*Ly) - Ly;
+			x = (Type) gsl_rng_uniform_int(gsl_r, (int) 2*Lx) - Lx;
+			y = (Type) gsl_rng_uniform_int(gsl_r, (int) 2*Ly) - Ly;
 		}
 
 
@@ -71,29 +72,29 @@ class C2DVector
 			y -= Ly2*((int) floor(y / Ly2 + 0.5));
 		}
 
-		Real Square() const// returns the magnitude of the vector
+		Type Square() const// returns the magnitude of the vector
 		{
 			return (x*x + y*y);
 		}
 
 		void Unit() // return unit vector parallel to the vector
 		{
-			Real magnitude = sqrt(x*x + y*y);
+			Type magnitude = sqrt(x*x + y*y);
 			x /= magnitude;
 			y /= magnitude;
 		}
 
-		C2DVector Rotate(Real phi)
+		Vec_template Rotate(Type phi)
 		{
-			C2DVector result;
+			Vec_template result;
 			result.x = cos(phi)*x - sin(phi)*y;
 			result.y = sin(phi)*x + cos(phi)*y;
 			return (result);
 		}
 		
-		C2DVector operator+ (const C2DVector p1) const
+		Vec_template operator+ (const Vec_template p1) const
 		{
-			C2DVector result;
+			Vec_template result;
 
 			result.x = x + p1.x;
 			result.y = y + p1.y;
@@ -101,9 +102,9 @@ class C2DVector
 			return result;
 		}
 		
-		C2DVector operator- (const C2DVector p1) const
+		Vec_template operator- (const Vec_template p1) const
 		{
-			C2DVector result;
+			Vec_template result;
 
 			result.x = x - p1.x;
 			result.y = y - p1.y;
@@ -111,9 +112,9 @@ class C2DVector
 			return result;
 		}
 
-		C2DVector operator/ (const Real lambda) const
+		Vec_template operator/ (const Type lambda) const
 		{
-			C2DVector result;
+			Vec_template result;
 
 			result.x = x / lambda;
 			result.y = y / lambda;
@@ -121,9 +122,9 @@ class C2DVector
 			return result;
 		}
 		
-		C2DVector operator* (const Real lambda) const
+		Vec_template operator* (const Type lambda) const
 		{
-			C2DVector result;
+			Vec_template result;
 
 			result.x = x * lambda;
 			result.y = y * lambda;
@@ -131,7 +132,7 @@ class C2DVector
 			return result;
 		}
 
-		C2DVector operator+= (const C2DVector p1)
+		Vec_template operator+= (const Vec_template p1)
 		{
 			x += p1.x;
 			y += p1.y;
@@ -139,7 +140,7 @@ class C2DVector
 			return *this;
 		}
 
-		C2DVector operator-= (const C2DVector p1)
+		Vec_template operator-= (const Vec_template p1)
 		{
 
 			x -= p1.x;
@@ -148,7 +149,7 @@ class C2DVector
 			return *this;
 		}
 
-		C2DVector operator/= (const Real lambda)
+		Vec_template operator/= (const Type lambda)
 		{
 
 			x /= lambda;
@@ -157,7 +158,7 @@ class C2DVector
 			return *this;
 		}
 
-		C2DVector operator*= (const Real lambda)
+		Vec_template operator*= (const Type lambda)
 		{
 			x *= lambda;
 			y *= lambda;
@@ -165,7 +166,7 @@ class C2DVector
 			return *this;
 		}
 
-		Real operator* (const C2DVector p1) const
+		Type operator* (const Vec_template p1) const
 		{
 			return (x*p1.x + y*p1.y);
 		}
@@ -183,13 +184,13 @@ class C2DVector
 		}
 
 		// for either binary or txt output
-		friend std::ostream& operator<<(std::ostream& os, const C2DVector t)
+		friend std::ostream& operator<<(std::ostream& os, const Vec_template t)
 		{
 			os << t.x << "\t" << t.y;
 			return (os);
 		}
 
-		friend std::istream& operator>>(std::istream& is, C2DVector& t)
+		friend std::istream& operator>>(std::istream& is, Vec_template& t)
 		{
 			// for binary input 
 			Saving_Real temp_float;
@@ -209,22 +210,26 @@ class C2DVector
 
 		}
 
-		~C2DVector()
+		~Vec_template()
 		{
 		}
 };
 
-const gsl_rng_type * C2DVector::T;
-gsl_rng * C2DVector::gsl_r;
+template<typename Type> const gsl_rng_type * Vec_template<Type>::T;
+template<typename Type> gsl_rng * Vec_template<Type>::gsl_r;
 
 class Index{
 public:
 	int x,y;
-	void Find(C2DVector r)
+	void Find(Vec_template<> r)
 	{
 		x = (int) (r.x + Lx)*divisor_x / (Lx2);
 		y = (int) (r.y + Ly)*divisor_y / (Ly2);
 	}
 };
+
+
+typedef Vec_template<Real> C2DVector;
+typedef Vec_template<Saving_Real> SavingVector;
 
 #endif

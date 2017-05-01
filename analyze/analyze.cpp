@@ -8,7 +8,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	C2DVector::Init_Rand(321);
+	SavingVector::Init_Rand(321);
 	srand(time(NULL));
 	for (int i = 1; i < argc; i++)
 	{
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 		if (read_state)
 		{
 //			sceneset->L -= 0.5-0.1;
-			C2DVector box_dim(sceneset->L);
+			SavingVector box_dim(sceneset->L);
 
 			boost::replace_all(name, "-r-v.bin", "");
 			stringstream ss("");
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 			ofstream out_file;
 			out_file.open(ss.str().c_str());
 
-//			sceneset->Save_Theta_Deviation(120, 0, sceneset->scene.size(), "theta-stat.dat");
+//			sceneset->Save_Theta_Deviation(120, 0, sceneset->Nf, "theta-stat.dat");
 //			sceneset->Plot_Fields(21, 40, name);
 //			sceneset->Plot_Averaged_Fields(128, name);
 //			sceneset->Plot_Averaged_Fields(64, name);
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
 //			Polarization_Time(sceneset);
 
 			cout << name << endl;
-			Quantities_Time(sceneset, 0*sceneset->scene.size()/2, out_file);
+			Quantities_Time(sceneset, 0*sceneset->Nf/2, out_file);
 
 //			Stat<double> p;
 //			Compute_Polarization(sceneset,&p);
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 
 			// The variables: Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
 //			Mean_Squared_Distance_Growth(sceneset, 200, 200, 40, 0.01); // Mean_Squared_Distance_Growth(SceneSet* s, int frames, int number_of_points, int number_of_pair_sets, Real r_cut)
-//			Mean_Squared_Displacement_Growth(sceneset, sceneset->scene.size(), 400);// void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
+//			Mean_Squared_Displacement_Growth(sceneset, sceneset->Nf, 400);// void Mean_Squared_Displacement_Growth(SceneSet* s, int frames, int number_of_points)
 //			Lyapunov_Exponent(sceneset, 900, 200, 40, 0.1,0.2);
 
 //			Pair_Distribution(sceneset, 6,400);

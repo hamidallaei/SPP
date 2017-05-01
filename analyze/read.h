@@ -6,6 +6,8 @@
 #include "field.h"
 #include <boost/algorithm/string.hpp>
 
+const float mem_max = 1000;
+
 class Scene{
 public:
 	VisualChain* sparticle;
@@ -14,17 +16,17 @@ public:
 	bool health_status;
 	static Real density;
 	static Real noise;
-	int Ns;
-	int Nm;
+	static int Ns;
+	static int Nm;
 	static int chain_length;
-	C2DVector L;
+	SavingVector L;
 	Scene();
 	Scene(const Scene&);
 	~Scene();
 	void Init(int, int);
-	void Reset();
+	void Delete();
 	void Draw();
-	void Magnify(C2DVector r0, float d0, C2DVector r1, float d1);
+	void Magnify(SavingVector r0, float d0, SavingVector r1, float d1);
 	void Auto_Correlation();
 	void Skip_File(std::istream& is, int n);
 	friend std::istream& operator>>(std::istream& is, Scene& scene);
@@ -34,12 +36,15 @@ public:
 Real Scene::density;
 Real Scene::noise;
 int Scene::chain_length;
+int Scene::Ns;
+int Scene::Nm;
 
 Scene::Scene()
 {
-	Ns = Nm = 0;
-	sparticle = NULL;
-	mparticle = NULL;
+	if (Ns > 0)
+		sparticle = new VisualChain[Ns];
+	if (Nm > 0)
+		mparticle = new VisualMembrane[Nm];
 }
 
 Scene::Scene(const Scene& s)
@@ -47,7 +52,10 @@ Scene::Scene(const Scene& s)
 	health_status = s.health_status;
 	t = s.t;
 	chain_length = s.chain_length;
-	Init(s.Ns, s.Nm);
+	if (Ns > 0)
+		sparticle = new VisualChain[Ns];
+	if (Nm > 0)
+		mparticle = new VisualMembrane[Nm];
 	for (int i = 0; i < Ns; i++)
 		sparticle[i] = s.sparticle[i];
 	for (int i = 0; i < Nm; i++)
@@ -57,7 +65,7 @@ Scene::Scene(const Scene& s)
 
 Scene::~Scene()
 {
-	Reset();
+	Delete();
 }
 
 void Scene::Init(int input_Ns, int input_Nm)
@@ -70,13 +78,12 @@ void Scene::Init(int input_Ns, int input_Nm)
 		mparticle = new VisualMembrane[Nm];
 }
 
-void Scene::Reset()
+void Scene::Delete()
 {
 	if (Ns != 0)
 		delete [] sparticle;
 	if (Nm != 0)
 		delete [] mparticle;
-	Ns = Nm = 0;
 }
 
 #ifdef VISUAL
@@ -94,7 +101,7 @@ void Scene::Draw()
 	cout << "Time is at:\t" << t << "\tR/v_0" << endl;
 }
 
-void Scene::Magnify(C2DVector r0, float d0, C2DVector r1, float d1)
+void Scene::Magnify(SavingVector r0, float d0, SavingVector r1, float d1)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glLineWidth(2);
@@ -142,13 +149,18 @@ void Scene::Skip_File(std::istream& in, int n)
 {
 	for (int i = 0; i < n; i++)
 	{
+		double Lx, Ly;
 		in.read((char*) &t, sizeof(double) / sizeof(char));
-		in.read((char*) &L.x, sizeof(double) / sizeof(char));
-		in.read((char*) &L.y, sizeof(double) / sizeof(char));
+		in.read((char*) &Lx, sizeof(double) / sizeof(char));
+		in.read((char*) &Ly, sizeof(double) / sizeof(char));
 		in.read((char*) &chain_length, sizeof(int) / sizeof(char));
 		in.read((char*) &Nm, sizeof(int) / sizeof(char));
 		in.read((char*) &Ns, sizeof(int) / sizeof(char));
-		C2DVector temp_r;
+
+		L.x = Lx;
+		L.y = Ly;
+
+		SavingVector temp_r;
 		Real temp_theta;
 		for (int j = 0; j < Nm; j++)
 		{
@@ -166,12 +178,17 @@ void Scene::Skip_File(std::istream& in, int n)
 std::istream& operator>>(std::istream& is, Scene& scene)
 {
 	scene.health_status = true;
+	int temp_int;
+	double Lx, Ly;
 	is.read((char*) &(scene.t), sizeof(double) / sizeof(char));
-	is.read((char*) &(scene.L.x), sizeof(double) / sizeof(char));
-	is.read((char*) &(scene.L.y), sizeof(double) / sizeof(char));
+	is.read((char*) &(Lx), sizeof(double) / sizeof(char));
+	is.read((char*) &(Ly), sizeof(double) / sizeof(char));
 	is.read((char*) &(scene.chain_length), sizeof(int) / sizeof(char));
-	is.read((char*) &(scene.Ns), sizeof(int) / sizeof(char));
-	is.read((char*) &(scene.Nm), sizeof(int) / sizeof(char));
+	is.read((char*) &(temp_int), sizeof(int) / sizeof(char));
+	is.read((char*) &(temp_int), sizeof(int) / sizeof(char));
+
+	scene.L.x = Lx;
+	scene.L.y = Ly;
 
 	if (is.eof() || is.tellg() < 0)
 	{
@@ -180,11 +197,6 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		return is;
 	}
 
-	scene.mparticle = new VisualMembrane[scene.Nm];
-	scene.sparticle = new VisualChain[scene.Ns];
-
-	Real Lx = scene.L.x;
-	Real Ly = scene.L.y;
 	for (int i = 0; i < scene.Nm; i++)
 	{
 		is >> scene.mparticle[i].r;
@@ -219,15 +231,22 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		}
 	}
 
+	if (scene.t < 0 || scene.t > 1000000)
+		scene.health_status = false;
+	if (temp_int < 0 || temp_int > 1000000)
+		scene.health_status = false;
+
 	if (scene.health_status)
 		VisualChain::chain_length = scene.chain_length;
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& scene)
 {
+	double Lx = scene.L.x;
+	double Ly = scene.L.y;
 	os.write((char*) &(scene.t), sizeof(double) / sizeof(char));
-	os.write((char*) &(scene.L.x), sizeof(double) / sizeof(char));
-	os.write((char*) &(scene.L.y), sizeof(double) / sizeof(char));
+	os.write((char*) &(Lx), sizeof(double) / sizeof(char));
+	os.write((char*) &(Ly), sizeof(double) / sizeof(char));
 	os.write((char*) &(scene.chain_length), sizeof(int) / sizeof(char));
 	os.write((char*) &(scene.Ns), sizeof(int) / sizeof(char));
 	os.write((char*) &(scene.Nm), sizeof(int) / sizeof(char));
@@ -239,8 +258,9 @@ std::ostream& operator<<(std::ostream& os, Scene& scene)
 
 class SceneSet{
 public:
-	vector<Scene> scene;
-	C2DVector L, L_min;
+	Scene* scene;
+	int Nf;
+	SavingVector L, L_min;
 	stringstream address;
 	string info;
 	ifstream input_file;
@@ -249,6 +269,8 @@ public:
 
 	SceneSet(string input_address);
 	~SceneSet();
+	void Reset();
+	int Count_Frames();
 	bool Read(int skip = 0);
 	void Write(int, int); // write from a time to the end of the file
 	void Write(int start, int end, int limit); // write from start to the end if end-start > limit
@@ -263,6 +285,7 @@ public:
 
 SceneSet::SceneSet(string input_address)
 {
+	Nf = 0;
 	L.Null();
 	address.str("");
 	address << input_address;
@@ -281,15 +304,69 @@ SceneSet::SceneSet(string input_address)
 
 SceneSet::~SceneSet()
 {
-	for (int i = 0; i < scene.size(); i++)
-		scene[i].Reset();
-	scene.clear();
+	Reset();
+}
+
+void SceneSet::Reset()
+{
+	if (Nf > 0)
+		delete [] scene;
+	Nf = 0;
+}
+
+int SceneSet::Count_Frames()
+{
+	int counter = 0;
+
+	input_file.open(address.str().c_str());
+	if (input_file.is_open())
+	{
+		input_file.seekg(0,ios_base::end);
+		int end_of_file = input_file.tellg();
+		input_file.seekg(0,ios_base::beg);
+
+		double temp_double;
+		int temp_int;
+		input_file.read((char*) &(temp_double), sizeof(double) / sizeof(char));
+		input_file.read((char*) &(temp_double), sizeof(double) / sizeof(char));
+		input_file.read((char*) &(temp_double), sizeof(double) / sizeof(char));
+		input_file.read((char*) &(temp_int), sizeof(int) / sizeof(char));
+		input_file.read((char*) &(Scene::Ns), sizeof(int) / sizeof(char));
+		input_file.read((char*) &(Scene::Nm), sizeof(int) / sizeof(char));
+		input_file.seekg(0,ios_base::beg);
+
+		static Scene temp_scene;
+
+		while (input_file.tellg() < end_of_file && input_file.tellg() >= 0)
+		{
+			input_file >> temp_scene;
+			if (temp_scene.health_status)
+				counter++;
+		}
+
+		float mem_usage = 0.000001*counter*( Scene::Ns*sizeof(VisualChain) + Scene::Nm*sizeof(VisualMembrane) + sizeof(temp_scene) );
+		cout << "Memory usage:\t" << mem_usage << endl;
+		if (mem_usage > (mem_max))
+		{
+				cout << "File is too big" << endl;
+				return(-2);
+		}
+	}
+	else
+		return (-1);
+	input_file.close();
+
+	return (counter);
 }
 
 bool SceneSet::Read(int skip)
 {
-	int counter = 0;
-	static Scene temp_scene;
+	int index = 0;
+
+	Nf = Count_Frames() - skip;
+	scene = new Scene[Nf];
+
+	Scene temp_scene;
 	L.Null();
 
 	input_file.open(address.str().c_str());
@@ -301,12 +378,9 @@ bool SceneSet::Read(int skip)
 
 		if (skip > 0)
 			temp_scene.Skip_File(input_file, skip);
-		temp_scene.Reset();
-
-		while (input_file.tellg() < end_of_file && input_file.tellg() >= 0)
+	
+		while (input_file.tellg() < end_of_file && input_file.tellg() >= 0 && index < Nf)
 		{
-			scene.push_back(temp_scene);
-			int index = scene.size()-1;
 			input_file >> scene[index];
 
 			for (int i = 0; i < scene[index].Nm; i++)
@@ -323,22 +397,21 @@ bool SceneSet::Read(int skip)
 				if (abs(scene[index].sparticle[i].r.y) > L.y)
 					L.y = abs(scene[index].sparticle[i].r.y);
 			}
-			if (0.000001*counter*( scene[index].Ns*sizeof(VisualChain) + scene[index].Nm*sizeof(VisualMembrane) + sizeof(scene[index]) ) > (600))
+			float mem_usage = 0.000001*index*( Scene::Ns*sizeof(VisualChain) + Scene::Nm*sizeof(VisualMembrane) + sizeof(temp_scene) );
+			if (mem_usage > (mem_max))
 			{
 				cout << "File is too big" << endl;
 				return(false);
 			}
-			if (counter % 1 != 0)
-				scene.pop_back();
-			counter++;
+			index++;
 		}
 	}
 	else
 		return (false);
 	input_file.close();
 
-	if (!scene[scene.size()-1].health_status)
-		scene.pop_back();
+	if (!scene[Nf-1].health_status)
+		Nf--;
 
 	L.x = round(L.x+0.1);
 	L.y = round(L.y+0.1);
@@ -354,10 +427,10 @@ bool SceneSet::Read(int skip)
 
 void SceneSet::Write(int start, int limit)
 {
-	if ((scene.size() - start) > limit)
+	if ((Nf - start) > limit)
 	{
 		output_file.open(address.str().c_str());
-		for (int i = start; i < scene.size(); i++)
+		for (int i = start; i < Nf; i++)
 			if (scene[i].health_status)
 				output_file << scene[i];
 		output_file.close();
@@ -383,7 +456,7 @@ void SceneSet::Write(int start, int end, int limit)
 void SceneSet::Write_Every(int interval)
 {
 	output_file.open(address.str().c_str());
-	for (int i = 0; i < scene.size(); i += interval)
+	for (int i = 0; i < Nf; i += interval)
 	{
 		if (scene[i].health_status)
 		{
@@ -396,7 +469,7 @@ void SceneSet::Write_Every(int interval)
 void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t, string info)
 {
 	Field averaged_field(smaller_grid_dim, L);
-	for (int i = start_t; i < scene.size() && i < end_t; i++)
+	for (int i = start_t; i < Nf && i < end_t; i++)
 	{
 		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].sparticle, scene[i].Ns);
@@ -421,7 +494,7 @@ void SceneSet::Plot_Fields(int smaller_grid_dim, int t, string name)
 void SceneSet::Plot_Averaged_Fields(int smaller_grid_dim, string info)
 {
 	Field averaged_field(smaller_grid_dim, L);
-	for (int i = 0; i < scene.size(); i++)
+	for (int i = 0; i < Nf; i++)
 	{
 		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].sparticle, scene[i].Ns);
@@ -435,7 +508,7 @@ void SceneSet::Plot_Averaged_Fields(int smaller_grid_dim, string info)
 void SceneSet::Plot_Averaged_Fields_Section(int smaller_grid_dim, int y, string info)
 {
 	Field averaged_field(smaller_grid_dim, L);
-	for (int i = 0; i < scene.size(); i++)
+	for (int i = 0; i < Nf; i++)
 	{
 		Field f(smaller_grid_dim, L);
 		f.Compute(scene[i].sparticle, scene[i].Ns);
@@ -450,7 +523,7 @@ void SceneSet::Plot_Density_Contour(int smaller_grid_dim, double rho, string inf
 {
 	Field averaged_field(smaller_grid_dim, L);
 	Field f(smaller_grid_dim, L);
-	for (int i = 0; i < scene.size(); i++)
+	for (int i = 0; i < Nf; i++)
 	{
 		f.Compute(scene[i].sparticle, scene[i].Ns);
 		averaged_field.Add(&f);
@@ -464,10 +537,10 @@ void SceneSet::Accumulate_Theta(int smaller_grid_dim, const int num_bins, const 
 {
 	Field f(smaller_grid_dim, L);
 	Stat<double> dtheta;
-	int step = (scene.size()/500);
+	int step = (Nf/500);
 	if (step == 0)
 		step = 1;
-	for (int i = 0; i < scene.size(); i+=step)
+	for (int i = 0; i < Nf; i+=step)
 	{
 		f.Compute(scene[i].sparticle, scene[i].Ns);
 		f.Add_Theta(dtheta,p_c,dp);
