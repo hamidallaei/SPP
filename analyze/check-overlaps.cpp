@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 		bool overlap = false;
 		if (read_state)
 		{
-			for (int frame = 0; frame < sceneset->Nf; frame++)
+			for (int frame = sceneset->Nf-1; frame >= 0; frame--)
 				for (int j = 0; j < sceneset->scene[frame].Ns; j++)
 					for (int k = j+1; k < sceneset->scene[frame].Ns; k++)
 					{

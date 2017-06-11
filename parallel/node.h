@@ -33,10 +33,12 @@ struct Node{
 	
 	Node();
 
+	void Init_Node();
 	void Get_Box_Info(int size, Particle* p);
 	void Init_Rand(); // Initialize the random seed
 	void Init_Rand(long int); // Initialize the random seed
 	void Find_npx_npy(); // Find the npx and npy, according to total number of nodes
+	void Find_npx_npy_Auto(); // Find the npx and npy automatically.
 	void Init_Topology();
 	void Send_Receive_Data(); // Send and Receive data of each neighboring cell
 	void Quick_Update_Cells(); // Update particles that are inside each cell
@@ -75,6 +77,11 @@ struct Node{
 
 Node::Node()
 {
+	Init_Node();
+}
+
+void Node::Init_Node()
+{
 // Get the information abount total nodes and thisnode id
 	MPI_Comm_size(MPI_COMM_WORLD, &total_nodes);
 	MPI_Comm_rank(MPI_COMM_WORLD, &node_id);
@@ -84,6 +91,11 @@ Node::Node()
 	#endif
 
 // Dynamical array allocation for cell:
+	max_divisor_x = static_cast<int> (floor(Lx / lx_min));// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
+	max_divisor_y = static_cast<int> (floor(Ly / lx_min));// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
+	divisor_x = max_divisor_x;
+	divisor_y = max_divisor_y;
+
 	cell = new Cell*[divisor_x];
 	for (int i = 0; i < divisor_x; i++)
 		cell[i] = new Cell[divisor_y];
@@ -118,6 +130,81 @@ void Node::Init_Rand()
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 	C2DVector::Init_Rand(seed);
+}
+
+int ipow(int base, int exp)
+{
+	 int result = 1;
+	 while (exp)
+	 {
+	     if (exp & 1)
+	         result *= base;
+	     exp >>= 1;
+	     base *= base;
+	 }
+
+	 return result;
+}
+
+void Node::Find_npx_npy_Auto()
+{
+	const int plen = 9;
+	int p[plen];
+	p[0] = 2;
+	p[1] = 3;
+	p[2] = 5;
+	p[3] = 7;
+	p[4] = 11;
+	p[5] = 13;
+	p[6] = 17;
+	p[7] = 19;
+	p[8] = 23;
+	int pp[plen];
+	int n_sample = 1;
+	for (int i = 0; i < plen; i++)
+	{
+		if (total_nodes % p[i] == 0)
+			pp[i] = total_nodes / p[i];
+		else
+			pp[i] = 0;
+		n_sample *= (pp[i]+1);
+	}
+
+
+	int delta_min = total_nodes - 1;
+	npx = total_nodes;
+	npy = 1;
+
+	for (int i0 = 0; i0 < pp[0]+1; i0++)
+		for (int i1 = 0; i1 < pp[1]+1; i1++)
+			for (int i2 = 0; i2 < pp[2]+1; i2++)
+				for (int i3 = 0; i3 < pp[3]+1; i3++)
+					for (int i4 = 0; i4 < pp[4]+1; i4++)
+						for (int i5 = 0; i5 < pp[5]+1; i5++)
+							for (int i6 = 0; i6 < pp[6]+1; i6++)
+								for (int i7 = 0; i7 < pp[7]+1; i7++)
+									for (int i8 = 0; i8 < pp[8]+1; i8++)
+										{
+											int temp_npx = ipow(p[0],i0);
+											temp_npx *= ipow(p[1],i1);
+											temp_npx *= ipow(p[2],i2);
+											temp_npx *= ipow(p[3],i3);
+											temp_npx *= ipow(p[4],i4);
+											temp_npx *= ipow(p[5],i5);
+											temp_npx *= ipow(p[6],i6);
+											temp_npx *= ipow(p[7],i7);
+											temp_npx *= ipow(p[8],i8);
+											int temp_npy = total_nodes / temp_npx;
+											int delta = abs(temp_npx - temp_npy);
+											if (delta < delta_min)
+											{
+												delta_min = delta;
+												npx = temp_npx;
+												npy = temp_npy;
+											}
+										}
+	if (node_id == 0)
+		cout << "The structure is:\n" << npx << "\t" << npy << endl;
 }
 
 void Node::Find_npx_npy() // Find the npx and npy, according to total number of nodes
@@ -255,7 +342,7 @@ void Node::Find_npx_npy() // Find the npx and npy, according to total number of 
 
 void Node::Init_Topology() // This function must be called after box definition.
 {
-	Find_npx_npy();
+	Find_npx_npy_Auto();
 
 // Computing the typical column and row number of cells in each node
 	int width_x = divisor_x / npx;

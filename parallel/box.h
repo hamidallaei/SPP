@@ -27,6 +27,7 @@ public:
 	Node* thisnode; // Node is a class that has information about the node_id and its boundaries, neighbores and etc.
 
 	Box();
+	Box(const Real input_Lx, const Real input_Ly, const Real input_phi);
 	// I believe that it is better to move these init functions to main files
 	void Init_Topology(); // Initialize the wall positions and numbers.
 	void Init(Node* input_node, Real input_density); // Intialize the box, positioning particles, giving them velocities, updating cells and sending information to all nodes.
@@ -64,6 +65,28 @@ Box::Box()
 	wall_num = 0;
 	particle = new Particle[max_N];
 }
+
+Box::Box(const Real input_Lx, const Real input_Ly, const Real input_phi)
+{
+	Ns = 0;
+	Nm = 0;
+	density = 0;
+	wall_num = 0;
+
+	Lbx = input_Lx;
+	Lby = input_Ly;
+
+	Lx = input_Lx;
+	Ly = input_Ly;
+	Lx2 = 2*input_Lx;
+	Ly2 = 2*input_Ly;
+
+	Real input_rho = 4*input_phi / (M_PI*Particle::sigma_p*Particle::sigma_p);
+
+	max_N = (int) floor(4*1.1*input_Lx*input_Ly*input_rho);
+	particle = new Particle[max_N];
+}
+
 
 // Initialize the wall positions and numbers.
 void Box::Init_Topology()
@@ -188,7 +211,7 @@ bool Box::Positioning_Particles(const string input_name)
 		particle[i].Reset();
 	}
 
-	cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
+//	cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
 	is.close();
 
 //	density = Ns / (Lx2*Ly2);

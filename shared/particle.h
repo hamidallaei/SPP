@@ -72,13 +72,6 @@ public:
 
 void BasicDynamicParticle::Init()
 {
-	r.Rand();
-	v.Rand(1.0);
-	theta = atan(v.y/v.x);
-	if (v.x < 0)
-		theta += PI;
-	theta -= 2*PI * (int (theta / (2*PI)));v.x = cos(theta);
-	v.y = sin(theta);
 	Reset();
 }
 

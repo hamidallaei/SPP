@@ -62,16 +62,16 @@ long int seed = 10;
 const Real PI = M_PI;
 
 const int max_wall_num = 8;
-const int max_N = 128000;
+int max_N = 128000;
 
 // Box
-const int Lx_int = 64;
-const int Ly_int = Lx_int;
-const int L_int = Lx_int;
-const Real Lx = Lx_int;
-const Real Ly = Ly_int;
-const Real Lx2 = 2*Lx;
-const Real Ly2 = 2*Ly;
+int Lx_int = 64;
+int Ly_int = Lx_int;
+int L_int = Lx_int;
+Real Lx = Lx_int;
+Real Ly = Ly_int;
+Real Lx2 = 2*Lx;
+Real Ly2 = 2*Ly;
 
 // Time
 Real dt = 1.0/1024/4;
@@ -89,10 +89,10 @@ Real Dc = 0.5; // The noise above which the initial condition is disordered, and
 const Real K = 0;
 
 const Real lx_min = (1 + 2*speed*cell_update_period*dt);
-const int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
-const int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
-const int divisor_x = max_divisor_x;
-const int divisor_y = max_divisor_y;
+int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
+int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
+int divisor_x = max_divisor_x;
+int divisor_y = max_divisor_y;
 
 const Real rv = 1 + (2*speed*dt*(cell_update_period)); // Radius cut off for verlet list
 

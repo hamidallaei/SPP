@@ -94,18 +94,18 @@ void Single_Run(Box& box, int argc, char *argv[])
 			cout << "arguments are: \n" << "packingfraction,\tg,\tDr" << endl;
 		exit(0);
 	}
-	Real input_packing_fraction = atof(argv[1]);
-	Real input_g = atof(argv[2]);
+	Real input_packing_fraction = atof(argv[2]);
+	Real input_g = atof(argv[3]);
 
 	Real input_rho = 4*input_packing_fraction / (M_PI*Particle::sigma_p*Particle::sigma_p);
 
-	Real input_noise = atof(argv[3]);
+	Real input_noise = atof(argv[4]);
 
 	bool FROM_FILE = false;
 	string name;
-	if (argc == 5)
+	if (argc == 6)
 	{
-		name = argv[4];
+		name = argv[5];
 		FROM_FILE = true;
 	}
 
@@ -116,7 +116,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_sigma_p(1);
 	Particle::Set_repulsion_radius(1.05);
 	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(10.0);
+	Particle::Set_A_p(2.0);
 	Particle::Set_g(1.0);
 
 	box.Init(box.thisnode, input_rho);
@@ -176,19 +176,19 @@ void Single_Run(Box& box, int argc, char *argv[])
 
 void Change_Noise(Box& box, int argc, char *argv[])
 {
-	if (argc < 4)
+	if (argc < 5)
 	{
 		if (box.thisnode == 0)
 			cout << "arguments are: \n" << "density,\tg,\tepsilon" << endl;
 		exit(0);
 	}
-	Real input_packing_fraction = atof(argv[1]);
-	Real input_g = atof(argv[2]);
+	Real input_packing_fraction = atof(argv[2]);
+	Real input_g = atof(argv[3]);
 
 	Real input_rho = 4*input_packing_fraction / (M_PI*Particle::sigma_p*Particle::sigma_p);
 
 	vector<Real> noise_list;
-	for (int i = 3; i < argc; i++)
+	for (int i = 4; i < argc; i++)
 		noise_list.push_back(atof(argv[i]));
 
 	Real t_eq,t_sim;
@@ -260,6 +260,12 @@ int main(int argc, char *argv[])
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
 
+	Real input_Lx = atof(argv[1]);
+	Real input_packing_fraction = atof(argv[2]);
+	Real input_g = atof(argv[3]);
+
+	Box box(input_Lx, input_Lx, input_packing_fraction);
+
 	Node thisnode;
 
 	#ifdef COMPARE
@@ -268,7 +274,6 @@ int main(int argc, char *argv[])
 		thisnode.Init_Rand();
 	#endif
 
-	Box box;
 	box.thisnode = &thisnode;
 
 	//Change_Noise(box, argc, argv);

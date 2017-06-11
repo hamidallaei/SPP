@@ -24,6 +24,7 @@ const unsigned int max_width = 1300;
 cv::VideoWriter writer;
 SceneSet* sceneset;
 string global_address;
+string global_name;
 
 int t = 0;
 bool save = false;
@@ -243,7 +244,10 @@ void KeyboardInput(unsigned char key, int x, int y)
 	if ((key == 83) || (key == 115))
 	{
 		cout << "Saving a snapshot" << endl;
-		sceneset->Plot_Fields(16, t, sceneset->info);
+//		sceneset->Plot_Fields(16, t, sceneset->info);
+		stringstream address("");
+		address << "screen-shot-t=" << sceneset->scene[t].t << "-" << global_name << ".png";
+		global_address = address.str().c_str();
 		Save_Image(global_address);
 	}
 	if ((key == 72) || (key == 104))
@@ -366,13 +370,13 @@ int main(int argc, char** argv)
 			window_height = (unsigned int) round(box_dim.y*window_width / box_dim.x);
 		}
 
-		string name = argv[argc-1];
-		string::size_type position_of_txt = name.find("-r-v", 0);
+		global_name = argv[argc-1];
+		string::size_type position_of_txt = global_name.find("-r-v", 0);
 		if (position_of_txt < 20000)
-			name.erase(position_of_txt);
+			global_name.erase(position_of_txt);
 
 		stringstream address("");
-		address << name << ".mpg";
+		address << global_name << ".mpg";
 
 		if (save)
 		{
@@ -381,10 +385,6 @@ int main(int argc, char** argv)
 		}
 		else
 			cv::VideoCapture cap(0);
-
-		address.str("");
-		address << "screen-shot-" << name << ".png";
-		global_address = address.str().c_str();
 
 		glutInit(&glargc, glargv);
 		glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);

@@ -218,15 +218,15 @@ class Vec_template
 template<typename Type> const gsl_rng_type * Vec_template<Type>::T;
 template<typename Type> gsl_rng * Vec_template<Type>::gsl_r;
 
-class Index{
-public:
-	int x,y;
-	void Find(Vec_template<> r)
-	{
-		x = (int) (r.x + Lx)*divisor_x / (Lx2);
-		y = (int) (r.y + Ly)*divisor_y / (Ly2);
-	}
-};
+/*class Index{*/
+/*public:*/
+/*	int x,y;*/
+/*	void Find(Vec_template<> r)*/
+/*	{*/
+/*		x = (int) (r.x + Lx)*divisor_x / (Lx2);*/
+/*		y = (int) (r.y + Ly)*divisor_y / (Ly2);*/
+/*	}*/
+/*};*/
 
 
 typedef Vec_template<Real> C2DVector;
