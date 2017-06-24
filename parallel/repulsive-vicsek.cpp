@@ -95,17 +95,18 @@ void Single_Run(Box& box, int argc, char *argv[])
 		exit(0);
 	}
 	Real input_packing_fraction = atof(argv[2]);
-	Real input_g = atof(argv[3]);
+	Real input_A_p =atof(argv[3]);
+	Real input_g = atof(argv[4]); 
 
 	Real input_rho = 4*input_packing_fraction / (M_PI*Particle::sigma_p*Particle::sigma_p);
 
-	Real input_noise = atof(argv[4]);
+	Real input_noise = atof(argv[5]);
 
 	bool FROM_FILE = false;
 	string name;
-	if (argc == 6)
+	if (argc == 7)
 	{
-		name = argv[5];
+		name = argv[6];
 		FROM_FILE = true;
 	}
 
@@ -116,7 +117,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_sigma_p(1);
 	Particle::Set_repulsion_radius(1.05);
 	Particle::Set_alignment_radius(1.1);
-	Particle::Set_A_p(2.0);
+	Particle::Set_A_p(input_A_p);
 	Particle::Set_g(1.0);
 
 	box.Init(box.thisnode, input_rho);
@@ -125,7 +126,7 @@ void Single_Run(Box& box, int argc, char *argv[])
 	Particle::Set_Dr(input_noise); // This will set the noise amplitude as well. Noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 
 	box.info.str("");
-	box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << input_noise << "-L=" << Lx << "-N=" << box.Ns;
+	box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-Ap=" << RepulsiveParticle::A_p  << "-noise=" << input_noise << "-dt_inv=" << 1.0/dt << "-L=" << Lx << "-N=" << box.Ns;
 
 	ofstream out_file;
 
@@ -222,7 +223,7 @@ void Change_Noise(Box& box, int argc, char *argv[])
 		Particle::Set_Dr(noise_list[i]); // This will set the noise amplitude as well. Noise amplitude depends on the step (dt) because of ito calculation. If we have epsilon in our differential equation and we descritise it with time steps dt, the noise in each step that we add is epsilon times sqrt(dt) if we factorise it with a dt we have dt*(epsilon/sqrt(dt)).
 
 		box.info.str("");
-		box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-noise=" << noise_list[i] << "-L=" << Lx << "-N=" << box.Ns;
+		box.info << "phi=" << box.packing_fraction <<  "-g=" << Particle::g << "-Ap=" << RepulsiveParticle::A_p  << "-noise=" << noise_list[i] << "-dt_inv=" << 1.0/dt << "-L=" << Lx << "-N=" << box.Ns;
 
 		if (box.thisnode->node_id == 0)
 		{

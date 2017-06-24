@@ -74,11 +74,11 @@ Real Lx2 = 2*Lx;
 Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/1024/4;
+Real dt = 1.0/1024/8;
 Real half_dt = dt/2;
 Real dt_over_6 = dt/6;
-const int cell_update_period = 128;
-const int saving_period = 128;
+const int cell_update_period = 256;
+const int saving_period = 512;
 Real eq_time = 0;
 Real sim_time = 16384;  // 2^14 = 16384
 long int equilibrium_step = (int) eq_time / dt;
