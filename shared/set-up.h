@@ -298,6 +298,10 @@ void Ring_Membrane(Particle* particle, const Real bead_diameter, int N_m)
 		r.y = membrane_radius*sin(theta);
 		particle[i].r = r;
 
+		#ifdef NonPeriodicCompute
+			particle[i].r_original = r;
+		#endif
+
 		theta += 2*M_PI /N_m;
 	}
 }
@@ -333,6 +337,10 @@ void Confined_In_Ring_Membrane(Particle* particle, const Real bead_diameter, int
 			r.x = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*cos(ring_theta);
 			r.y = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*sin(ring_theta);
 			particle[N_m+i].r = r;
+			#ifdef NonPeriodicCompute
+			particle[N_m+i].r_original = r;
+			#endif
+
 			particle[N_m+i].theta = ring_theta + M_PI*(i%2);
 			particle[N_m+i].v.x = cos(particle[N_m+i].theta);
 			particle[N_m+i].v.y = sin(particle[N_m+i].theta);

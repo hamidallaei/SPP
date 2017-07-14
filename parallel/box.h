@@ -190,11 +190,6 @@ bool Box::Positioning_Particles(const string input_name)
 		MPI_Barrier(MPI_COMM_WORLD);
 		counter++;
 	}
-/*	while (is.tellg() != end_of_is)*/
-/*	{*/
-/*		is >> this;*/
-/*		MPI_Barrier(MPI_COMM_WORLD);*/
-/*	}*/
 
 	for (int i = 0; i < Nm; i++)
 	{
