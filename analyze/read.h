@@ -272,8 +272,8 @@ public:
 	void Reset();
 	int Count_Frames();
 	bool Read(int skip = 0);
-	void Write(int, int); // write from a time to the end of the file
-	void Write(int start, int end, int limit); // write from start to the end if end-start > limit
+	void Write(int start, int end); // write from frame start to the frame end
+	void Write(float, float); // write from an specefic time to another time
 	void Write_Every(int interval); // write every interval
 	void Save_Theta_Deviation(int, int, int, string);
 	void Plot_Fields(int, int, string);
@@ -425,32 +425,22 @@ bool SceneSet::Read(int skip)
 	return (true);
 }
 
-void SceneSet::Write(int start, int limit)
+void SceneSet::Write(int start, int end)
 {
-	if ((Nf - start) > limit)
-	{
-		output_file.open(address.str().c_str());
-		for (int i = start; i < Nf; i++)
-			if (scene[i].health_status)
-				output_file << scene[i];
-		output_file.close();
-	}
-	else
-		cout << "I will not cut the file because it is short enough!" << endl;
+	output_file.open(address.str().c_str());
+	for (int i = start; i < end; i++)
+		if (scene[i].health_status)
+			output_file << scene[i];
+	output_file.close();
 }
 
-void SceneSet::Write(int start, int end, int limit)
+void SceneSet::Write(float start, float end)
 {
-	if ((end - start) > limit)
-	{
-		output_file.open(address.str().c_str());
-		for (int i = start; i < end; i++)
-			if (scene[i].health_status)
-				output_file << scene[i];
-		output_file.close();
-	}
-	else
-		cout << "I will not cut the file because it is short enough!" << endl;
+	output_file.open(address.str().c_str());
+	for (int i = 0; i < Nf; i++)
+		if (scene[i].health_status && (scene[i].t <= end) && (scene[i].t >= start))
+			output_file << scene[i];
+	output_file.close();
 }
 
 void SceneSet::Write_Every(int interval)
