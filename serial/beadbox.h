@@ -85,7 +85,7 @@ Box::Box(const Real input_R)
 	Ns = 0;
 	Nm = 0;
 
-	Lbx = input_R*3;
+	Lbx = input_R*2;
 	Lby = Lbx;
 
 	Lx = Lbx;
@@ -100,7 +100,8 @@ Box::Box(const Real input_R)
 	r_old = new C2DVector[max_N];
 	theta_old = new Real[max_N];
 
-	lx_min = (2 + 2*speed*cell_update_period*dt);
+	lx_min = (1 + 2*speed*cell_update_period*dt);
+	rv = 2 + 2*speed*cell_update_period*dt;
 
 	max_divisor_x = static_cast<int> (floor(Lx / lx_min));// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 	max_divisor_y = static_cast<int> (floor(Ly / lx_min));// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
@@ -511,11 +512,22 @@ std::ostream& operator<<(std::ostream& os, Box* box)
 // Reading the particle information (position and velocities) from a standard input stream (probably a file).
 std::istream& operator>>(std::istream& is, Box* box)
 {
-	is.read((char*) &box->N, sizeof(int) / sizeof(char));
-	for (int i = 0; i < box->N; i++)
+	int nb; // nb is number of beads for swimmers
+	is.read((char*) &(box->t), sizeof(Real) / sizeof(char));
+	is.read((char*) &(box->Lbx), sizeof(Real) / sizeof(char));
+	is.read((char*) &(box->Lby), sizeof(Real) / sizeof(char));
+	is.read((char*) &(nb), sizeof(int) / sizeof(char));
+	is.read((char*) &(box->Ns), sizeof(box->Ns) / sizeof(char));
+	is.read((char*) &(box->Nm), sizeof(box->Nm) / sizeof(char));
+
+	for (int i = 0; i < box->Nm; i++)
 	{
-		is >> box->particle[i].r;
-		is >> box->particle[i].v;
+		is >> box->particle[i].r_original;
+	}
+
+	for (int i = box->Nm; i < (box->Nm + box->Ns); i++)
+	{
+		box->particle[i].Read(is);
 	}
 }
 

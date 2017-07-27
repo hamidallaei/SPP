@@ -94,7 +94,7 @@ int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than L
 int divisor_x = max_divisor_x;
 int divisor_y = max_divisor_y;
 
-const Real rv = 1 + (2*speed*dt*(cell_update_period)); // Radius cut off for verlet list
+Real rv = 1 + (2*speed*dt*(cell_update_period)); // Radius cut off for verlet list
 
 // Parallel Use only
 const int tag_max = 32767; // For parallel use only
