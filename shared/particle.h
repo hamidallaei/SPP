@@ -826,6 +826,7 @@ public:
 	void Move_Runge_Kutta2_2();
 	virtual void Noise_Gen();
 	void Interact(ActiveBrownianChain& ac);
+	void Read(std::istream& is);
 	void Write(std::ostream& os);
 };
 
@@ -983,7 +984,13 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 		}
 }
 
-
+void ActiveBrownianChain::Read(std::istream& is)
+{
+	is >> r_original;
+	Saving_Real temp_theta;
+	is.read((char*) &(temp_theta), sizeof(Saving_Real) / sizeof(char));
+	theta = temp_theta;
+}
 
 void ActiveBrownianChain::Write(std::ostream& os)
 {

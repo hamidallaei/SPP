@@ -6,18 +6,27 @@
 
 int input_seed;
 
-inline void timing_information(clock_t start_time, int i_step, int total_step)
+inline void timing_information(Box* box, clock_t start_time, Real box_initial_time)
 {
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
-		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
-		cout << "\r" << round(100.0*i_step / total_step) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+		int remaining_time = (lapsed_time*(sim_time - box->t)) / (box->t -  box_initial_time + 1);
+		cout << "\r" << round(100.0*box->t / sim_time) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
+}
+
+bool does_file_exist(const char *fileName)
+{
+	std::ifstream infile(fileName);
+	bool result = infile.good();
+	infile.close();
+	return result;
 }
 
 inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_period, int quantities_saving_period, ofstream& out_file, ofstream& variables_file)
 {
 	clock_t start_time, end_time;
 	start_time = clock();
+	Real box_initial_time = box->t;
 
 	#ifdef TRACK_PARTICLE
 	if (!flag)
@@ -27,16 +36,23 @@ inline Real data_gathering(Box* box, long int total_step, int trajectory_saving_
 	cout << "gathering data:" << endl;
 	int saving_time = 0;
 
-	box->Save_Particles_Positions();
-
-	for (long int i = 0; i < total_step; i+=cell_update_period)
+	if (box->t < dt)
 	{
+		box->Save_Particles_Positions();
+		out_file << box;
+		timing_information(box, start_time, box_initial_time);
+	}
+
+	int i = 0;
+	while (box->t < sim_time)
+	{
+		box->Multi_Step(cell_update_period);
+		i += cell_update_period;
 		if ((i / cell_update_period) % trajectory_saving_period == 0)
 		{
 			out_file << box;
-			timing_information(start_time,i,total_step);
+			timing_information(box, start_time, box_initial_time);
 		}
-		box->Multi_Step(cell_update_period);
 		if ((i / cell_update_period) % quantities_saving_period == 0)
 			box->Save_All_Variables(variables_file);
 	}
@@ -93,6 +109,14 @@ void Run(Box& box, int argc, char *argv[])
 	int input_Nm = (int) round(M_PI/asin(0.5*membrane_l_eq/input_membrane_radius));
 	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
 
+	bool FROM_FILE = false;
+	string name;
+	if (argc == 7)
+	{
+		name = argv[6];
+		FROM_FILE = true;
+	}
+
 	Real t_eq,t_sim;
 
 //	Particle::lambda = 0.1; // tumbling rate
@@ -122,13 +146,6 @@ void Run(Box& box, int argc, char *argv[])
 	box.membrane_radius = input_membrane_radius;
 	box.packing_fraction = input_packing_fraction;
 
-	if (input_file == 0)
-	{
-		Ring_Membrane(box.particle, Particle::sigma_p, box.Nm);
-		Confined_In_Ring_Membrane(box.particle, Particle::sigma_p, box.Ns, box.Nm);
-		box.Update_Cells();
-	}
-
 	box.info.str("");
 	box.info << "k="<< box.membrane_elasticity;
 	box.info << "-R="<< box.membrane_radius;
@@ -140,13 +157,42 @@ void Run(Box& box, int argc, char *argv[])
 	ofstream out_file;
 	ofstream variables_file;
 
-	stringstream address;
-	address.str("");
-	address << "r-v-" << box.info.str() << ".bin";
-	out_file.open(address.str().c_str());
-	address.str("");
-	address << "quantities-" << box.info.str() << ".dat";
-	variables_file.open(address.str().c_str());
+	stringstream traj_address;
+	traj_address.str("");
+	traj_address << "r-v-" << box.info.str() << ".bin";
+
+
+	stringstream quant_address;
+	quant_address.str("");
+	quant_address << "quantities-" << box.info.str() << ".dat";
+
+
+	if (FROM_FILE)
+	{
+		box.Positioning_Particles(traj_address.str());
+		out_file.open(traj_address.str().c_str(), ios::out | ios::app | ios::binary);
+		variables_file.open(quant_address.str().c_str(), ios::out | ios::app | ios::binary);
+	}
+	else
+	{
+		if (does_file_exist(traj_address.str().c_str()))
+		{
+			box.Positioning_Particles(traj_address.str());
+			out_file.open(traj_address.str().c_str(), ios::out | ios::app | ios::binary);
+			variables_file.open(quant_address.str().c_str(), ios::out | ios::app | ios::binary);
+		}
+		else
+		{
+			Ring_Membrane(box.particle, Particle::sigma_p, box.Nm);
+			Confined_In_Ring_Membrane(box.particle, Particle::sigma_p, box.Ns, box.Nm);
+			for (int i = 0; i < box.Ns; i++)
+				box.particle[i].r_original = box.particle[i].r;
+			out_file.open(traj_address.str().c_str());
+			variables_file.open(quant_address.str().c_str());
+		}
+	}
+
+	box.Sync();
 
 	cout << " Box information is: " << box.info.str() << endl;
 

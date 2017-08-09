@@ -312,6 +312,8 @@ void SceneSet::Reset()
 	if (Nf > 0)
 		delete [] scene;
 	Nf = 0;
+	Scene::Ns = 0;
+	Scene::Nm = 0;
 }
 
 int SceneSet::Count_Frames()
@@ -335,7 +337,7 @@ int SceneSet::Count_Frames()
 		input_file.read((char*) &(Scene::Nm), sizeof(int) / sizeof(char));
 		input_file.seekg(0,ios_base::beg);
 
-		static Scene temp_scene;
+		Scene temp_scene;
 
 		while (input_file.tellg() < end_of_file && input_file.tellg() >= 0)
 		{

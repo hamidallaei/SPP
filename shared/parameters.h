@@ -77,8 +77,10 @@ Real Ly2 = 2*Ly;
 Real dt = 1.0/1024/8;
 Real half_dt = dt/2;
 Real dt_over_6 = dt/6;
-const int cell_update_period = 256;
-const int saving_period = 512;
+const Real cell_update_interval = 1.0 / 32;
+const int cell_update_period = (int) (cell_update_interval / dt);
+const Real saving_interval = 16;
+const int saving_period = (int) (saving_interval / cell_update_interval);//16*16;
 Real eq_time = 0;
 Real sim_time = 16384;  // 2^14 = 16384
 long int equilibrium_step = (int) eq_time / dt;
@@ -88,7 +90,7 @@ const Real speed = 1;
 Real Dc = 0.5; // The noise above which the initial condition is disordered, and below it is polar ordered.
 const Real K = 0;
 
-Real lx_min = (1 + 2*speed*cell_update_period*dt);
+Real lx_min = (0.5 + 2*speed*cell_update_period*dt);
 int max_divisor_x = static_cast<int> (Lx_int / lx_min);// must be smaller than Lx2*(1 - 2*cell_update_period*dt);
 int max_divisor_y = static_cast<int> (Ly_int / lx_min);// must be smaller than Ly2*(1 - 2*cell_update_period*dt);
 int divisor_x = max_divisor_x;

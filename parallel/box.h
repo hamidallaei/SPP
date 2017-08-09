@@ -206,10 +206,7 @@ bool Box::Positioning_Particles(const string input_name)
 		particle[i].Reset();
 	}
 
-//	cout << "number_of_particles = " << Ns << endl; // Printing number of particles.
 	is.close();
-
-//	density = Ns / (Lx2*Ly2);
 
 	thisnode->Full_Update_Cells();
 

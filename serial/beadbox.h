@@ -232,34 +232,51 @@ bool Box::Positioning_Particles(const string input_name)
 
 	string name = input_name;
 	stringstream address(name);
+
+	stringstream command("");
+	command << "./fix-file.out ";
+	command << name;
+	system(command.str().c_str());
+
 	ifstream is;
-	is.open(address.str().c_str());
+	is.open(address.str().c_str(), fstream::in);
 	if (!is.is_open())
 		return false;
 
-	is.read((char*) &N, sizeof(int) / sizeof(char));
-	if (N < 0 || N > 1000000)
-		return (false);
-	while (!is.eof())
-	{
-		for (int i = 0; i < N; i++)
-		{
-			is >> particle[i].r;
-			is >> particle[i].v;
-		}
-		is.read((char*) &N, sizeof(int) / sizeof(char));
-	}
-	for (int i = 0; i < N; i++)
-		particle[i].theta = atan2(particle[i].v.y,particle[i].v.x);
-	cout << "number_of_particles = " << N << endl; // Printing number of particles.
+	is >> this;
 
+	if (Ns < 0 || Ns > 1000000)
+		return (false);
+
+	is.seekg(0,ios_base::end);
+	int end_of_is = is.tellg();
+	is.seekg(0,ios_base::beg);
+	while (is.tellg() < end_of_is && is.tellg() >= 0)
+	{
+		static int counter = 0;
+		Save_Particles_Positions();
+		is >> this;
+		counter++;
+	}
+
+	for (int i = 0; i < Nm; i++)
+	{
+		particle[i].r = particle[i].r_original;
+		particle[i].r.Periodic_Transform();
+	}
+
+	for (int i = Nm; i < Nm+Ns; i++)
+	{
+		particle[i].r = particle[i].r_original;
+		particle[i].r.Periodic_Transform();
+		particle[i].v.x = cos(particle[i].theta);
+		particle[i].v.y = sin(particle[i].theta);
+		particle[i].Reset();
+	}
 
 	is.close();
 
 	Sync();
-
-// Buliding up info stream. In next versions we will take this part out of box, making our libraries more abstract for any simulation of SPP.
-	info.str("");
 
 	return (true);
 }
@@ -407,7 +424,7 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 	mb_xx = mb_yy = mb_xy = mb_l = 0;
 	sw_xx = sw_yy = sw_xy = sw_l = 0;
 
-	for (int i = Ns; i < Ns+Nm; i++)
+	for (int i = 0; i < Nm; i++)
 	{
 			C2DVector r, v;
 			r = particle[i].r_original;
@@ -419,7 +436,7 @@ void Box::Compute_All_Variables() // Compute center of mass position and speed, 
 			mb_yy += r.y*r.y;
 			mb_xy += r.x*r.y;
 	}
-	for (int i = 0; i < Ns; i++)
+	for (int i = Nm; i < Ns+Nm; i++)
 	{
 		C2DVector r, v;
 		Real spin, dtheta;
@@ -481,7 +498,7 @@ void Box::Save_All_Variables(std::ostream& os) // Save center of mass position a
 {
 	Compute_All_Variables();
 	static bool first_time = true;
-	if (first_time)
+	if (first_time && os.tellp()==0)
 		os << "#\ttime\tx_cm\ty_cm\tvx_cm\tvy_cm\tangular momentum\tangular freq.\tGyration raduis\tAsphericity\tQxx\tQxy\tQyy\tsw. ang. freq." << endl;
 	os << t << "\t" << mb_r_cm << "\t" << mb_v_cm << "\t" << mb_l << "\t" << mb_omega << "\t" << mb_Rg << "\t" << mb_Delta << "\t" << mb_xx << "\t" << mb_xy << "\t" << mb_yy << "\t" << sw_omega << endl;
 	first_time = false;

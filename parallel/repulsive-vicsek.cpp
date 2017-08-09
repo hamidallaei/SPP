@@ -4,13 +4,13 @@
 #include "../shared/cell.h"
 #include "box.h"
 
-inline void timing_information(Box* box, clock_t start_time, int i_step, int total_step)
+inline void timing_information(Box* box, clock_t start_time, Real box_initial_time)
 {
 	if (box->thisnode->node_id == 0)
 	{
 		clock_t current_time = clock();
 		int lapsed_time = (current_time - start_time) / (CLOCKS_PER_SEC);
-		int remaining_time = (lapsed_time*(total_step - i_step)) / (i_step + 1);
+		int remaining_time = (lapsed_time*(sim_time - box->t)) / (box->t -  box_initial_time + 1);
 		cout << "\r" << box->t << "\t" << round(100.0*box->t / sim_time) << "% lapsed time: " << lapsed_time << " s		remaining time: " << remaining_time << " s" << flush;
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -28,6 +28,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 {
 	clock_t start_time, end_time;
 	start_time = clock();
+	Real box_initial_time = box->t;
 
 	if (box->thisnode->node_id == 0)
 		cout << "equilibrium:" << endl;
@@ -35,7 +36,7 @@ inline Real equilibrium(Box* box, long int equilibrium_step, int saving_period, 
 	for (long int i = 0; i < equilibrium_step; i+=cell_update_period)
 	{
 		box->Multi_Step(cell_update_period);
-		timing_information(box,start_time,i,equilibrium_step);
+		timing_information(box,start_time, box_initial_time);
 	}
 
 	if (box->thisnode->node_id == 0)
@@ -52,6 +53,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 {
 	clock_t start_time, end_time;
 	start_time = clock();
+	Real box_initial_time = box->t;
 
 	#ifdef TRACK_PARTICLE
 	if (!flag)
@@ -73,7 +75,7 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 		if ((i / cell_update_period) % saving_period == 0)
 		{
 			out_file << box;
-			timing_information(box,start_time,i,total_step);
+			timing_information(box,start_time, box_initial_time);
 		}
 	}
 
