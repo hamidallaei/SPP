@@ -124,7 +124,7 @@ void Run(Box& box, int argc, char *argv[])
 //	Particle::torque_tumble = 0.2; // torque strength of a tumble
 
 
-	Particle::Set_Dr(1.0/4);
+	Particle::Set_Dr(1.0/8);
 	Particle::Set_separation(1.0/(input_chain_length-1));
 
 // The following must be before box.init
@@ -153,6 +153,7 @@ void Run(Box& box, int argc, char *argv[])
 	box.info << "-R="<< box.membrane_radius;
 	box.info << "-r=" << Particle::R0;
 	box.info << "-psi=" << box.cover_fraction;
+	box.info << "-Dr=" << Particle::Dr;
 	box.info << "-seed=" << input_seed;
 	box.info << "-ABP";
 

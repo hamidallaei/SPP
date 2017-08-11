@@ -46,8 +46,8 @@ typedef float Saving_Real;
 //	typedef ContinuousParticle Particle;
 //	typedef VicsekParticle2 Particle;
 //	typedef MarkusParticle Particle;
-	typedef RepulsiveParticle Particle;
-//	typedef ActiveBrownianChain Particle;
+//	typedef RepulsiveParticle Particle;
+	typedef ActiveBrownianChain Particle;
 //	typedef RTPChain Particle;
 	#ifdef NonPeriodicCompute
 		const int dof = 5;
@@ -74,7 +74,7 @@ Real Lx2 = 2*Lx;
 Real Ly2 = 2*Ly;
 
 // Time
-Real dt = 1.0/1024/8;
+Real dt = 1.0/1024;
 Real half_dt = dt/2;
 Real dt_over_6 = dt/6;
 const Real cell_update_interval = 1.0 / 32;
@@ -82,7 +82,7 @@ const int cell_update_period = (int) (cell_update_interval / dt);
 const Real saving_interval = 16;
 const int saving_period = (int) (saving_interval / cell_update_interval);//16*16;
 Real eq_time = 0;
-Real sim_time = 16384;  // 2^14 = 16384
+Real sim_time = 16384*2;  // 2^14 = 16384
 long int equilibrium_step = (int) eq_time / dt;
 long int total_step = (int) sim_time / dt;
 
