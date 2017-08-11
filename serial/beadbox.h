@@ -19,6 +19,7 @@ public:
 	Real Lbx, Lby;
 	Real t;
 	Real packing_fraction;
+	Real cover_fraction;
 	Real membrane_elasticity;
 	Real membrane_radius;
 

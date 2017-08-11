@@ -327,7 +327,7 @@ int VisualChain::chain_length = 2;
 
 		for (int i = 0; i < chain_length; i++)
 		{
-			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i)/(chain_length-1));
 
 			r_temp = r + s_i;
 
@@ -347,7 +347,7 @@ int VisualChain::chain_length = 2;
 
 		for (int i = 0; i < chain_length; i++)
 		{
-			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i));
+			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i)/(chain_length-1));
 			SavingVector p;
 			p = r - r0 + s_i;
 

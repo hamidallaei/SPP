@@ -100,6 +100,7 @@ void Run(Box& box, int argc, char *argv[])
 
 
 	Particle::Set_Dr(0.1);
+	Particle::Set_separation(1.0);
 
 // The following must be before box.init
 	for (int i = 0; i < input_Nm; i++)

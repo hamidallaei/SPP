@@ -320,6 +320,7 @@ void Confined_In_Ring_Membrane(Particle* particle, const Real bead_diameter, int
 /*	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;*/
 	Real membrane_radius = 0.5*bead_diameter/sin(M_PI/N_m);
 	int chain_length = particle[N_m].nb; // number of beads in each swimmer(chain)
+	Real sw_length = chain_length*Particle::separation + Particle::sigma_p;
 
 	int i = 0;
 	int n_1 = 0;
@@ -330,12 +331,12 @@ void Confined_In_Ring_Membrane(Particle* particle, const Real bead_diameter, int
 		n_ring is number of active particles on that ring
 		ring_index renotes the index of each ring
 		*/
-		Real ring_radius = membrane_radius - ring_index * chain_length * (bead_diameter - 0.1);// - bead_diameter/2;
-		Real n_ring = (int) floor(2 * M_PI * ring_radius / (bead_diameter - 0.1));
+		Real ring_radius = membrane_radius - ring_index * (sw_length - 0.1);// - bead_diameter/2;
+		Real n_ring = (int) floor(2 * M_PI * ring_radius / (Particle::sigma_p - 0.1));
 		for (int i = n_1; i < (n_1 + n_ring) && i < N_s; i++)
 		{
-			r.x = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*cos(ring_theta);
-			r.y = (ring_radius+(chain_length-1)*Particle::sigma_p/2)*sin(ring_theta);
+			r.x = (ring_radius+(sw_length-1)*Particle::sigma_p/2)*cos(ring_theta);
+			r.y = (ring_radius+(sw_length-1)*Particle::sigma_p/2)*sin(ring_theta);
 			particle[N_m+i].r = r;
 			#ifdef NonPeriodicCompute
 			particle[N_m+i].r_original = r;

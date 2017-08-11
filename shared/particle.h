@@ -793,6 +793,7 @@ class ActiveBrownianChain : public BasicDynamicParticle {
 public:
 //	const int dof = 3; // degree of freedom. It is required in the comminucation between nodes. The dof coordinates are sent and received.
 	int nb; // number of beads
+	static Real separation;
 	Real m_parallel;  // Mobility parallel to the direction
 	Real m_perpendicular; // Mobility perpendicular to the direction
 	Real k_perpendicular; // Mobility perpendicular to the direction
@@ -814,6 +815,7 @@ public:
 	void Set_F0(const Real);
 	static void Set_sigma_p(const Real);
 	static void Set_repulsion_radius(const Real);
+	static void Set_separation(const Real);
 	static void Set_A_p(const Real);
 	void Set_nb(const int);
 	void Set_R0(const Real); // Sould be called after Set_nb
@@ -839,6 +841,7 @@ ActiveBrownianChain::ActiveBrownianChain()
 void ActiveBrownianChain::Set_F0(const Real input_F0) {F0 = input_F0;}
 void ActiveBrownianChain::Set_sigma_p(const Real input_sigma_p)  {sigma_p = input_sigma_p;}
 void ActiveBrownianChain::Set_repulsion_radius(const Real input_repulsion_radius) {repulsion_radius = input_repulsion_radius;}
+void ActiveBrownianChain::Set_separation(const Real input_separation)  {separation = input_separation;}
 void ActiveBrownianChain::Set_A_p(const Real input_A_p) {A_p = input_A_p;}
 void ActiveBrownianChain::Set_torque0(const Real input_torque0) {torque0 = input_torque0;}
 
@@ -858,10 +861,15 @@ void ActiveBrownianChain::Set_nb(const int input_nb)
 		k_perpendicular = 1; // Mobility perpendicular to the direction
 	}
 	else
-	{	// these values are for two-sphere swimmers. TODO one has to import general relations.
+	{
+		Real aspect_ratio = 1 / ( (separation*(nb - 1) / sigma_p) + 1 );
+		Real e2 = 1 - aspect_ratio*aspect_ratio;
+		Real e = sqrt(e2);
+		Real L = log((1+e) / (1-e));
+
 		m_parallel = 1.0;
-		m_perpendicular = 0.87;
-		k_perpendicular = 4.8;
+		m_perpendicular = 0.5 * ( 2*e + (3*e2 - 1)*L ) / ( (1+e2)*L - 2*e );
+		k_perpendicular = 6 / (1 + aspect_ratio*aspect_ratio) / sigma_p / sigma_p;
 	}
 }
 
@@ -962,8 +970,8 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 		for (int j = 0; j < ac.nb; j++)
 		{
 			C2DVector s_this, s_that;	// s is position of the beads on each swimmer wrt swimmer middle point
-			s_this = v*(sigma_p*((1-nb)/2.0+i)); 	   //  v is the direction of the particle
-			s_that = ac.v*(sigma_p*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
+			s_this = v*(separation*((1-nb)/2.0+i)); 	   //  v is the direction of the particle
+			s_that = ac.v*(separation*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
 
 			dr = dr0 + s_this - s_that;
 
@@ -1022,6 +1030,7 @@ void ActiveBrownianChain::Write(std::ostream& os)
 Real ActiveBrownianChain::A_p = 1.;		// interaction strength
 Real ActiveBrownianChain::sigma_p = 1.0;		// sigma in Yukawa Potential
 Real ActiveBrownianChain::repulsion_radius = 1.1;		// repulsive cutoff radius
+Real ActiveBrownianChain::separation = 1; // separation between two neighboring beads in a swimmer
 Real ActiveBrownianChain::torque0 = 0; // The intrinsinc torque in the particle. This make the motion chiral
 Real ActiveBrownianChain::R0 = 0; // The intrinsinc radius of motion. This make the motion chiral
 //###################################################################

@@ -71,8 +71,9 @@ Real input_membrane_elasticity;
 Real input_membrane_radius;
 Real input_chiral_radius;
 Real input_packing_fraction;
+Real input_cover_fraction;
 int input_file = 0;
-int input_chain_length = 2;
+int input_chain_length = 3;
 
 void Read_Arguments(int argc, char *argv[])
 {
@@ -91,23 +92,22 @@ void Read_Arguments(int argc, char *argv[])
 	cout << "1-membrane elasticity" << endl;
 	cout << "2-membrane radius" << endl;
 	cout << "3-chirality radius" << endl;
-	cout << "4-packing fraction" << endl;
+	cout << "4-cover fraction" << endl;
 
 	input_membrane_elasticity = atof(argv[1+input_file]);
 	input_membrane_radius = atof(argv[2+input_file]);
 	input_chiral_radius = atof(argv[3+input_file]);
-	input_packing_fraction = atof(argv[4+input_file]);
+	input_cover_fraction = atof(argv[4+input_file]);
 
 }
 
 void Run(Box& box, int argc, char *argv[])
 {
-//	int input_Nm = (int) round(2*M_PI*input_membrane_radius / Particle::sigma_p);
-//	int input_Ns = (int) round(input_packing_fraction*input_Nm*input_Nm / (input_chain_length*M_PI*M_PI));
 	Real membrane_l_eq = Particle::sigma_p + 13*Particle::A_p*(Particle::repulsion_radius - Particle::sigma_p)/(input_membrane_elasticity*Particle::sigma_p + 13*Particle::A_p);
 	membrane_l_eq = Particle::sigma_p;
 	int input_Nm = (int) round(M_PI/asin(0.5*membrane_l_eq/input_membrane_radius));
-	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
+//	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
+	int input_Ns = (int) round(M_PI * input_cover_fraction * Particle::sigma_p * (1 / sin(M_PI/input_Nm)  - 2*Particle::sigma_p ));
 
 	bool FROM_FILE = false;
 	string name;
@@ -125,6 +125,7 @@ void Run(Box& box, int argc, char *argv[])
 
 
 	Particle::Set_Dr(0.1);
+	Particle::Set_separation(1.0/(input_chain_length-1));
 
 // The following must be before box.init
 	for (int i = 0; i < input_Nm; i++)
@@ -145,12 +146,13 @@ void Run(Box& box, int argc, char *argv[])
 	box.membrane_elasticity = input_membrane_elasticity;
 	box.membrane_radius = input_membrane_radius;
 	box.packing_fraction = input_packing_fraction;
+	box.cover_fraction = input_cover_fraction;
 
 	box.info.str("");
 	box.info << "k="<< box.membrane_elasticity;
 	box.info << "-R="<< box.membrane_radius;
 	box.info << "-r=" << Particle::R0;
-	box.info << "-phi=" << box.packing_fraction;
+	box.info << "-psi=" << box.cover_fraction;
 	box.info << "-seed=" << input_seed;
 	box.info << "-ABP";
 
