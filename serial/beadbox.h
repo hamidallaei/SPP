@@ -290,7 +290,7 @@ void Box::Interact_Membrane_Beads()
 		C2DVector dr = particle[i].r - particle[(i+1)%Nm].r;
 		dr.Periodic_Transform();
 		Real d = sqrt(dr.Square());
-		C2DVector f = Spring(dr, d, Particle::sigma_p, membrane_elasticity);
+		C2DVector f = Spring(dr, d, Particle::repulsion_radius_m, membrane_elasticity);
 		particle[i].f += f;
 		particle[(i+1)%Nm].f -= f;
 	}

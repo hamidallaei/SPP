@@ -139,7 +139,7 @@ void Scene::Magnify(SavingVector r0, float d0, SavingVector r1, float d1)
 //	glEnd();
 
 	for (int i = 0; i < Nm; i++)
-		mparticle[i].Draw_Magnified(r0,d0,r1,d1);
+		mparticle[i].Draw_Magnified(r0,d0,r1,d1, i == 0);
 	for (int i = 0; i < Ns; i++)
 		sparticle[i].Draw_Magnified(r0,d0,r1,d1);
 }

@@ -178,9 +178,9 @@ public:
 	void VisualMembrane::Draw(float x0 = 0, float y0 = 0, float scale = 1, bool flag = false)
 	{
 		RGB color;
-		color.red = 0.2;
-		color.green = 0.2;
-		color.blue = 0.2;
+		color.red = 0.5;
+		color.green = 0.5;
+		color.blue = 0.5;
 		if (flag)
 		{
 			color.red = 0.0;
@@ -207,9 +207,9 @@ public:
 			null.Null();
 
 			RGB color;
-			color.red = 0.2;
-			color.green = 0.2;
-			color.blue = 0.2;
+			color.red = 0.5;
+			color.green = 0.5;
+			color.blue = 0.5;
 
 			Draw_Circle(p, radius*scale, scale*thickness / thickness_factor, color, mode);
 		}
@@ -231,9 +231,9 @@ public:
 			null.Null();
 
 			RGB color;
-			color.red = 0.2;
-			color.green = 0.2;
-			color.blue = 0.2;
+			color.red = 0.5;
+			color.green = 0.5;
+			color.blue = 0.5;
 			if (flag)
 			{
 				color.red = 0.0;

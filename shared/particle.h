@@ -806,6 +806,8 @@ public:
 	Real dtheta; // amount of noise added to theta
 	static Real sigma_p;
 	static Real repulsion_radius;
+	static Real sigma_m;
+	static Real repulsion_radius_m;
 	static Real A_p;
 	static Real torque0; // The intrinsinc torque in the particle. This make the motion chiral
 	static Real R0; // The intrinsinc radius of motion. This make the motion chiral
@@ -856,8 +858,8 @@ void ActiveBrownianChain::Set_nb(const int input_nb)
 	nb = input_nb;
 	if (nb == 1)
 	{	// case of a single spherial particle
-		m_parallel = 1;  	 // Mobility parallel to the direction
-		m_perpendicular = 1; // Mobility perpendicular to the direction
+		m_parallel = 0.5;  	 // Mobility parallel to the direction
+		m_perpendicular = 0.5; // Mobility perpendicular to the direction
 		k_perpendicular = 1; // Mobility perpendicular to the direction
 	}
 	else
@@ -966,28 +968,45 @@ inline void ActiveBrownianChain::Interact(ActiveBrownianChain& ac)
 		dr0.Periodic_Transform();
 	#endif
 	C2DVector dr;
-	for (int i = 0; i < nb; i++)
-		for (int j = 0; j < ac.nb; j++)
+	if (nb == 1 && ac.nb == 1)
+	{
+		Real d2 = dr0.Square();
+		Real d = sqrt(d2);
+
+		C2DVector interaction_force;
+		if (d < repulsion_radius_m)
 		{
-			C2DVector s_this, s_that;	// s is position of the beads on each swimmer wrt swimmer middle point
-			s_this = v*(separation*((1-nb)/2.0+i)); 	   //  v is the direction of the particle
-			s_that = ac.v*(separation*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
+			interaction_force = R12_Repulsive_Truncated(dr0, d, repulsion_radius_m, sigma_m,A_p);
 
-			dr = dr0 + s_this - s_that;
-
-			Real d2 = dr.Square();
-			Real d = sqrt(d2);
-
-			C2DVector interaction_force;
-			if (d < repulsion_radius)
+			f += interaction_force;
+			ac.f -= interaction_force;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < nb; i++)
+			for (int j = 0; j < ac.nb; j++)
 			{
-				interaction_force = R12_Repulsive_Truncated(dr,d,repulsion_radius,sigma_p,A_p);
+				C2DVector s_this, s_that;	// s is position of the beads on each swimmer wrt swimmer middle point
+				s_this = v*(separation*((1-nb)/2.0+i)); 	   //  v is the direction of the particle
+				s_that = ac.v*(separation*((1-ac.nb)/2.0+j)); //  v is the direction of the particle
 
-				f += interaction_force;
-				ac.f -= interaction_force;
+				dr = dr0 + s_this - s_that;
 
-				torque += s_this.x*interaction_force.y - s_this.y*interaction_force.x;
-				ac.torque += -s_that.x*interaction_force.y + s_that.y*interaction_force.x;
+				Real d2 = dr.Square();
+				Real d = sqrt(d2);
+
+				C2DVector interaction_force;
+				if (d < repulsion_radius)
+				{
+					interaction_force = R12_Repulsive_Truncated(dr,d,repulsion_radius,sigma_p,A_p);
+
+					f += interaction_force;
+					ac.f -= interaction_force;
+
+					torque += s_this.x*interaction_force.y - s_this.y*interaction_force.x;
+					ac.torque += -s_that.x*interaction_force.y + s_that.y*interaction_force.x;
+				}
 			}
 		}
 }
@@ -1030,6 +1049,8 @@ void ActiveBrownianChain::Write(std::ostream& os)
 Real ActiveBrownianChain::A_p = 1.;		// interaction strength
 Real ActiveBrownianChain::sigma_p = 1.0;		// sigma in Yukawa Potential
 Real ActiveBrownianChain::repulsion_radius = 1.1;		// repulsive cutoff radius
+Real ActiveBrownianChain::sigma_m = 0.5;		// sigma in Yukawa Potential of membrane beads
+Real ActiveBrownianChain::repulsion_radius_m = 0.55;		// repulsive cutoff radius of membrane beads
 Real ActiveBrownianChain::separation = 1; // separation between two neighboring beads in a swimmer
 Real ActiveBrownianChain::torque0 = 0; // The intrinsinc torque in the particle. This make the motion chiral
 Real ActiveBrownianChain::R0 = 0; // The intrinsinc radius of motion. This make the motion chiral

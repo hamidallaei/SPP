@@ -103,8 +103,8 @@ void Read_Arguments(int argc, char *argv[])
 
 void Run(Box& box, int argc, char *argv[])
 {
-	Real membrane_l_eq = Particle::sigma_p + 13*Particle::A_p*(Particle::repulsion_radius - Particle::sigma_p)/(input_membrane_elasticity*Particle::sigma_p + 13*Particle::A_p);
-	membrane_l_eq = Particle::sigma_p;
+	Real membrane_l_eq = Particle::sigma_m + 13*Particle::A_p*(Particle::repulsion_radius_m - Particle::sigma_m)/(input_membrane_elasticity*Particle::sigma_m + 13*Particle::A_p);
+	membrane_l_eq = Particle::sigma_m;
 	int input_Nm = (int) round(M_PI/asin(0.5*membrane_l_eq/input_membrane_radius));
 //	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
 	int input_Ns = (int) round(M_PI * input_cover_fraction * Particle::sigma_p * (1 / sin(M_PI/input_Nm)  - 2*Particle::sigma_p ));
@@ -124,7 +124,7 @@ void Run(Box& box, int argc, char *argv[])
 //	Particle::torque_tumble = 0.2; // torque strength of a tumble
 
 
-	Particle::Set_Dr(0.1);
+	Particle::Set_Dr(1.0/4);
 	Particle::Set_separation(1.0/(input_chain_length-1));
 
 // The following must be before box.init
@@ -185,8 +185,8 @@ void Run(Box& box, int argc, char *argv[])
 		}
 		else
 		{
-			Ring_Membrane(box.particle, Particle::sigma_p, box.Nm);
-			Confined_In_Ring_Membrane(box.particle, Particle::sigma_p, box.Ns, box.Nm);
+			Ring_Membrane(box.particle, Particle::sigma_m, box.Nm);
+			Confined_In_Ring_Membrane(box.particle, Particle::sigma_m, box.Ns, box.Nm);
 			for (int i = 0; i < box.Ns; i++)
 				box.particle[i].r_original = box.particle[i].r;
 			out_file.open(traj_address.str().c_str());
