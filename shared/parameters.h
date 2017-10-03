@@ -8,7 +8,7 @@
 //#define CIRCULAR_BOX
 //#define verlet_list
 // This is for checking particles outside of the box
-#define DEBUG
+//#define DEBUG
 // This tracks a specific particle. The id of the tracking particle is given below.
 //#define TRACK_PARTICLE
 // This will round torques to avoid any difference of this program and other versions caused by truncation of numbers (if we change order of a sum, the result will change because of the truncation error)
@@ -103,7 +103,7 @@ const int tag_max = 32767; // For parallel use only
 
 #ifdef TRACK_PARTICLE
 const int track = 59;
-BasicDynamicParticle* track_p;
+Particle* track_p;
 bool flag = false;
 #endif
 

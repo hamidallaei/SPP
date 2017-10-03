@@ -20,6 +20,7 @@ public:
 	static int Nm;
 	static int chain_length;
 	SavingVector L;
+	SavingVector r_cm;
 	Scene();
 	Scene(const Scene&);
 	~Scene();
@@ -197,9 +198,11 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		return is;
 	}
 
+	scene.r_cm.Null();
 	for (int i = 0; i < scene.Nm; i++)
 	{
 		is >> scene.mparticle[i].r;
+		scene.r_cm += scene.mparticle[i].r;
 		#ifdef Periodic_Show
 			scene.mparticle[i].r.x -= Lx*2*((int) floor(scene.mparticle[i].r.x / (Lx*2) + 0.5));
 			scene.mparticle[i].r.y -= Ly*2*((int) floor(scene.mparticle[i].r.y / (Ly*2) + 0.5));
@@ -215,6 +218,7 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	for (int i = 0; i < scene.Ns; i++)
 	{
 		is >> scene.sparticle[i].r;
+		scene.r_cm += scene.sparticle[i].r;
 		#ifdef Periodic_Show
 			scene.sparticle[i].r.x -= Lx*2*((int) floor(scene.sparticle[i].r.x / (Lx*2) + 0.5));
 			scene.sparticle[i].r.y -= Ly*2*((int) floor(scene.sparticle[i].r.y / (Ly*2) + 0.5));
@@ -230,6 +234,14 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 			return is;
 		}
 	}
+
+		scene.r_cm /= scene.Nm + scene.Ns;
+		#ifdef Translated_Scaled
+			for (int i = 0; i < scene.Nm; i++)
+				scene.mparticle[i].r -= scene.r_cm;
+			for (int i = 0; i < scene.Ns; i++)
+				scene.sparticle[i].r -= scene.r_cm;
+		#endif
 
 	if (scene.t < 0 || scene.t > 1000000)
 		scene.health_status = false;

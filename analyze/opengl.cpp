@@ -12,13 +12,14 @@
 #include <cmath>
 
 #define VISUAL
-#define Periodic_Show
+//#define Periodic_Show
+#define Translated_Scaled
 #include "read.h"
 #include "../shared/c2dvector.h"
 
-unsigned int window_width = 680;
-unsigned int window_height = 680;
-const unsigned int max_height = 680;
+unsigned int window_width = 669;
+unsigned int window_height = 669;
+const unsigned int max_height = 669;
 const unsigned int max_width = 1300;
 
 cv::VideoWriter writer;
@@ -42,10 +43,10 @@ void Init()
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glShadeModel (GL_FLAT);
 	Init_Circle();
-	float sigma = 1.0;
+	float sigma = 1.1;
 	VisualParticle::radius = sigma / 2;
 	VisualParticle::tail = 1;
-	VisualParticle::thickness = 1.5;
+	VisualParticle::thickness = 0.5;
 
 //	r_lense.x = 25;
 //	r_lense.y = 25;
@@ -360,6 +361,10 @@ int main(int argc, char** argv)
 
 	if (read_state)
 	{
+		#ifdef Translated_Scaled
+			sceneset->L.x = 25;
+			sceneset->L.y = sceneset->L.x;
+		#endif
 		box_dim = sceneset->L;
 
 		window_height = max_height;
@@ -371,9 +376,14 @@ int main(int argc, char** argv)
 		}
 
 		global_name = argv[argc-1];
-		string::size_type position_of_txt = global_name.find("-r-v", 0);
+
+		string::size_type position_of_txt = global_name.find("r-v-", 0);
+		cout << position_of_txt << endl;
 		if (position_of_txt < 20000)
-			global_name.erase(position_of_txt);
+			global_name.erase(0, position_of_txt + 4);
+		position_of_txt = global_name.find(".bin", 0);
+		if (position_of_txt < 20000)
+			global_name.erase(position_of_txt, 4);
 
 		stringstream address("");
 		address << global_name << ".mpg";

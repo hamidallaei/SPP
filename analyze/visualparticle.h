@@ -3,6 +3,8 @@
 
 #ifdef VISUAL
 	const int circle_points_num = 100;
+	const double alpha_value = 0.3;
+	const double center_line_illum = 0.4;
 
 	GLfloat unitcircle[2*circle_points_num];
 	GLuint indices[circle_points_num];
@@ -26,7 +28,7 @@
 	{
 		glEnableClientState (GL_VERTEX_ARRAY);
 
-		glColor4f(color.red, color.green, color.blue,0.5);
+		glColor4f(color.red, color.green, color.blue, alpha_value);
 		glLineWidth(thickness);
 
 		glPolygonMode(GL_FRONT_AND_BACK, mode);
@@ -43,7 +45,7 @@
 			glVertex2f(0, 0);
 			glVertex2f(-cos(theta),-sin(theta));
 		glEnd();
-			glColor4f(color.red, color.green, color.blue,1.0);
+			glColor4f(color.red, color.green, color.blue, 1.0);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
 	
@@ -56,7 +58,7 @@
 	{
 		glEnableClientState (GL_VERTEX_ARRAY);
 
-		glColor4f(color.red, color.green, color.blue,0.5);
+		glColor4f(color.red, color.green, color.blue, alpha_value);
 		glLineWidth(thickness);
 
 		glPolygonMode(GL_FRONT_AND_BACK, mode);
@@ -69,7 +71,7 @@
 
 		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
 
-		glColor4f(color.red, color.green, color.blue,1.0);
+		glColor4f(color.red, color.green, color.blue, 1.0);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDrawElements(GL_POLYGON,circle_points_num,GL_UNSIGNED_INT,indices);
 	
@@ -333,12 +335,25 @@ int VisualChain::chain_length = 2;
 
 			Draw_Circle(r_temp, theta, radius*scale, thickness, color, mode);
 		}
+
+		glLineWidth(2);
+		glColor4f(center_line_illum*color.red, center_line_illum*color.green, center_line_illum*color.blue, 1.0);
+		glTranslatef(r.x,r.y,0);
+		glBegin(GL_LINES);
+			glVertex2f(-0.7*cos(theta),-0.7*sin(theta));
+			glVertex2f(0.7*cos(theta),0.7*sin(theta));
+		glEnd();
+	
+		glDisableClientState( GL_VERTEX_ARRAY );
+		glLoadIdentity();
+		glLineWidth(1);
 	}
 
 	void VisualChain::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
 		float scale = d1 / d0;
 		SavingVector v_temp, p;
+		SavingVector r_new = (r - r0)*scale + r1;
 		v_temp.x = cos(theta);
 		v_temp.y = sin(theta);
 
@@ -360,6 +375,23 @@ int VisualChain::chain_length = 2;
 				Draw_Circle(p, theta, radius*scale, scale*thickness / thickness_factor, color, mode);
 			}
 		}
+
+		if (fabs(r.x - r0.x) < (d0-radius) && fabs(r.y - r0.y) < (d0-radius))
+		{
+			float lw = round(scale*2);
+			glLineWidth(lw);
+			glColor4f(center_line_illum*color.red, center_line_illum*color.green, center_line_illum*color.blue, 1.0);
+			glTranslatef(r_new.x,r_new.y,0);
+			glBegin(GL_LINES);
+				glVertex2f(-0.7*scale*cos(theta),-0.7*scale*sin(theta));
+				glVertex2f(0.7*scale*cos(theta),0.7*scale*sin(theta));
+			glEnd();
+
+			glDisableClientState( GL_VERTEX_ARRAY );
+			glLoadIdentity();
+			glLineWidth(1);
+		}
+
 	}
 #endif
 

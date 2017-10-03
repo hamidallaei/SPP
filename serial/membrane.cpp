@@ -104,10 +104,10 @@ void Read_Arguments(int argc, char *argv[])
 void Run(Box& box, int argc, char *argv[])
 {
 	Real membrane_l_eq = Particle::sigma_m + 13*Particle::A_p*(Particle::repulsion_radius_m - Particle::sigma_m)/(input_membrane_elasticity*Particle::sigma_m + 13*Particle::A_p);
-	membrane_l_eq = Particle::sigma_m;
+	membrane_l_eq = Particle::repulsion_radius_m;
 	int input_Nm = (int) round(M_PI/asin(0.5*membrane_l_eq/input_membrane_radius));
 //	int input_Ns = (int) round(input_packing_fraction/( input_chain_length*sin(M_PI/input_Nm)*sin(M_PI/input_Nm) ));
-	int input_Ns = (int) round(M_PI * input_cover_fraction * Particle::sigma_p * (1 / sin(M_PI/input_Nm)  - 2*Particle::sigma_p ));
+	int input_Ns = (int) round(M_PI * input_cover_fraction * Particle::sigma_p * (1 / sin(M_PI/input_Nm/Particle::repulsion_radius_m)  - 2*Particle::sigma_p ));
 
 	bool FROM_FILE = false;
 	string name;
@@ -186,8 +186,8 @@ void Run(Box& box, int argc, char *argv[])
 		}
 		else
 		{
-			Ring_Membrane(box.particle, Particle::sigma_m, box.Nm);
-			Confined_In_Ring_Membrane(box.particle, Particle::sigma_m, box.Ns, box.Nm);
+			Ring_Membrane(box.particle, Particle::repulsion_radius_m, box.Nm);
+			Confined_In_Ring_Membrane(box.particle, Particle::repulsion_radius_m, box.Ns, box.Nm);
 			for (int i = 0; i < box.Ns; i++)
 				box.particle[i].r_original = box.particle[i].r;
 			out_file.open(traj_address.str().c_str());
@@ -199,7 +199,10 @@ void Run(Box& box, int argc, char *argv[])
 
 	cout << " Box information is: " << box.info.str() << endl;
 
-	int quantities_saving_period = ( (int) round(16/dt) ) / cell_update_period;
+	cout << box.particle[184].m_parallel << "\t" << box.particle[184].m_perpendicular << "\t" << box.particle[184].k_perpendicular << endl;
+	cout << box.particle[184].torque0 << "\t" << box.particle[184].F0 << "\t" << box.particle[184].R0 << endl;
+
+	int quantities_saving_period = ( (int) round(1.0/dt) ) / cell_update_period;
 	t_sim = data_gathering(&box, total_step, saving_period, quantities_saving_period, out_file, variables_file);
 
 	cout << " Done in " << (t_sim / 60.0) << " minutes" << endl;

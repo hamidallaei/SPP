@@ -207,11 +207,11 @@ void Wall::Interact(ContinuousParticle* p)
 			{
 				p->torque += (p->gw)*((p->v.x*dr.y - p->v.y*dr.x)/(2*PI*(d2)));
 				#ifdef TRACK_PARTICLE
-					if (p == track_p)
-					{
-		//				if (abs(p->torque) > 0.1)
-	//						cout << "Intwall:     " << p->r << "\t" << d2 << "\t" << p->theta << "\t" << p->torque << endl << flush;
-					}
+/*					if (p == track_p)*/
+/*					{*/
+/*		//				if (abs(p->torque) > 0.1)*/
+/*	//						cout << "Intwall:     " << p->r << "\t" << d2 << "\t" << p->theta << "\t" << p->torque << endl << flush;*/
+/*					}*/
 				#endif
 			}
 }
@@ -254,11 +254,11 @@ void Wall::Interact(RepulsiveParticle* p)
 			p->torque -= torque_interaction;
 
 			#ifdef TRACK_PARTICLE
-				if (p == track_p)
-				{
-	//				if (abs(p->torque) > 0.1)
-//						cout << "Intwall:     " << p->r << "\t" << d2 << "\t" << p->theta << "\t" << p->torque << endl << flush;
-				}
+/*				if (p == track_p)*/
+/*				{*/
+/*	//				if (abs(p->torque) > 0.1)*/
+/*//						cout << "Intwall:     " << p->r << "\t" << d2 << "\t" << p->theta << "\t" << p->torque << endl << flush;*/
+/*				}*/
 			#endif
 		}
 	}
