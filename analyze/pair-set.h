@@ -16,7 +16,10 @@ public:
 
 	void Add(int p); // Add a particle id to the list of pid of this cell.
 	void Add_Pairs_Self(Pair_Set* ps);
+	void Delete();
 	void Add_Pairs(Cell* c, Pair_Set* ps);
+	bool Check(Cell* c);
+	bool Self_Check();
 };
 
 class Pair_Set{
@@ -178,6 +181,11 @@ Cell::Cell()
 }
 
 Cell::~Cell()
+{
+	Delete();
+}
+
+void Cell::Delete()
 {
 	pid.clear();
 }
