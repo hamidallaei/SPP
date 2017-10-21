@@ -1,6 +1,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -12,8 +12,8 @@
 #include <cmath>
 
 #define VISUAL
-//#define Periodic_Show
-#define Translated_Scaled
+#define Periodic_Show
+//#define Translated_Scaled
 #include "read.h"
 #include "../shared/c2dvector.h"
 
@@ -140,6 +140,27 @@ void Draw_Color_Wheel(SavingVector r, float R0, float R1)
 
 	glDisableClientState( GL_VERTEX_ARRAY );
 	glLoadIdentity();
+
+	glLineWidth(8);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glColor4f(0, 0, 0,1);
+	glBegin(GL_LINES);
+	glVertex2f(-sceneset->L.x + R1, -sceneset->L.y + R1);
+	glVertex2f(-sceneset->L.x + R1 + 10, -sceneset->L.y + R1);
+	glEnd();
+	glLineWidth(1);
+
+	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+	glRasterPos2f(r.x - 1.5*R1, r.y - 1.5*R1);
+	stringstream text_to_render("");
+	text_to_render << "t = " << sceneset->scene[t].t;
+	const unsigned char* str = reinterpret_cast<const unsigned char *>(text_to_render.str().c_str());
+	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, str);
+
+	glRasterPos2f(-sceneset->L.x + R1, -sceneset->L.y + 0.4*R1);
+	text_to_render.str("10 a");
+	str = reinterpret_cast<const unsigned char *>(text_to_render.str().c_str());
+	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, str);
 }
 
 void Display()
@@ -210,22 +231,40 @@ void SpecialInput(int key, int x, int y)
 	switch(key)
 	{
 		case GLUT_KEY_PAGE_UP:
-			t += 99;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t += 24;
+			else
+				t += 99;
 		break;
 		case GLUT_KEY_PAGE_DOWN:
-			t -= 101;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t -= 26;
+			else
+				t -= 101;
 		break;
 		case GLUT_KEY_UP:
-			t += 9;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t += 4;
+			else
+				t += 9;
 		break;	
 		case GLUT_KEY_DOWN:
-			t -= 11;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t -= 6;
+			else
+				t -= 11;
 		break;
 		case GLUT_KEY_LEFT:
-			t -= 2;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t -= 2;
+			else
+				t -= 3;
 		break;
 		case GLUT_KEY_RIGHT:
-			t += 0;
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+				t += 0;
+			else
+				t += 1;
 		break;
 		default:
 			t -= 1;

@@ -8,7 +8,7 @@
 #include "../shared/particle.h"
 #include "../shared/geometry.h"
 
-
+void Set_time_step(); // Setting the time step and seting up other related values
 void Square_Lattice_Formation(Particle* particle, int N); // Positioning partilces in a square lattice
 void Triangle_Lattice_Formation(Particle* particle, int N, double sigma); // Positioning partilces in a triangular lattice. This is denser.
 void Random_Formation(Particle* particle, int N); // Positioning partilces Randomly
@@ -20,6 +20,15 @@ void Four_Vortex_Formation(Particle* particle, int N); // Four vortex inside the
 void Clump_Formation(Particle* particle, int N, int size); // Positioning particles in a clump that is moving in some direction.
 void Square_Ring_Formation(Particle* particle, int N); // Positioning particles in a square shape ring(the center is empty)
 void Star_Trap_Initialization(Geometry* geometry, int N_hands, Real half_delta); // Defining geometry of a star shaped trap
+
+void Set_time_step(const Real& input_dt)
+{
+	dt = input_dt;
+	half_dt = 0.5*dt;
+	dt_over_6 = dt / 6;
+	cell_update_period = (int) (cell_update_interval / dt);
+	saving_period = (int) (saving_interval / cell_update_interval);
+}
 
 
 void Single_Vortex_Formation(Particle* particle, int N)
@@ -320,7 +329,7 @@ void Confined_In_Ring_Membrane(Particle* particle, const Real bead_diameter, int
 /*	Real membrane_radius = 0.5*N_m*Particle::sigma_p / M_PI;*/
 	Real membrane_radius = 0.5*bead_diameter/sin(M_PI/N_m);
 	int chain_length = particle[N_m].nb; // number of beads in each swimmer(chain)
-	Real sw_length = chain_length*Particle::separation + Particle::sigma_p;
+	Real sw_length;// = chain_length*Particle::separation + Particle::sigma_p;
 
 	int i = 0;
 	int n_1 = 0;

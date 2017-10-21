@@ -67,7 +67,23 @@ inline Real data_gathering(Box* box, long int total_step, int saving_period, ofs
 	if (box->t < dt)
 			out_file << box;
 
+	Real initial_dt = dt;
+	Set_time_step(dt);
+
 	int i = 0;
+	while (box->t < 1.0)
+	{
+		box->Multi_Step(cell_update_period);
+		i += cell_update_period;
+		if ((i / cell_update_period) % saving_period == 0)
+		{
+			out_file << box;
+			timing_information(box,start_time, box_initial_time);
+		}
+	}
+
+	Set_time_step(initial_dt);
+
 	while (box->t < sim_time)
 	{
 		box->Multi_Step(cell_update_period);
