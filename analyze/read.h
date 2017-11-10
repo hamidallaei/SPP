@@ -13,6 +13,7 @@ public:
 	VisualChain* sparticle;
 	VisualMembrane* mparticle;
 	Real t;
+	Real omega_s;
 	bool health_status;
 	static Real density;
 	static Real noise;
@@ -26,7 +27,10 @@ public:
 	~Scene();
 	void Init(int, int);
 	void Delete();
+	void Periodic_Transform();
+	void Translate_Rcm();
 	void Draw();
+	void Draw_Translated_Scaled();
 	void Magnify(SavingVector r0, float d0, SavingVector r1, float d1);
 	void Auto_Correlation();
 	void Skip_File(std::istream& is, int n);
@@ -87,6 +91,28 @@ void Scene::Delete()
 		delete [] mparticle;
 }
 
+void Scene::Periodic_Transform()
+{
+	for (int i = 0; i < Nm; i++)
+	{
+		mparticle[i].r.x -= Lx*2*((int) floor(mparticle[i].r.x / (Lx*2) + 0.5));
+		mparticle[i].r.y -= Ly*2*((int) floor(mparticle[i].r.y / (Ly*2) + 0.5));
+	}
+	for (int i = 0; i < Ns; i++)
+	{
+		sparticle[i].r.x -= Lx*2*((int) floor(sparticle[i].r.x / (Lx*2) + 0.5));
+		sparticle[i].r.y -= Ly*2*((int) floor(sparticle[i].r.y / (Ly*2) + 0.5));
+	}
+}
+
+void Scene::Translate_Rcm()
+{
+		for (int i = 0; i < Nm; i++)
+			mparticle[i].r -= r_cm;
+		for (int i = 0; i < Ns; i++)
+			sparticle[i].r -= r_cm;
+}
+
 #ifdef VISUAL
 void Scene::Draw()
 {
@@ -98,8 +124,18 @@ void Scene::Draw()
 
 	if (Nm > 0)
 		mparticle[0].Draw(0,0,1,true);
+}
 
-	cout << "Time is at:\t" << t << "\tR/v_0" << endl;
+void Scene::Draw_Translated_Scaled()
+{
+	for (int i = 0; i < Ns; i++)
+		sparticle[i].Draw(r_cm.x, r_cm.y);
+
+	for (int i = 0; i < Nm; i++)
+		mparticle[i].Draw(r_cm.x, r_cm.y);
+
+	if (Nm > 0)
+		mparticle[0].Draw(r_cm.x, r_cm.y, 1,true);
 }
 
 void Scene::Magnify(SavingVector r0, float d0, SavingVector r1, float d1)
@@ -203,11 +239,6 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	{
 		is >> scene.mparticle[i].r;
 		scene.r_cm += scene.mparticle[i].r;
-		#ifdef Periodic_Show
-			scene.mparticle[i].r.x -= Lx*2*((int) floor(scene.mparticle[i].r.x / (Lx*2) + 0.5));
-			scene.mparticle[i].r.y -= Ly*2*((int) floor(scene.mparticle[i].r.y / (Ly*2) + 0.5));
-		#endif
-
 		if (i == scene.Nm - 1 && (is.eof() || is.tellg() < 0))
 		{
 			scene.health_status = false;
@@ -219,10 +250,6 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 	{
 		is >> scene.sparticle[i].r;
 		scene.r_cm += scene.sparticle[i].r;
-		#ifdef Periodic_Show
-			scene.sparticle[i].r.x -= Lx*2*((int) floor(scene.sparticle[i].r.x / (Lx*2) + 0.5));
-			scene.sparticle[i].r.y -= Ly*2*((int) floor(scene.sparticle[i].r.y / (Ly*2) + 0.5));
-		#endif
 		Saving_Real temp_float;
 		is.read((char*) &temp_float,sizeof(Saving_Real) / sizeof(char));
 		scene.sparticle[i].theta = temp_float;
@@ -235,13 +262,7 @@ std::istream& operator>>(std::istream& is, Scene& scene)
 		}
 	}
 
-		scene.r_cm /= scene.Nm + scene.Ns;
-		#ifdef Translated_Scaled
-			for (int i = 0; i < scene.Nm; i++)
-				scene.mparticle[i].r -= scene.r_cm;
-			for (int i = 0; i < scene.Ns; i++)
-				scene.sparticle[i].r -= scene.r_cm;
-		#endif
+	scene.r_cm /= scene.Nm + scene.Ns;
 
 	if (scene.t < 0 || scene.t > 1000000)
 		scene.health_status = false;
@@ -288,11 +309,15 @@ public:
 	void Write(float, float); // write from an specefic time to another time
 	void Write_Every(int interval); // write every interval
 	void Save_Theta_Deviation(int, int, int, string);
+	void Periodic_Transform();
+	void Translate_Rcm();
+	void Draw_Path(int frame);
 	void Plot_Fields(int, int, string);
 	void Plot_Averaged_Fields(int smaller_grid_dim, string name);
 	void Plot_Averaged_Fields_Section(int smaller_grid_dim, int y, string info);
 	void Plot_Density_Contour(int smaller_grid_dim, double rho, string info);
 	void Accumulate_Theta(int smaller_grid_dim, const int num_bins, const double& p_c, const double& dp, const string& info);
+	void Compute_Omega();
 };
 
 SceneSet::SceneSet(string input_address)
@@ -424,17 +449,40 @@ bool SceneSet::Read(int skip)
 		return (false);
 	input_file.close();
 
+	Nf--;
 	if (!scene[Nf-1].health_status)
 		Nf--;
 
 	L.x = round(L.x+0.1);
 	L.y = round(L.y+0.1);
+	L.x = max(L.x, L.y);
+	L.y = L.x;
 	L_min = L;
 	L.x += 0.5;
 	L.y += 0.5;
 
-	L = scene[0].L;
-	L_min = L;
+	#ifdef Periodic_Show
+		L = scene[0].L;
+		L_min = L;
+	#endif
+
+	Compute_Omega();
+
+	#ifdef Periodic_Show
+		Periodic_Transform();
+	#endif
+	#ifdef Translated_Scaled
+		Translate_Rcm();
+		L.x = L.y = 0;
+		for (int index = 0; index < Nf; index++)
+			for (int i = 0; i < scene[index].Nm; i++)
+			{
+				if (abs(scene[index].mparticle[i].r.x) > L.x)
+					L.x = abs(scene[index].mparticle[i].r.x);
+				if (abs(scene[index].mparticle[i].r.y) > L.y)
+					L.y = abs(scene[index].mparticle[i].r.y);
+			}
+	#endif
 
 	return (true);
 }
@@ -486,6 +534,30 @@ void SceneSet::Save_Theta_Deviation(int smaller_grid_dim, int start_t, int end_t
 	averaged_field.Save_Theta_Deviation(outfile);
 	outfile.close();
 	averaged_field.Reset();
+}
+
+void SceneSet::Periodic_Transform()
+{
+	for (int i = 0; i < Nf; i++)
+		scene[i].Periodic_Transform();
+}
+
+void SceneSet::Translate_Rcm()
+{
+	for (int i = 0; i < Nf; i++)
+		scene[i].Translate_Rcm();
+}
+
+void SceneSet::Draw_Path(int frame)
+{
+	glLineWidth(1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glColor4f(0, 0, 0,1);
+	glBegin(GL_LINES);
+	for (int i = 0; i < frame; i++)
+		glVertex2f(scene[i].r_cm.x, scene[i].r_cm.y);
+	glEnd();
+	glLineWidth(1);
 }
 
 void SceneSet::Plot_Fields(int smaller_grid_dim, int t, string name)
@@ -561,6 +633,28 @@ void SceneSet::Accumulate_Theta(int smaller_grid_dim, const int num_bins, const 
 	dtheta.Histogram(num_bins,address.str().c_str());
 	cout << "Number of date: " << dtheta.data.size() << endl;
 	dtheta.Reset();
+}
+
+void SceneSet::Compute_Omega()
+{
+	SavingVector v, r;
+	Real Ls;
+	Real Sxx, Syy, Sxy;
+	for (int step = 1; step < Nf; step++)
+	{
+		Ls = Sxx = Sxy = Syy = 0;
+		for (int i = 0; i < scene[step].Ns; i++)
+		{
+			v.x = (scene[step].sparticle[i].r.x - scene[step - 1].sparticle[i].r.x) / (scene[step].t - scene[step-1].t);
+			v.y = (scene[step].sparticle[i].r.y - scene[step - 1].sparticle[i].r.y) / (scene[step].t - scene[step-1].t);
+			r = scene[step].sparticle[i].r - scene[step].r_cm;
+			Ls += r.x * v.y - r.y * v.x;
+			Sxx += r.x*r.x;
+			Sxy += r.x*r.y;
+			Syy += r.y*r.y;
+		}
+		scene[step].omega_s = Ls / (Sxx + Syy);
+	}
 }
 
 #endif

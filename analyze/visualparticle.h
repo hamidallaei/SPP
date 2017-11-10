@@ -167,6 +167,7 @@ public:
 
 //		virtual void Draw(float, float, float);
 		void Draw(float, float, float, bool);
+		void Draw_Translated_Scaled(float, float, float, bool, SavingVector);
 		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
 		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1, bool flag);
 	#endif
@@ -190,8 +191,28 @@ public:
 			color.blue = 0.0;
 		}
 
-		Draw_Circle(r, radius*scale, thickness, color, mode);
+		SavingVector r_temp(r);
+		r_temp.x -= x0;
+		r_temp.y -= y0;
+
+		Draw_Circle(r_temp, radius*scale, thickness, color, mode);
 	}
+
+/*	void VisualMembrane::Draw_Translated_Scaled(float x0 = 0, float y0 = 0, float scale = 1, bool flag = false, SavingVector rcm)*/
+/*	{*/
+/*		RGB color;*/
+/*		color.red = 0.5;*/
+/*		color.green = 0.5;*/
+/*		color.blue = 0.5;*/
+/*		if (flag)*/
+/*		{*/
+/*			color.red = 0.0;*/
+/*			color.green = 0.0;*/
+/*			color.blue = 0.0;*/
+/*		}*/
+
+/*		Draw_Circle(r - r_cm, radius*scale, thickness, color, mode);*/
+/*	}*/
 
 	void VisualMembrane::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
@@ -260,6 +281,7 @@ public:
 
 		void Find_Color(RGB&);
 		void Draw(float, float, float);
+		void Draw_Translated_Scaled(float, float, float, SavingVector r_cm);
 		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
 	#endif
 };
@@ -282,8 +304,20 @@ public:
 	{
 		RGB color;
 		Find_Color(color);
-		Draw_Circle(r, theta, radius*scale, thickness, color, mode);
+
+		SavingVector r_temp(r);
+		r_temp.x -= x0;
+		r_temp.y -= y0;
+
+		Draw_Circle(r_temp, theta, radius*scale, thickness, color, mode);
 	}
+
+/*	void VisualParticle::Draw_Translated_Scaled(float x0 = 0, float y0 = 0, float scale = 1, SavingVector r_cm)*/
+/*	{*/
+/*		RGB color;*/
+/*		Find_Color(color);*/
+/*		Draw_Circle(r - r_cm, theta, radius*scale, thickness, color, mode);*/
+/*	}*/
 
 	void VisualParticle::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{
@@ -311,6 +345,7 @@ public:
 
 	#ifdef VISUAL
 		void Draw(float, float, float);
+		void Draw(float, float, float, SavingVector);
 		void Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1);
 	#endif
 };
@@ -332,6 +367,8 @@ int VisualChain::chain_length = 2;
 			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i)/(chain_length-1));
 
 			r_temp = r + s_i;
+			r_temp.x -= x0;
+			r_temp.y -= y0;
 
 			Draw_Circle(r_temp, theta, radius*scale, thickness, color, mode);
 		}
@@ -348,6 +385,37 @@ int VisualChain::chain_length = 2;
 		glLoadIdentity();
 		glLineWidth(1);
 	}
+
+/*	void VisualChain::Draw_Translated_Scaled(float x0 = 0, float y0 = 0, float scale = 1, SavingVector r_cm)*/
+/*	{*/
+/*		SavingVector v_temp, r_temp;*/
+/*		v_temp.x = cos(theta);*/
+/*		v_temp.y = sin(theta);*/
+
+/*		RGB color;*/
+/*		Find_Color(color);*/
+
+/*		for (int i = 0; i < chain_length; i++)*/
+/*		{*/
+/*			SavingVector s_i = v_temp*(((1-chain_length)/2.0 + i)/(chain_length-1));*/
+
+/*			r_temp = r + s_i - r_cm;*/
+
+/*			Draw_Circle(r_temp, theta, radius*scale, thickness, color, mode);*/
+/*		}*/
+
+/*		glLineWidth(2);*/
+/*		glColor4f(center_line_illum*color.red, center_line_illum*color.green, center_line_illum*color.blue, 1.0);*/
+/*		glTranslatef(r.x - r_cm.x,r.y - r_cm.y,0);*/
+/*		glBegin(GL_LINES);*/
+/*			glVertex2f(-0.7*cos(theta),-0.7*sin(theta));*/
+/*			glVertex2f(0.7*cos(theta),0.7*sin(theta));*/
+/*		glEnd();*/
+/*	*/
+/*		glDisableClientState( GL_VERTEX_ARRAY );*/
+/*		glLoadIdentity();*/
+/*		glLineWidth(1);*/
+/*	}*/
 
 	void VisualChain::Draw_Magnified(SavingVector r0, float d0, SavingVector r1, float d1)
 	{

@@ -12,8 +12,8 @@
 #include <cmath>
 
 #define VISUAL
-#define Periodic_Show
-//#define Translated_Scaled
+//#define Periodic_Show
+#define Translated_Scaled
 #include "read.h"
 #include "../shared/c2dvector.h"
 
@@ -84,16 +84,21 @@ void Save_Frame()
 {
 		static int num = 0;
 		stringstream address;
+		#ifdef Translated_Scaled
+			address << "ts-img";
+		#else
+			address << "img";
+		#endif
 		if (num < 10)
-			address << "img000" << num << ".png";
+			address << "000" << num << ".png";
 		else
 			if (num < 100)
-				address << "img00" << num << ".png";
+				address << "00" << num << ".png";
 			else
 				if (num < 1000)
-					address << "img0" << num << ".png";
+					address << "0" << num << ".png";
 				else
-					address << "img" << num << ".png";
+					address << num << ".png";
 		Save_Image(address.str().c_str());
 		num++;
 }
@@ -146,7 +151,7 @@ void Draw_Color_Wheel(SavingVector r, float R0, float R1)
 	glColor4f(0, 0, 0,1);
 	glBegin(GL_LINES);
 	glVertex2f(-sceneset->L.x + R1, -sceneset->L.y + R1);
-	glVertex2f(-sceneset->L.x + R1 + 10, -sceneset->L.y + R1);
+	glVertex2f(-sceneset->L.x + R1 + 32, -sceneset->L.y + R1);
 	glEnd();
 	glLineWidth(1);
 
@@ -157,8 +162,15 @@ void Draw_Color_Wheel(SavingVector r, float R0, float R1)
 	const unsigned char* str = reinterpret_cast<const unsigned char *>(text_to_render.str().c_str());
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, str);
 
+	glRasterPos2f(r.x - 2.5*R1, r.y - 2*R1);
+	text_to_render.str("");
+	Real omega_s = 0.001*round(1000*sceneset->scene[t].omega_s * 0.5 * sceneset->scene[t].L.x);
+	text_to_render << "w = " << omega_s;
+	str = reinterpret_cast<const unsigned char *>(text_to_render.str().c_str());
+	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, str);
+
 	glRasterPos2f(-sceneset->L.x + R1, -sceneset->L.y + 0.4*R1);
-	text_to_render.str("10 a");
+	text_to_render.str("32 a");
 	str = reinterpret_cast<const unsigned char *>(text_to_render.str().c_str());
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, str);
 }
@@ -170,6 +182,11 @@ void Display()
 	//glPopMatrix();
 	SavingVector r0,r1;
 
+	#ifndef Translated_Scaled
+		#ifndef Periodic_Show
+			sceneset->Draw_Path(t);
+		#endif
+	#endif
 	sceneset->scene[t].Draw();
 	if (magnify)
 		Magnify(r_lense,d0,r_image,d1);
@@ -400,10 +417,10 @@ int main(int argc, char** argv)
 
 	if (read_state)
 	{
-		#ifdef Translated_Scaled
-			sceneset->L.x = 25;
-			sceneset->L.y = sceneset->L.x;
-		#endif
+//		#ifdef Translated_Scaled
+//			sceneset->L.x = 25;
+//			sceneset->L.y = sceneset->L.x;
+//		#endif
 		box_dim = sceneset->L;
 
 		window_height = max_height;
@@ -417,7 +434,7 @@ int main(int argc, char** argv)
 		global_name = argv[argc-1];
 
 		string::size_type position_of_txt = global_name.find("r-v-", 0);
-		cout << position_of_txt << endl;
+
 		if (position_of_txt < 20000)
 			global_name.erase(0, position_of_txt + 4);
 		position_of_txt = global_name.find(".bin", 0);
